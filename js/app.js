@@ -1,6 +1,6 @@
 import { guardarVenta } from "./ventas.js";
 import { renderCarrito } from "./ui.js";
-import { renderVentas } from "./ui.js";
+import { renderVentas } from "./renderventas.js";
 
 
 
