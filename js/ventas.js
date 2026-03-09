@@ -1,6 +1,8 @@
 import { save, load } from "./storage.js";
 
-let ventas = load("ventas") || [];
+export function obtenerVentas() {
+  return load("ventas") || [];
+}
 
 function generarNumeroVenta() {
   const ventas = obtenerVentas();
