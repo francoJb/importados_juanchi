@@ -3,6 +3,7 @@ import { obtenerVentas } from "./ventas.js";
 export function renderVentas() {
   const ventas = obtenerVentas();
   const tabla = document.getElementById("tablaVentasBody");
+  if (!tabla) return;
 
   tabla.innerHTML = "";
 

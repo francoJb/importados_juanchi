@@ -1,9 +1,10 @@
 import { renderVentas } from "./renderventas.js";
 import { verDetalleVenta } from "./detalleventa.js";
 window.verDetalleVenta = verDetalleVenta;
-renderVentas();
 
-
+document.addEventListener("DOMContentLoaded", () => {
+  renderVentas();
+});
 
 export function renderCarrito(productos) {
   const tabla = document.getElementById("tablaCarrito");
@@ -31,4 +32,7 @@ export function renderCarrito(productos) {
     `;
   });
   totalElement.textContent = `$${total}`;
+  window.cerrarDetalleVenta = function () {
+    document.getElementById("modalDetalleVenta").classList.add("hidden");
+  };
 }

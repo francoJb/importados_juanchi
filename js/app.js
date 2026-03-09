@@ -5,6 +5,7 @@ import { renderVentas } from "./renderventas.js";
 
 
 
+
 document.addEventListener("DOMContentLoaded", () => {
   const linkDashboard = document.getElementById("linkDashboard");
   const linkClientes = document.getElementById("linkClientes");
@@ -22,14 +23,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnConfirmar = document.getElementById("btnConfirmar");
   const linkVentas = document.getElementById("linkVentas");
   const seccionVentas = document.getElementById("seccionVentas");
-  
+
  
   async function cargarClientes() {
       const respuesta = await fetch("http://localhost:3000/clientes");
       const clientes = await respuesta.json();
 
-      const lista = document.getElementById("listaClientes");
-      lista.innerHTML = "";
+      const tabla = document.getElementById("tablaClientesBody");
+      if (!tabla) return;
+      tabla.innerHTML = "";
 
       clientes.forEach(cliente => {
           const fila = document.createElement("tr");
@@ -44,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <td>${cliente.email}</td>
             `;
 
-          lista.appendChild(fila);
+          tabla.appendChild(fila);
       });
   }
 
@@ -185,8 +187,8 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCarrito(carrito);
   };
   cargarClientes();
+  
 });
 
-renderVentas();
 
 

@@ -45,4 +45,5 @@ export function verDetalleVenta(id) {
   html += `</tbody></table>`;
 
   contenedor.innerHTML = html;
+  document.getElementById("modalDetalleVenta").classList.remove("hidden");
 }
