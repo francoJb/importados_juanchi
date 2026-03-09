@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JR Import - Sistema de Ventas</title>
+    <!-- Importamos Tailwind CSS desde su CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configuración para que Tailwind reconozca el modo oscuro por clase
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        naranja: {
+                            500: '#f97316',
+                            600: '#ea580c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 text-gray-800 dark:text-white transition-colors duration-300">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Aquí irán el Sidebar y el Contenido -->
+        <!-- Sidebar (Menú Lateral) -->
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
+            <!-- Logo de JR Import -->
+            <div class="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700">
+                <div class="w-8 h-8 bg-naranja-500 rounded-lg flex items-center justify-center text-white font-bold">JR</div>
+                  <span class="text-xl font-bold tracking-tight text-naranja-600">JR Import</span>
+            </div>
+            <!-- Opciones del Menú -->
+            <nav class="flex-1 p-4 space-y-2">
+                <a id="linkDashboard" href="#" class="flex items-center p-3 bg-naranja-500 text-white rounded-xl shadow-md">
+                    <span>📊 Dashboard</span>
+                </a>
+                <a id="linkClientes" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                    <span>👥 Clientes</span>
+                </a>
+                <a id="linkVentas" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                    <span>🛒 Ventas</span>
+                </a>
+                <a href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                    <span>📦 Inventario</span>
+                </a>
+            </nav>
+            <!-- Interruptor de Modo Oscuro -->
+            <div class="p-4 border-t border-gray-100 dark:border-slate-700">
+                <button id="btnDarkMode" class="w-full py-2 px-4 bg-gray-200 dark:bg-slate-700 rounded-lg text-sm font-medium">
+                    🌙 Cambiar Modo
+                </button>
+            </div>
+        </aside>
+        <!-- Área Principal -->
+        <main class="flex-1 overflow-y-auto p-8">
+            <div id="seccionDashboard">
+                <header class="mb-8 flex justify-between items-center">
+                </header>
+            </div>
+                <!-- SECCIÓN CLIENTES (Oculta por defecto) -->
+                <div id="seccionClientes" class="hidden animate-fade-in">
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Directorio de Clientes</h1>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Gestiona los contactos de JR Import</p>
+                        </div>
+                        <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                            + Nuevo Cliente
+                        </button>
+                    </header>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-300 text-xs uppercase">
+                                    <th class="p-4 font-semibold">ID</th>
+                                    <th class="p-4 font-semibold">Nombre</th>
+                                    <th class="p-4 font-semibold">Apellido</th>
+                                    <th class="p-4 font-semibold">DNI</th>
+                                    <th class="p-4 font-semibold">Dirección</th>
+                                    <th class="p-4 font-semibold">Teléfono</th>
+                                    <th class="p-4 font-semibold">Email</th>
+                                    <th class="p-4 font-semibold text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaClientes" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="seccionVentas" class="hidden">
+                    <header class="mb-8">
+                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2">
+                            <span>+</span> Nueva Venta
+                        </button>
+                        <h1 class="text-2xl font-bold">Historial de Ventas</h1>
+                        <p class="text-gray-500 text-sm">Ventas registradas en el sistema</p>
+                    </header>
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-slate-700 text-xs uppercase">
+                                <th class="p-4">N° Venta</th>
+                                <th class="p-4">Fecha</th>
+                                <th class="p-4 text-right">Total Venta</th>
+                                <th class="p-4 text-right">Saldo</th>
+                                <th class="p-4 text-center">Entregado</th>
+                                <th class="p-4">Cliente</th>
+                                <th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaVentasBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Overlay del Modal -->
+    <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <!-- Caja del Formulario -->
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
+                <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form id="formVenta" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Cliente</label>
+                    <input type="text" id="inputCliente" placeholder="Consumidor Final" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                </div>
+                 <div>
+                    <label class="block text-sm font-medium mb-1">Catálogo</label>
+                    <input type="text" id="inputCatalogo" placeholder="Lista_1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                </div>
+                 <div>
+                    <label class="block text-sm font-medium mb-1">Producto</label>
+                    <input type="text" id="inputProducto" placeholder="Buscar en Inventario" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium mb-1">Cantidad</label>
+                        <input type="number" id="inputCantidad" value="1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium mb-1">Precio (ARS)</label>
+                        <input type="number" id="inputPrecio" placeholder="0.00" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">
+                    Agregar Producto
+                </button>
+                <div class="mt-4">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left border-b">
+                                <th class="py-2">Producto</th>
+                                <th class="py-2 text-center">Cant.</th>
+                                <th class="py-2 text-right">Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCarrito"></tbody>
+                    </table>
+                    <div class="flex justify-end mt-4 text-lg font-bold">
+                        Total: <span id="totalVenta" class="ml-2">$0</span>
+                    </div>
+                </div>
+                <button type="button" id="btnConfirmar" class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
+                    Confirmar Venta
+                </button>
+            </form>
+            
+        </div>
+    </div>
+    <!-- MODAL CLIENTE -->
+    <div id="modalCliente" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-naranja-600">Nuevo Cliente</h2>
+                <button id="btnCerrarModalCliente" class="text-gray-400 hover:text-gray-600">
+                    ✕
+                </button>
+            </div>
+            <form class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nombre</label>
+                    <input type="text" id="inputNombreCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Apellido</label>
+                    <input type="text" id="inputApellidoCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">DNI</label>
+                    <input type="number" id="inputDniCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Dirección</label>
+                    <input type="text" id="inputDireccionCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div> 
+                <div>
+                    <label class="block text-sm font-medium mb-1">Teléfono</label>
+                    <input type="number" id="inputTelefonoCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="inputEmailCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                </div>
+                <button type="button" id="btnGuardarCliente"
+                    class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl">
+                    Guardar Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="./js/app.js"></script>
+</body>
+
+</html>
