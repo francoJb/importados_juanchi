@@ -86,17 +86,21 @@
                                     <th class="p-4 font-semibold text-right">Acciones</th>
                                 </tr>
                             </thead>
+                            <div id="detalleVenta" class="mt-6 p-4 border rounded"></div>
                             <tbody id="listaClientes" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
+                <!-- ECCION VENTAS (Oculta por defecto) -->
                 <div id="seccionVentas" class="hidden">
-                    <header class="mb-8">
-                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2">
-                            <span>+</span> Nueva Venta
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Ventas registradas en el sistema</p>
+                        </div>
+                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                            + Nueva Venta
                         </button>
-                        <h1 class="text-2xl font-bold">Historial de Ventas</h1>
-                        <p class="text-gray-500 text-sm">Ventas registradas en el sistema</p>
                     </header>
                 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <table class="w-full text-left border-collapse">
@@ -113,6 +117,7 @@
                         </thead>
                         <tbody id="tablaVentasBody"></tbody>
                     </table>
+                    <div id="detalleVenta"></div>
                 </div>
             </div>
         </main>

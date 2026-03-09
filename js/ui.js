@@ -1,4 +1,6 @@
 import { renderVentas } from "./renderventas.js";
+import { verDetalleVenta } from "./detalleventa.js";
+window.verDetalleVenta = verDetalleVenta;
 renderVentas();
 
 
