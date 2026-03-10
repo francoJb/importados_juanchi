@@ -1,6 +1,7 @@
 import { guardarVenta } from "./ventas.js";
 import { renderCarrito } from "./ui.js";
 import { renderVentas } from "./renderventas.js";
+import { descontarStock } from "./productos.js";
 
 
 
@@ -177,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   const cliente = document.getElementById("inputCliente").value;
   guardarVenta(carrito, total, cliente);
+  descontarStock(carrito);
   renderVentas();
   carrito = [];
   renderCarrito(carrito);

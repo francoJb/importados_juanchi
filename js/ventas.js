@@ -6,8 +6,12 @@ export function obtenerVentas() {
 
 function generarNumeroVenta() {
   const ventas = obtenerVentas();
-  const numero = ventas.length + 1;
-  return numero.toString().padStart(4, "0");
+  if (ventas.length === 0) {
+    return "0001";
+  }
+  const ultimoNumero = Math.max(...ventas.map(v => Number(v.id)));
+  const nuevoNumero = ultimoNumero + 1;
+  return nuevoNumero.toString().padStart(4, "0");
 }
 
 export function guardarVenta(carrito, total, cliente) {
