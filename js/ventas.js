@@ -10,17 +10,19 @@ function generarNumeroVenta() {
   return numero.toString().padStart(4, "0");
 }
 
-export function guardarVenta(carrito, total) {
+export function guardarVenta(carrito, total, cliente) {
   const ventas = obtenerVentas();
+
   const nuevaVenta = {
     id: generarNumeroVenta(),
     fecha: new Date().toLocaleDateString(),
-    cliente: "Consumidor Final",
+    cliente: cliente || "Consumidor Final",
     productos: carrito,
     total: total,
     saldo: 0,
     entregado: false
   };
+
   ventas.push(nuevaVenta);
   save("ventas", ventas);
 }

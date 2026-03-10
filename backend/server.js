@@ -27,15 +27,15 @@ app.post("/clientes", (req, res) => {
     const { nombre, apellido, dni, direccion, telefono, email } = req.body;
 
     db.run(
-        "INSERT INTO clientes (nombre, apellido, dni, direccion. telefono, email) VALUES (?, ?, ?)",
-        [nombre, apellido, dni, direccion, telefono, email],
-        function (err) {
-            if (err) {
-                return res.status(500).json(err);
-            }
-            res.json({ id: this.lastID });
-        }
-    );
+  "INSERT INTO clientes (nombre, apellido, dni, direccion, telefono, email) VALUES (?, ?, ?, ?, ?, ?)",
+  [nombre, apellido, dni, direccion, telefono, email],
+  function (err) {
+    if (err) {
+      return res.status(500).json(err);
+    }
+    res.json({ id: this.lastID });
+  }
+);
 });
 
 // ruta para obtener clientes

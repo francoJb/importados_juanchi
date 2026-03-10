@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const respuesta = await fetch("http://localhost:3000/clientes");
       const clientes = await respuesta.json();
 
-      const tabla = document.getElementById("tablaClientesBody");
+      const tabla = document.getElementById("listaClientes");
       if (!tabla) return;
       tabla.innerHTML = "";
 
@@ -175,7 +175,8 @@ document.addEventListener("DOMContentLoaded", () => {
   carrito.forEach(p => {
     total += p.precio * p.cantidad;
   });
-  guardarVenta(carrito, total);
+  const cliente = document.getElementById("inputCliente").value;
+  guardarVenta(carrito, total, cliente);
   renderVentas();
   carrito = [];
   renderCarrito(carrito);
