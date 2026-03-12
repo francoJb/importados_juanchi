@@ -2,6 +2,24 @@ import { guardarVenta } from "./ventas.js";
 import { renderCarrito } from "./ui.js";
 import { renderVentas } from "./renderventas.js";
 import { descontarStock } from "./productos.js";
+import { obtenerProductos } from "./productos.js";
+import { agregarProducto } from "./productos.js";
+import { renderProductos } from "./renderproductos.js";
+import { eliminarProducto, editarProducto } from "./productos.js";
+
+window.eliminarProducto = function(index){
+    eliminarProducto(index);
+    renderProductos();
+  };
+
+ window.editarProducto = function(index){
+  const nombre = prompt("Nuevo nombre:");
+  const precio = Number(prompt("Nuevo precio:"));
+  const stock = Number(prompt("Nuevo stock:"));
+  if(!nombre) return;
+  editarProducto(index, nombre, precio, stock);
+  renderProductos();
+};
 
 
 
@@ -12,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const linkClientes = document.getElementById("linkClientes");
   const seccionDashboard = document.getElementById("seccionDashboard");
   const seccionClientes = document.getElementById("seccionClientes");
+  const seccionProductos = document.getElementById("seccionProductos");
   const btnDarkMode = document.getElementById("btnDarkMode");
   const btnAbrirModalCliente = document.getElementById("btnAbrirModalCliente")
   const modalCliente = document.getElementById("modalCliente")
@@ -24,6 +43,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnConfirmar = document.getElementById("btnConfirmar");
   const linkVentas = document.getElementById("linkVentas");
   const seccionVentas = document.getElementById("seccionVentas");
+  const linkProductos = document.getElementById("linkProductos");
+  
+
+
+  linkProductos.addEventListener("click", () => {
+    seccionDashboard.classList.add("hidden");
+    seccionClientes.classList.add("hidden");
+    seccionVentas.classList.add("hidden");
+    seccionProductos.classList.remove("hidden");
+  });
+
+ 
 
  
   async function cargarClientes() {
@@ -164,6 +195,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const producto = document.getElementById("inputProducto").value;
     const precio = Number(document.getElementById("inputPrecio").value);
     const cantidad = Number(document.getElementById("inputCantidad").value);
+    const productos = obtenerProductos();
+    const productoDB = productos.find(p => p.nombre === producto);
+    if (!productoDB) {
+      alert("Producto no encontrado en inventario");
+      return;
+    }
+    if (cantidad > productoDB.stock) {
+      alert("Stock insuficiente");
+      return;
+    }
     const item = { producto, precio, cantidad };
     carrito.push(item);
     renderCarrito(carrito);
@@ -185,11 +226,26 @@ document.addEventListener("DOMContentLoaded", () => {
   modal.classList.add("hidden");
   });
 
+  const formProducto = document.getElementById("formProducto");
+  if (formProducto) {
+    formProducto.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById("prodNombre").value;
+      const precio = Number(document.getElementById("prodPrecio").value);
+      const stock = Number(document.getElementById("prodStock").value);
+      agregarProducto(nombre, precio, stock);
+      renderProductos();
+      formProducto.reset();
+    });
+  }
+
   window.eliminarProducto = function(index) {
   carrito.splice(index, 1);
   renderCarrito(carrito);
   };
   cargarClientes();
+  renderProductos();
+  
   
 });
 

@@ -44,7 +44,7 @@
                 <a id="linkVentas" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
                     <span>🛒 Ventas</span>
                 </a>
-                <a href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                <a id="linkProductos" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
                     <span>📦 Inventario</span>
                 </a>
             </nav>
@@ -62,44 +62,44 @@
                 </header>
             </div>
                 <!-- SECCIÓN CLIENTES (Oculta por defecto) -->
-                <div id="seccionClientes" class="hidden animate-fade-in">
-                    <header class="mb-8 flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Directorio de Clientes</h1>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Gestiona los contactos de JR Import</p>
-                        </div>
-                        <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
-                            + Nuevo Cliente
-                        </button>
-                    </header>
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-300 text-xs uppercase">
-                                    <th class="p-4 font-semibold">ID</th>
-                                    <th class="p-4 font-semibold">Nombre</th>
-                                    <th class="p-4 font-semibold">Apellido</th>
-                                    <th class="p-4 font-semibold">DNI</th>
-                                    <th class="p-4 font-semibold">Dirección</th>
-                                    <th class="p-4 font-semibold">Teléfono</th>
-                                    <th class="p-4 font-semibold">Email</th>
-                                    <th class="p-4 font-semibold text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="listaClientes" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
-                        </table>
-                    </div>      
-                </div>
+            <div id="seccionClientes" class="hidden animate-fade-in">
+                <header class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Directorio de Clientes</h1>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Gestiona los contactos de JR Import</p>
+                    </div>
+                    <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        + Nuevo Cliente
+                    </button>
+                </header>
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-300 text-xs uppercase">
+                                <th class="p-4 font-semibold">ID</th>
+                                <th class="p-4 font-semibold">Nombre</th>
+                                <th class="p-4 font-semibold">Apellido</th>
+                                <th class="p-4 font-semibold">DNI</th>
+                                <th class="p-4 font-semibold">Dirección</th>
+                                <th class="p-4 font-semibold">Teléfono</th>
+                                <th class="p-4 font-semibold">Email</th>
+                                <th class="p-4 font-semibold text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaClientes" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
+                    </table>
+                </div>      
+            </div>
                 <!-- SECCION VENTAS (Oculta por defecto) -->
-                <div id="seccionVentas" class="hidden">
-                    <header class="mb-8 flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
-                        </div>
-                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
-                            + Nueva Venta
-                        </button>
-                    </header>
+            <div id="seccionVentas" class="hidden">
+                <header class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
+                    </div>
+                    <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        + Nueva Venta
+                    </button>
+                </header>
                 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -117,6 +117,30 @@
                     </table>
                 </div>
             </div>
+            <!-- SECCION PRODUCTOS (Oculta por defecto) -->
+            <section id="seccionProductos" class="hidden p-6">
+                <h2 class="text-2xl font-bold mb-4">Productos</h2>
+                <form id="formProducto" class="mb-6 flex gap-3">
+                    <input id="prodNombre" placeholder="Nombre" class="border p-2">
+                    <input id="prodPrecio" type="number" placeholder="Precio" class="border p-2">
+                    <input id="prodStock" type="number" placeholder="Stock" class="border p-2">
+                    <button class="bg-blue-500 text-white px-4 py-2">
+                        Guardar
+                    </button>
+                </form>
+                <table class="w-full border">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductosBody"></tbody>
+                </table>
+            </section>
         </main>
     </div>
     <!-- Overlay del Modal -->
