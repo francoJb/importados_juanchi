@@ -1,49 +1,64 @@
-import { save, load } from "./storage.js";
-
-export function obtenerProductos() {
-  return load("productos") || [];
+export async function obtenerProductos() {
+  const res = await fetch("http://localhost:3000/productos");
+  const productos = await res.json();
+  return productos;
 }
 
-export function guardarProductos(productos) {
-  save("productos", productos);
-}
-
-export function descontarStock(carrito) {
-  const productos = obtenerProductos();
-  carrito.forEach(item => {
-    const producto = productos.find(p => p.nombre === item.producto);
-    if (producto) {
-      producto.stock -= item.cantidad;
-    }
+export async function agregarProducto(nombre, marca, modelo, categoria, precio, stock) {
+  await fetch("http://localhost:3000/productos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nombre,
+      marca,
+      modelo,
+      categoria,
+      precio,
+      stock
+    })
   });
-  guardarProductos(productos);
 }
 
-export function agregarProducto(nombre, marca, modelo, categoria, precio, stock){
-  const productos = obtenerProductos();
-  const nuevo = {
-    id: Date.now(),
-    nombre,
-    marca,
-    modelo,
-    categoria,
-    precio,
-    stock
-  };
-  productos.push(nuevo);
-  save("productos", productos);
+export async function eliminarProducto(id) {
+
+  await fetch(`http://localhost:3000/productos/${id}`, {
+    method: "DELETE"
+  });
 }
 
-export function eliminarProducto(index) {
-  const productos = obtenerProductos();
-  productos.splice(index, 1);
-  save("productos", productos);
+export async function editarProducto(id, nombre, marca, modelo, categoria, precio, stock) {
+  await fetch(`http://localhost:3000/productos/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nombre,
+      marca,
+      modelo,
+      categoria,
+      precio,
+      stock
+    })
+  });
 }
 
-export function editarProducto(index, nombre, precio, stock) {
-  const productos = obtenerProductos();
-  productos[index].nombre = nombre;
-  productos[index].precio = precio;
-  productos[index].stock = stock;
-  save("productos", productos);
+export async function descontarStock(carrito) {
+  const productos = await obtenerProductos();
+  for (let item of carrito) {
+    const productoDB = productos.find(p => p.nombre === item.producto);
+    if (!productoDB) continue;
+    const nuevoStock = productoDB.stock - item.cantidad;
+    await editarProducto(
+      productoDB.id,
+      productoDB.nombre,
+      productoDB.marca,
+      productoDB.modelo,
+      productoDB.categoria,
+      productoDB.precio,
+      nuevoStock
+    );
+  }
 }

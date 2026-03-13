@@ -1,10 +1,18 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
+const clientesRoutes = require("./routes/clientesRoutes");
+const productosRoutes = require("./routes/productosRoutes");
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/clientes", clientesRoutes);
+app.use("/productos", productosRoutes);
+
+
+
 
 // crear base de datos
 const db = new sqlite3.Database("./database.db");
