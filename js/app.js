@@ -4,15 +4,15 @@ import { renderVentas } from "./renderventas.js";
 import { descontarStock } from "./productos.js";
 import { obtenerProductos } from "./productos.js";
 import { agregarProducto } from "./productos.js";
-import { renderProductos } from "./renderproductos.js";
 import { eliminarProducto, editarProducto } from "./productos.js";
+import { renderProductos } from "./renderproductos.js";
 
 window.eliminarProducto = function(index){
     eliminarProducto(index);
     renderProductos();
-  };
+};
 
- window.editarProducto = function(index){
+window.editarProducto = function(index){
   const nombre = prompt("Nuevo nombre:");
   const precio = Number(prompt("Nuevo precio:"));
   const stock = Number(prompt("Nuevo stock:"));
@@ -54,8 +54,71 @@ document.addEventListener("DOMContentLoaded", () => {
     seccionProductos.classList.remove("hidden");
   });
 
- 
+  const buscarProducto = document.getElementById("buscarProducto");
+    
+  if(buscarProducto){
+    buscarProducto.addEventListener("input", () => {
+        const texto = document.getElementById("buscarProducto").value;
+        renderProductos(filtroCategoria.value, texto);
+      });
+  }     
 
+
+
+  function cargarCategorias(){
+    const productos = obtenerProductos();
+    const select = document.getElementById("filtroCategoria");
+    if(!select) return;
+    const categorias = [...new Set(productos.map(p => p.categoria))];
+    categorias.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat;
+      option.textContent = cat;
+      select.appendChild(option);
+    });
+  }
+
+  const filtroCategoria = document.getElementById("filtroCategoria");
+  if(filtroCategoria){
+   filtroCategoria.addEventListener("change", () => {
+      renderProductos(filtroCategoria.value);
+    });
+  }
+
+
+  const inputProducto = document.getElementById("inputProducto");
+  const sugerencias = document.getElementById("sugerenciasProductos");
+  inputProducto.addEventListener("input", () => {
+    const texto = inputProducto.value.toLowerCase();
+    const productos = obtenerProductos();
+    sugerencias.innerHTML = "";
+    if(texto.length === 0){
+      sugerencias.classList.add("hidden");
+      return;
+    }
+    const filtrados = productos.filter(p =>
+      p.nombre.toLowerCase().includes(texto)
+    );
+    filtrados.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-600";
+      div.textContent = `${p.nombre} (stock: ${p.stock})`;
+      div.addEventListener("click", () => {
+        inputProducto.value = p.nombre;
+        document.getElementById("inputPrecio").value = p.precio;
+        sugerencias.classList.add("hidden");
+      });
+      sugerencias.appendChild(div);
+    });
+    sugerencias.classList.remove("hidden");
+  });
+
+  function verificarStockBajo(){
+    const productos = obtenerProductos();
+    const bajos = productos.filter(p => p.stock <= 2);
+    if(bajos.length === 0) return;
+    console.log("Productos con stock bajo:", bajos);
+  }
  
   async function cargarClientes() {
       const respuesta = await fetch("http://localhost:3000/clientes");
@@ -118,19 +181,21 @@ document.addEventListener("DOMContentLoaded", () => {
     modalCliente.classList.add("hidden");
   }
  
-  btnAbrirModalCliente.addEventListener("click", () => {
-    modalCliente.classList.remove("hidden")
-  })
+  btnAbrirModal.addEventListener("click", () => {
+    cargarProductosSelect();
+    modal.classList.remove("hidden");
+  });
   
   btnCerrarModalCliente.addEventListener("click", () => {
     modalCliente.classList.add("hidden")
   })
 
   function mostrarSeccion(seccion) {
-  seccionDashboard.classList.add("hidden");
-  seccionClientes.classList.add("hidden");
-  seccionVentas.classList.add("hidden");
-  seccion.classList.remove("hidden");
+    seccionDashboard.classList.add("hidden");
+    seccionClientes.classList.add("hidden");
+    seccionVentas.classList.add("hidden");
+    seccionProductos.classList.add("hidden");
+    seccion.classList.remove("hidden");
   }
 
   linkDashboard.addEventListener("click", (e) => {
@@ -189,6 +254,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   let carrito = [];
+
+  const selectProducto = document.getElementById("inputProducto");
+  selectProducto.addEventListener("change", () => {
+    const productos = obtenerProductos();
+    const nombre = selectProducto.value;
+    const producto = productos.find(p => p.nombre === nombre);
+    if(producto){
+      document.getElementById("inputPrecio").value = producto.precio;
+    }
+  });  
+  
+
   const form = document.getElementById("formVenta");
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -231,20 +308,34 @@ document.addEventListener("DOMContentLoaded", () => {
     formProducto.addEventListener("submit", (e) => {
       e.preventDefault();
       const nombre = document.getElementById("prodNombre").value;
+      const marca = document.getElementById("prodMarca").value;
+      const modelo = document.getElementById("prodModelo").value;
+      const categoria = document.getElementById("prodCategoria").value;
       const precio = Number(document.getElementById("prodPrecio").value);
       const stock = Number(document.getElementById("prodStock").value);
-      agregarProducto(nombre, precio, stock);
+      agregarProducto(nombre, marca, modelo, categoria, precio, stock);
       renderProductos();
       formProducto.reset();
     });
   }
+    function cargarProductosSelect(){
+    const productos = obtenerProductos();
+    const select = document.getElementById("inputProducto");
+    if(!select) return;
+    select.innerHTML = "";
+    productos.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.nombre;
+      option.textContent = `${p.nombre} (stock: ${p.stock})`;
+      select.appendChild(option);
+    });
+  }
 
-  window.eliminarProducto = function(index) {
-  carrito.splice(index, 1);
-  renderCarrito(carrito);
-  };
+
   cargarClientes();
   renderProductos();
+  verificarStockBajo();
+  cargarCategorias();
   
   
 });

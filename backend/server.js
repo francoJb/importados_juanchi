@@ -9,7 +9,7 @@ app.use(express.json());
 // crear base de datos
 const db = new sqlite3.Database("./database.db");
 
-// crear tabla clientes si no existe
+// crear tabla CLIENTES si no existe
 db.run(`
 CREATE TABLE IF NOT EXISTS clientes (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,6 +19,19 @@ dni TEXT,
 direccion TEXT,
 telefono TEXT,
 email TEXT
+)
+`);
+
+// crear tabla PRODUCTOS si no existe
+db.run(`
+CREATE TABLE IF NOT EXISTS productos (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+nombre TEXT,
+marca TEXT,
+modelo TEXT,
+categoria TEXT,
+precio REAL,
+stock INTEGER
 )
 `);
 
@@ -46,6 +59,32 @@ app.get("/clientes", (req, res) => {
         }
         res.json(rows);
     });
+});
+
+// ruta para guardar PRODCTOS
+app.post("/productos", (req, res) => {
+  const { nombre, marca, modelo, categoria, precio, stock } = req.body;
+  db.run(
+    `INSERT INTO productos (nombre, marca, modelo, categoria, precio, stock)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [nombre, marca, modelo, categoria, precio, stock],
+    function(err){
+      if(err){
+        return res.status(500).json(err);
+      }
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+// ruta para obtener PRODUCTOS
+app.get("/productos", (req, res) => {
+  db.all("SELECT * FROM productos", [], (err, rows) => {
+    if(err){
+      return res.status(500).json(err);
+    }
+    res.json(rows);
+  });
 });
 
 app.listen(3000, () => {

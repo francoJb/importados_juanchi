@@ -17,13 +17,16 @@ export function descontarStock(carrito) {
     }
   });
   guardarProductos(productos);
-
 }
-export function agregarProducto(nombre, precio, stock) {
+
+export function agregarProducto(nombre, marca, modelo, categoria, precio, stock){
   const productos = obtenerProductos();
   const nuevo = {
-    id: "P" + (productos.length + 1).toString().padStart(3, "0"),
+    id: Date.now(),
     nombre,
+    marca,
+    modelo,
+    categoria,
     precio,
     stock
   };
