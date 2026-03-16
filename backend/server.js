@@ -36,13 +36,15 @@ email TEXT
 db.run(`
 CREATE TABLE IF NOT EXISTS productos (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
+codigo TEXT,
 nombre TEXT,
 marca TEXT,
 modelo TEXT,
 categoria TEXT,
 precio REAL,
-stock INTEGER
-stock_minimo INTEGER DEFAULT 1
+stock INTEGER,
+stock_minimo INTEGER DEFAULT 1,
+activo INGEGER DEFAULT 1
 )
 `);
 

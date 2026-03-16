@@ -37,6 +37,7 @@ export async function editarProducto(id, nombre, marca, modelo, categoria, preci
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
+      codigo,
       nombre,
       marca,
       modelo,
@@ -55,6 +56,7 @@ export async function descontarStock(carrito) {
     if (!productoDB) continue;
     const nuevoStock = productoDB.stock - item.cantidad;
     await editarProducto(
+      productoDB.codigo,
       productoDB.id,
       productoDB.nombre,
       productoDB.marca,

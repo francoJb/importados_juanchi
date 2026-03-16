@@ -8,7 +8,7 @@ import { eliminarProducto as apiEliminarProducto, editarProducto as apiEditarPro
 import { renderProductos } from "./renderproductos.js";
 import { initNavigation } from "./modules/navigation.js";
 import { cargarClientes, guardarCliente } from "./modules/clientesUi.js";
-import { cargarCategorias, verificarStockBajo, cargarProductosSelect, initAutocomplete } from "./modules/productosUI.js";
+import { cargarCategorias, verificarStockBajo, cargarProductosSelect, initAutocomplete } from "./modules/productosUi.js";
 
 
 window.eliminarProducto = async function(id){
