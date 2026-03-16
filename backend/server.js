@@ -98,10 +98,11 @@ app.get("/clientes", (req, res) => {
 
 // ruta para guardar PRODCTOS
 app.post("/productos", (req, res) => {
-  const { nombre, marca, modelo, categoria, precio, stock } = req.body;
+  const { codigo, nombre, marca, modelo, categoria, precio, stock, stok_minimo
+   } = req.body;
   db.run(
-    `INSERT INTO productos (nombre, marca, modelo, categoria, precio, stock)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [nombre, marca, modelo, categoria, precio, stock],
     function(err){
       if(err){

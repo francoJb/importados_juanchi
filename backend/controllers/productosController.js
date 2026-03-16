@@ -12,7 +12,7 @@ exports.crearProducto = (req, res) => {
   const {codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo } = req.body;
   db.run(
     `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
-     VALUES (?, ?, ?, ?, ?, ?, ?  )`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo],
     function(err){
       if(err){
