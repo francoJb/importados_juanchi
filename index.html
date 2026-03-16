@@ -117,30 +117,21 @@
                     </table>
                 </div>
             </div>
+
             <!-- SECCION PRODUCTOS (Oculta por defecto) -->
             <section id="seccionProductos" class="hidden p-6">
-                <h2 class="text-2xl font-bold mb-4">Productos</h2>
-                <form id="formProducto" class="mb-6 flex gap-3 flex-wrap">
-                    <input id="prodNombre" placeholder="Nombre" class="border p-2">
-                    <input id="prodMarca" placeholder="Marca" class="border p-2">
-                    <input id="prodModelo" placeholder="Modelo" class="border p-2">
-                    <input id="prodCategoria" placeholder="Categoría" class="border p-2">
-                    <input id="prodPrecio" type="number" placeholder="Precio" class="border p-2">
-                    <input id="prodStock" type="number" placeholder="Stock" class="border p-2">
-                    <button class="bg-blue-500 text-white px-4 py-2">
-                    Guardar
-                    </button>
-                </form>
-                
+                <h2 class="text-2xl font-bold mb-4">Productos</h2>    
                 <div class="mb-4"><input type="text" id="buscarProducto" placeholder="Buscar producto, marca o modelo..."class="border p-2 rounded w-64"></div>
-
                 <div class="mb-4">
                     <label class="mr-2 font-semibold">Filtrar por categoría:</label>
                     <select id="filtroCategoria" class="border p-2 rounded">
-                        <option value="todas">Todas</option>
+                        <option value="">Todas</option>
                     </select>
                 </div>
-
+                <button
+                    id="btnAbrirModalProducto"class="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+                    Agregar Producto
+                </button>
                 <table class="w-full border">
                     <thead>
                         <tr>
@@ -156,9 +147,8 @@
             </section>
         </main>
     </div>
-    <!-- Overlay del Modal -->
+    <!-- MODAL VENTA-->
     <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <!-- Caja del Formulario -->
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
@@ -173,6 +163,8 @@
                     <label class="block text-sm font-medium mb-1">Catálogo</label>
                     <input type="text" id="inputCatalogo" placeholder="Lista_1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
                 </div>
+                <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
+                <input id="inputCodigoBarras" class="border p-2 rounded" placeholder="Escanear producto"/>
                  <div>
                     <label class="block text-sm font-medium mb-1">Producto</label>
                     <input id="inputProducto" type="text" placeholder="Buscar producto..." class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
@@ -206,6 +198,21 @@
                         Total: <span id="totalVenta" class="ml-2">$0</span>
                     </div>
                 </div>
+                <label class="text-xs text-gray-500">Forma de pago</label>
+                <select id="formaPago" class="border p-2 rounded">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="qr">QR</option>
+                </select>
+                <label class="text-xs text-gray-500">Cuotas</label>
+                <select id="cuotas" class="border p-2 rounded">
+                    <option value="1">1 cuota</option>
+                    <option value="3">3 cuotas</option>
+                    <option value="6">6 cuotas</option>
+                    <option value="12">12 cuotas</option>
+                </select>
+                <p id="valorCuota" class="text-sm font-semibold mt-2"></p>
                 <button type="button" id="btnConfirmar" class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
                     Confirmar Venta
                 </button>
@@ -213,6 +220,41 @@
             
         </div>
     </div>
+
+    <!-- MODAL PRODUCTO -->
+    <div id="modalProducto" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded w-96">
+            <div class="flex justify-between mb-4">
+            <h2 class="text-xl font-bold">Nuevo Producto</h2>
+            <button id="btnCerrarModalProducto">✖</button>
+            </div>
+            <form id="formProducto" class="flex flex-col gap-2">
+                <input type="hidden" id="prodId">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
+                <input id="prodCodigo" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Nombre</label>
+                <input id="prodNombre" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Marca</label>
+                <input id="prodMarca" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Modelo</label>
+                <input id="prodModelo" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Categoría</label>
+                <select id="prodCategoria" class="border p-2 rounded">
+                    <option value="">Seleccionar categoría</option>
+                </select>
+                <label class="text-xs text-gray-500 dark:text-gray-400">Precio</label>
+                <input id="prodPrecio" type="number" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Stock</label>
+                <input id="prodStock" type="number" class="border p-2 rounded">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Stock mínimo</label>
+                <input id="prodStockMinimo" type="number" class="border p-2 rounded">
+                <button class="bg-green-500 text-white p-2 rounded mt-2">
+                    Guardar Producto
+                </button>
+            </form>
+        </div>
+    </div>
+    
     <!-- MODAL CLIENTE -->
     <div id="modalCliente" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
@@ -256,6 +298,8 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="./js/app.js"></script>
+    
+    <!-- MODAL DETALLE VENTA -->
     <div id="modalDetalleVenta" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-[500px]">
             <div class="flex justify-between mb-4">

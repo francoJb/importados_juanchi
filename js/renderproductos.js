@@ -3,8 +3,8 @@ import { obtenerProductos } from "./productos.js";
 export async function renderProductos() {
 
   const productos = await obtenerProductos();
-  const tabla = document.getElementById("tablaProductosBody");
 
+  const tabla = document.getElementById("tablaProductosBody");
   if (!tabla) return;
 
   tabla.innerHTML = "";
@@ -15,19 +15,15 @@ export async function renderProductos() {
       <tr class="border-b">
         <td class="p-2">${p.id}</td>
         <td class="p-2">${p.nombre}</td>
-        <td class="p-2">${p.marca}</td>
-        <td class="p-2">${p.modelo}</td>
-        <td class="p-2">${p.categoria}</td>
         <td class="p-2">$${p.precio}</td>
         <td class="p-2">${p.stock}</td>
-        
         <td class="p-2 text-center">
           <button onclick="editarProducto(${p.id})">✏️</button>
           <button onclick="eliminarProducto(${p.id})">🗑</button>
         </td>
       </tr>
     `;
-
   });
 
 }
+

@@ -3,6 +3,8 @@ const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
 const clientesRoutes = require("./routes/clientesRoutes");
 const productosRoutes = require("./routes/productosRoutes");
+const ventasRoutes = require("./routes/ventasRoutes");
+
 
 
 const app = express();
@@ -10,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/clientes", clientesRoutes);
 app.use("/productos", productosRoutes);
-
+app.use("/ventas", ventasRoutes);
 
 
 
@@ -40,8 +42,31 @@ modelo TEXT,
 categoria TEXT,
 precio REAL,
 stock INTEGER
+stock_minimo INTEGER DEFAULT 1
 )
 `);
+
+// crear tabla VENTAS si no existe
+db.run(`
+CREATE TABLE IF NOT EXISTS ventas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cliente TEXT,
+  total REAL,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`);
+
+// crear tabla DETALLE_VENTA si no existe
+db.run(`
+CREATE TABLE IF NOT EXISTS detalle_venta (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  venta_id INTEGER,
+  producto TEXT,
+  precio REAL,
+  cantidad INTEGER
+)
+`);
+
 
 // ruta para guardar cliente
 app.post("/clientes", (req, res) => {

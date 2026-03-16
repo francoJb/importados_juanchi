@@ -1,22 +1,24 @@
 export async function obtenerProductos() {
   const res = await fetch("http://localhost:3000/productos");
-  const productos = await res.json();
-  return productos;
+  const data = await res.json();
+  return data;
 }
 
-export async function agregarProducto(nombre, marca, modelo, categoria, precio, stock) {
+export async function agregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
   await fetch("http://localhost:3000/productos", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
+      codigo,
       nombre,
       marca,
       modelo,
       categoria,
       precio,
-      stock
+      stock,
+      stock_minimo
     })
   });
 }
@@ -28,7 +30,7 @@ export async function eliminarProducto(id) {
   });
 }
 
-export async function editarProducto(id, nombre, marca, modelo, categoria, precio, stock) {
+export async function editarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
   await fetch(`http://localhost:3000/productos/${id}`, {
     method: "PUT",
     headers: {
@@ -40,7 +42,8 @@ export async function editarProducto(id, nombre, marca, modelo, categoria, preci
       modelo,
       categoria,
       precio,
-      stock
+      stock,
+      stock_minimo
     })
   });
 }

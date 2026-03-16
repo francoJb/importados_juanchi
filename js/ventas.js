@@ -14,13 +14,14 @@ function generarNumeroVenta() {
   return nuevoNumero.toString().padStart(4, "0");
 }
 
-export function guardarVenta(carrito, total, cliente) {
+export function guardarVenta(carrito, total, cliente, formaPago, cuotas) {
   const ventas = obtenerVentas();
-
   const nuevaVenta = {
     id: generarNumeroVenta(),
     fecha: new Date().toLocaleDateString(),
     cliente: cliente || "Consumidor Final",
+    formaPago,
+    cuotas,
     productos: carrito,
     total: total,
     saldo: 0,

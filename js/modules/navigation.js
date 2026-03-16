@@ -4,21 +4,17 @@ export function initNavigation(){
   const linkClientes = document.getElementById("linkClientes");
   const linkVentas = document.getElementById("linkVentas");
   const linkProductos = document.getElementById("linkProductos");
-
   const seccionDashboard = document.getElementById("seccionDashboard");
   const seccionClientes = document.getElementById("seccionClientes");
   const seccionVentas = document.getElementById("seccionVentas");
   const seccionProductos = document.getElementById("seccionProductos");
 
   function mostrarSeccion(seccion){
-
     seccionDashboard.classList.add("hidden");
     seccionClientes.classList.add("hidden");
     seccionVentas.classList.add("hidden");
     seccionProductos.classList.add("hidden");
-
     seccion.classList.remove("hidden");
-
   }
 
   linkDashboard.addEventListener("click", e=>{

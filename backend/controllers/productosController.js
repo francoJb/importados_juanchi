@@ -1,7 +1,7 @@
 const db = require("../database/db");
 
 exports.obtenerProductos = (req, res) => {
-  db.all("SELECT * FROM productos", [], (err, rows) => {
+  db.all("SELECT * FROM productos WHERE activo = 1", [], (err, rows) => {
     if (err) {
       return res.status(500).json(err);
     }
@@ -9,11 +9,11 @@ exports.obtenerProductos = (req, res) => {
   });
 };
 exports.crearProducto = (req, res) => {
-  const { nombre, marca, modelo, categoria, precio, stock } = req.body;
+  const {codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo } = req.body;
   db.run(
-    `INSERT INTO productos (nombre, marca, modelo, categoria, precio, stock)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [nombre, marca, modelo, categoria, precio, stock],
+    `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
+     VALUES (?, ?, ?, ?, ?, ?, ?  )`,
+    [codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo],
     function(err){
       if(err){
         return res.status(500).json(err);
@@ -22,19 +22,19 @@ exports.crearProducto = (req, res) => {
     }
   );
 };
+
 exports.eliminarProducto = (req, res) => {
   const id = req.params.id;
   db.run(
-    "DELETE FROM productos WHERE id = ?",
-    [id],
+    "UPDATE productos SET activo = 0 WHERE id = ?",
+    [req.params.id],
     function(err){
-      if(err){
-        return res.status(500).json(err);
-      }
-      res.json({ eliminado: true });
+      if(err) return res.status(500).json(err);
+      res.json({mensaje:"Producto desactivado"});
     }
   );
 };
+
 exports.actualizarProducto = (req, res) => {
   const id = req.params.id;
   const { nombre, marca, modelo, categoria, precio, stock } = req.body;
