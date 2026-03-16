@@ -44,7 +44,7 @@ categoria TEXT,
 precio REAL,
 stock INTEGER,
 stock_minimo INTEGER DEFAULT 1,
-activo INGEGER DEFAULT 1
+activo INTEGER DEFAULT 1
 )
 `);
 
@@ -96,32 +96,6 @@ app.get("/clientes", (req, res) => {
     });
 });
 
-// ruta para guardar PRODCTOS
-app.post("/productos", (req, res) => {
-  const { codigo, nombre, marca, modelo, categoria, precio, stock, stok_minimo
-   } = req.body;
-  db.run(
-    `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [nombre, marca, modelo, categoria, precio, stock],
-    function(err){
-      if(err){
-        return res.status(500).json(err);
-      }
-      res.json({ id: this.lastID });
-    }
-  );
-});
-
-// ruta para obtener PRODUCTOS
-app.get("/productos", (req, res) => {
-  db.all("SELECT * FROM productos", [], (err, rows) => {
-    if(err){
-      return res.status(500).json(err);
-    }
-    res.json(rows);
-  });
-});
 
 app.listen(3000, () => {
     console.log("Servidor corriendo en puerto 3000");

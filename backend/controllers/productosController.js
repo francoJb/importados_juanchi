@@ -2,8 +2,9 @@ const db = require("../database/db");
 
 exports.obtenerProductos = (req, res) => {
   db.all("SELECT * FROM productos WHERE activo = 1", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json(err);
+    if(err){
+      console.error("Error al crear producto:", err.message);
+      return res.status(500).json({ error: err.message });
     }
     res.json(rows);
   });
@@ -16,7 +17,8 @@ exports.crearProducto = (req, res) => {
     [codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo],
     function(err){
       if(err){
-        return res.status(500).json(err);
+        console.error("Error SQL:", err.message);
+        return res.status(500).json({error: err.message});
       }
       res.json({ id: this.lastID });
     }
