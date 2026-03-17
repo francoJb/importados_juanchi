@@ -1,3 +1,4 @@
+import { initNavigation, mostrarSeccion } from "./modules/navigation.js";
 import { guardarVenta } from "./ventas.js";
 import { renderCarrito } from "./ui.js";
 import { renderVentas } from "./renderventas.js";
@@ -6,7 +7,6 @@ import { obtenerProductos } from "./productos.js";
 import { agregarProducto as apiAgregarProducto } from "./productos.js";
 import { eliminarProducto as apiEliminarProducto, editarProducto as apiEditarProducto } from "./productos.js";
 import { renderProductos } from "./renderproductos.js";
-import { initNavigation } from "./modules/navigation.js";
 import { cargarClientes, guardarCliente } from "./modules/clientesUi.js";
 import { cargarCategorias, verificarStockBajo, cargarProductosSelect, initAutocomplete } from "./modules/productosUi.js";
 
@@ -86,11 +86,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   
 
-  linkProductos.addEventListener("click",async () => {
-    seccionDashboard.classList.add("hidden");
-    seccionClientes.classList.add("hidden");
-    seccionVentas.classList.add("hidden");
-    seccionProductos.classList.remove("hidden");
+  linkProductos.addEventListener("click", async () => {
+    mostrarSeccion(document.getElementById("seccionProductos"));
     await renderProductos();
   });
 
@@ -290,12 +287,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // 🔴 SOLO si salió bien
       if(ok){
         await renderProductos();
-        // 👇 MOSTRAR SECCIÓN PRODUCTOS
-        document.getElementById("seccionDashboard").classList.add("hidden");
-        document.getElementById("seccionClientes").classList.add("hidden");
-        document.getElementById("seccionVentas").classList.add("hidden");
-        document.getElementById("seccionProductos").classList.remove("hidden");
-
+        mostrarSeccion(document.getElementById("seccionProductos")); // 🔥 ACÁ
         formProducto.reset();
         document.getElementById("prodId").value = "";
         modalProducto.classList.add("hidden");
