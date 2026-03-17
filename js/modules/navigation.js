@@ -9,7 +9,25 @@ export function initNavigation(){
   const seccionVentas = document.getElementById("seccionVentas");
   const seccionProductos = document.getElementById("seccionProductos");
 
- export function mostrarSeccion(seccion){
+  linkDashboard.addEventListener("click", e=>{
+    e.preventDefault();
+    mostrarSeccion(seccionDashboard);
+  });
+  linkClientes.addEventListener("click", e=>{
+    e.preventDefault();
+    mostrarSeccion(seccionClientes);
+  });
+  linkVentas.addEventListener("click", e=>{
+    e.preventDefault();
+    mostrarSeccion(seccionVentas);
+  });
+  linkProductos.addEventListener("click", e=>{
+    e.preventDefault();
+    mostrarSeccion(seccionProductos);
+  });
+}
+
+export function mostrarSeccion(seccion){
     const seccionDashboard = document.getElementById("seccionDashboard");
     const seccionClientes = document.getElementById("seccionClientes");
     const seccionVentas = document.getElementById("seccionVentas");
@@ -22,25 +40,3 @@ export function initNavigation(){
 
     seccion.classList.remove("hidden");
   }
-
-  linkDashboard.addEventListener("click", e=>{
-    e.preventDefault();
-    mostrarSeccion(seccionDashboard);
-  });
-
-  linkClientes.addEventListener("click", e=>{
-    e.preventDefault();
-    mostrarSeccion(seccionClientes);
-  });
-
-  linkVentas.addEventListener("click", e=>{
-    e.preventDefault();
-    mostrarSeccion(seccionVentas);
-  });
-
-  linkProductos.addEventListener("click", e=>{
-    e.preventDefault();
-    mostrarSeccion(seccionProductos);
-  });
-
-}
