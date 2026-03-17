@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cliente = document.getElementById("inputCliente").value;
   const formaPago = document.getElementById("formaPago").value;
   const cuotas = Number(document.getElementById("cuotas").value);
-  guardarVenta(carrito, total, cliente, formaPago, cliente);
+  guardarVenta(carrito, total, cliente, formaPago, cuotas);
   await descontarStock(carrito);
   renderVentas();
   carrito = [];
@@ -279,15 +279,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const stock_minimo = Number(document.getElementById("prodStockMinimo").value);
       let ok;
       if(id){
-        ok = true; // podés mejorar esto después
+        ok = true;
         await apiEditarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
       }else{
         ok = await apiAgregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
       }
-      // 🔴 SOLO si salió bien
       if(ok){
         await renderProductos();
-        mostrarSeccion(document.getElementById("seccionProductos")); // 🔥 ACÁ
+        mostrarSeccion(document.getElementById("seccionProductos"));
         formProducto.reset();
         document.getElementById("prodId").value = "";
         modalProducto.classList.add("hidden");
