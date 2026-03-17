@@ -36,7 +36,7 @@ email TEXT
 db.run(`
 CREATE TABLE IF NOT EXISTS productos (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-codigo TEXT,
+codigo TEXT UNIQUE,
 nombre TEXT,
 marca TEXT,
 modelo TEXT,
