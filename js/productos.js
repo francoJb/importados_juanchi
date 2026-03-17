@@ -5,7 +5,8 @@ export async function obtenerProductos() {
 }
 
 export async function agregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
-  await fetch("http://localhost:3000/productos", {
+  const errorDiv = document.getElementById("errorProducto");
+  const res = await fetch("http://localhost:3000/productos", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -21,6 +22,19 @@ export async function agregarProducto(codigo, nombre, marca, modelo, categoria, 
       stock_minimo
     })
   });
+  const data = await res.json();
+  console.log("STATUS:", res.status);
+  console.log("RESPUESTA:", data);
+
+  if (!res.ok) {
+    errorDiv.textContent = data.error;
+    errorDiv.style.display = "block";
+    return false;
+  }
+    errorDiv.style.display = "none";
+    errorDiv.textContent = "Producto guardado correctamente";
+    errorDiv.style.color = "green";
+      
 }
 
 export async function eliminarProducto(id) {

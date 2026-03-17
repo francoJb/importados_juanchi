@@ -11,14 +11,34 @@ exports.obtenerProductos = (req, res) => {
 };
 exports.crearProducto = (req, res) => {
   const {codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo } = req.body;
+    // 🔴 Validación básica
+  if (!codigo || !nombre || !precio) {
+    return res.status(400).json({
+      error: "Código, nombre y precio son obligatorios"
+    });
+  }
+  // 🔴 Validación numérica
+  if (isNaN(precio) || isNaN(stock)) {
+    return res.status(400).json({
+      error: "Precio y stock deben ser números"
+    });
+  }
+
   db.run(
     `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo],
     function(err){
-      if(err){
+      // 🔴 Error de duplicado
+      if (err && err.message.includes("UNIQUE")) {
+        return res.status(400).json({
+          error: "Ya existe un producto con ese código"
+        });
+      }
+      // 🔴 Otro error SQL
+      if (err) {
         console.error("Error SQL:", err.message);
-        return res.status(500).json({error: err.message});
+        return res.status(500).json({ error: err.message });
       }
       res.json({ id: this.lastID });
     }

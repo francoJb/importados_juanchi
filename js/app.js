@@ -280,15 +280,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       const precio = Number(document.getElementById("prodPrecio").value);
       const stock = Number(document.getElementById("prodStock").value);
       const stock_minimo = Number(document.getElementById("prodStockMinimo").value);
+      let ok;
       if(id){
+        ok = true; // podés mejorar esto después
         await apiEditarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
       }else{
-        await apiAgregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
+        ok = await apiAgregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
       }
-      await renderProductos();
-      formProducto.reset();
-      document.getElementById("prodId").value = "";
-      modalProducto.classList.add("hidden");
+      // 🔴 SOLO si salió bien
+      if(ok){
+        await renderProductos();
+        // 👇 MOSTRAR SECCIÓN PRODUCTOS
+        document.getElementById("seccionDashboard").classList.add("hidden");
+        document.getElementById("seccionClientes").classList.add("hidden");
+        document.getElementById("seccionVentas").classList.add("hidden");
+        document.getElementById("seccionProductos").classList.remove("hidden");
+
+        formProducto.reset();
+        document.getElementById("prodId").value = "";
+        modalProducto.classList.add("hidden");
+      }
     });
   }
     
