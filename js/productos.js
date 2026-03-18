@@ -45,12 +45,10 @@ export async function eliminarProducto(id) {
   });
 }
 
-export async function editarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
-  await fetch(`http://localhost:3000/productos/${id}`, {
+export async function editarProducto(id, codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
+  const response = await fetch(`http://localhost:3000/productos/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
       codigo,
       nombre,
@@ -62,6 +60,7 @@ export async function editarProducto(id, nombre, marca, modelo, categoria, preci
       stock_minimo
     })
   });
+  return response.ok;
 }
 
 export async function descontarStock(id, cantidadRestar) {

@@ -4,6 +4,7 @@ export async function renderProductos() {
 
   const productos = await obtenerProductos();
 
+  
   const tabla = document.getElementById("tablaProductosBody");
   if (!tabla) return;
 

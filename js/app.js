@@ -27,7 +27,6 @@ window.editarProducto = async function(id){
   document.getElementById("prodNombre").value = p.nombre;
   document.getElementById("prodMarca").value = p.marca;
   document.getElementById("prodModelo").value = p.modelo;
-  await actualizarSelectCategorias();
   document.getElementById("prodCategoria").value = p.categoria;
   document.getElementById("prodPrecio").value = p.precio;
   document.getElementById("prodStock").value = p.stock;
@@ -35,21 +34,7 @@ window.editarProducto = async function(id){
   modalProducto.classList.remove("hidden");
 }; 
 
-async function actualizarSelectCategorias() {
-    const response = await fetch("http://localhost:3000/categorias");
-    const categorias = await response.json();
-    
-    const select = document.getElementById("prodCategoria");
-    if (!select) return;
 
-    select.innerHTML = '<option value="">Seleccionar categoría</option>';
-    categorias.forEach(cat => {
-        const option = document.createElement("option");
-        option.value = cat.nombre;
-        option.textContent = cat.nombre;
-        select.appendChild(option);
-    });
-  }
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -96,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       cambiarPantalla(link.id);
     }
   });
-  await actualizarSelectCategorias();
 
   // Función universal para abrir/cerrar cualquier modal
   function toggleModal(idModal, mostrar = true) {
@@ -136,56 +120,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  
 
-  const btnNuevaCategoria = document.getElementById("btnNuevaCategoria");
 
-  if (btnNuevaCategoria) {
-    btnNuevaCategoria.onclick = async () => {
-      e.preventDefault(); // Evita cualquier acción por defecto
-      e.stopPropagation(); // 👈 Esto evita que el clic afecte al modal de fondo
-      const nombre = prompt("Escribí el nombre de la nueva categoría:");
-        
-      if (nombre && nombre.trim() !== "") {
-        try {
-          const response = await fetch("http://localhost:3000/categorias", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nombre: nombre.trim() })
-          });
+  async function cargarSugerenciasCategorias() {
+    const productos = await obtenerProductos();
+    const datalist = document.getElementById("listaCategorias");
+    if (!datalist || !Array.isArray(productos)) return;
 
-          if (response.ok) {
-            alert("✅ Categoría guardada");
-            // Llamamos a la función que creamos antes para refrescar el select
-            await actualizarSelectCategorias(); 
-          } else {
-            alert("❌ Error: Tal vez la categoría ya existe");
-          }
-        }catch (error) {
-          console.error("Error al guardar categoría:", error);
-        }
-      }
-    };
+    // Extraemos categorías únicas de los productos que ya tenés
+    const categoriasUnicas = [...new Set(productos.map(p => p.categoria).filter(c => c))];
+    
+    datalist.innerHTML = categoriasUnicas.map(cat => 
+        `<option value="${cat}">`
+    ).join("");
   }
 
-  document.getElementById("btnNuevaCategoria").onclick = async () => {
-  const nombre = prompt("Nombre de la nueva categoría:");
-    if (nombre) {
-      await fetch("http://localhost:3000/categorias", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ nombre })
-      });
-      await actualizarSelectCategorias(); // Recarga el select con la nueva
-    }
-  };
 
-
-
-
-
-  
-  await actualizarSelectCategorias();
   await verificarStockBajo();
 
 
@@ -384,11 +334,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   const formProducto = document.getElementById("formProducto");
+
   if (formProducto) {
     formProducto.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const codigo = document.getElementById("prodCodigo").value;
+
+      // 1. Capturamos los datos
       const id = document.getElementById("prodId").value;
+      const codigo = document.getElementById("prodCodigo").value;
       const nombre = document.getElementById("prodNombre").value;
       const marca = document.getElementById("prodMarca").value;
       const modelo = document.getElementById("prodModelo").value;
@@ -396,76 +349,38 @@ document.addEventListener("DOMContentLoaded", async () => {
       const precio = Number(document.getElementById("prodPrecio").value);
       const stock = Number(document.getElementById("prodStock").value);
       const stock_minimo = Number(document.getElementById("prodStockMinimo").value);
+
       let ok;
-      if(id){const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
 
-const dbPath = path.resolve(__dirname, "database.db");
-
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error("Error al conectar:", err.message);
-    } else {
-        console.log("Conectado a SQLite en:", dbPath);
-        crearTablas(); // Llamamos a la creación de tablas aquí
-    }
-});
-
-function crearTablas() {
-    db.serialize(() => {
-        // Tabla Productos con la columna 'activo'
-        db.run(`CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo TEXT UNIQUE,
-            nombre TEXT,
-            marca TEXT,
-            modelo TEXT,
-            categoria TEXT,
-            precio REAL,
-            stock INTEGER,
-            stock_minimo INTEGER DEFAULT 1,
-            activo INTEGER DEFAULT 1
-        )`);
-
-        // Tabla Clientes
-        db.run(`CREATE TABLE IF NOT EXISTS clientes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT,
-            apellido TEXT,
-            dni TEXT,
-            direccion TEXT,
-            telefono TEXT,
-            email TEXT
-        )`);
-
-        console.log("Tablas verificadas/creadas correctamente.");
-    });
-}
-
-module.exports = db;
-
-        ok = true;
-        await apiEditarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
-      }else{
+      // 2. Decidimos si editamos o agregamos usando las funciones de la API
+      if (id) {
+        // Si hay ID, editamos el existente
+        ok = await apiEditarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
+        await renderProductos(); // Refrescamos la tabla
+      } else {
+        // Si no hay ID, creamos uno nuevo
         ok = await apiAgregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
       }
-      if(ok){
-        await renderProductos();
-        mostrarSeccion(document.getElementById("seccionProductos"));
-        formProducto.reset();
-        document.getElementById("prodId").value = "";
-        modalProducto.classList.add("hidden");
+
+      // 3. Si la operación fue exitosa, limpiamos y cerramos
+      if (ok) {
+        await renderProductos(); // Refrescamos la tabla
+        formProducto.reset(); // Vaciamos el formulario
+        document.getElementById("prodId").value = ""; // Limpiamos el ID oculto
+        modalProducto.classList.add("hidden"); // Cerramos el modal
+        alert("✅ Producto guardado correctamente");
       }
     });
   }
+
     
 
 
   cargarClientes();
   await renderProductos();
   await verificarStockBajo();
-  await actualizarSelectCategorias();
-  
+  await cargarSugerenciasCategorias();
+
   
 });
 

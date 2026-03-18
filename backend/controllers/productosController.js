@@ -11,6 +11,7 @@ exports.obtenerProductos = (req, res) => {
 };
 exports.crearProducto = (req, res) => {
   const {codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo } = req.body;
+  const categoriaLimpia = String(categoria || "").trim().toUpperCase() || "GENERAL";
     // 🔴 Validación básica
   if (!codigo || !nombre || !precio) {
     return res.status(400).json({
@@ -27,7 +28,7 @@ exports.crearProducto = (req, res) => {
   db.run(
     `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo],
+    [codigo, nombre, marca, modelo, categoriaLimpia, precio, stock, stock_minimo],
     function(err){
       // 🔴 Error de duplicado
       if (err && err.message.includes("UNIQUE")) {
@@ -60,11 +61,12 @@ exports.eliminarProducto = (req, res) => {
 exports.actualizarProducto = (req, res) => {
   const id = req.params.id;
   const { nombre, marca, modelo, categoria, precio, stock } = req.body;
+  const categoriaLimpia = String(categoria || "").trim().toUpperCase() || "GENERAL";
   db.run(
     `UPDATE productos
      SET nombre=?, marca=?, modelo=?, categoria=?, precio=?, stock=?
      WHERE id=?`,
-    [nombre, marca, modelo, categoria, precio, stock, id],
+    [nombre, marca, modelo, categoriaLimpia, precio, stock, id],
     function(err){
       if(err){
         return res.status(500).json(err);

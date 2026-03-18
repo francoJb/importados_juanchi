@@ -154,23 +154,38 @@
                 </table>
             </section>
 
-            <!-- SECCION CONFIGURACIO (Oculta por defecto) -->
-            <div id="seccionConfig" class="hidden">
-                <h1 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Configuración del Sistema</h1>
-                <!-- Gestión de Categorías -->
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-                    <h2 class="text-lg font-semibold mb-4">Categorías de Productos</h2>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="nuevoNombreCategoria" placeholder="Nueva categoría..." class="border p-2 rounded flex-1 dark:bg-slate-700">
-                        <button id="btnGuardarCategoriaConfig" class="bg-naranja-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-naranja-600">Agregar</button>
+            <!-- SECCION CONFIGURACION (Oculta por defecto) -->
+            <div id="seccionConfig" class="hidden p-6">
+                <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Panel de Control</h1>
+                
+                <div class="flex gap-6">
+                    <!-- Sub-menú de Configuración -->
+                    <aside class="w-48 space-y-2">
+                        <button class="w-full text-left p-3 rounded-lg bg-naranja-500 text-white font-medium">📦 Categorías</button>
+                        <button class="w-full text-left p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 cursor-not-allowed" title="Próximamente">👤 Usuarios (Pronto)</button>
+                    </aside>
+
+                    <!-- Área de contenido de la Configuración -->
+                    <div class="flex-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+                        <h2 class="text-xl font-bold mb-4">Gestión de Categorías</h2>
+                        
+                        <!-- Formulario para agregar -->
+                        <div class="flex gap-2 mb-6">
+                            <input type="text" id="inputNuevaCat" placeholder="Ej: Electrónica, Ropa..." class="flex-1 border p-2 rounded-lg dark:bg-slate-700">
+                            <button id="btnGuardarCat" class="bg-naranja-500 hover:bg-naranja-600 text-white px-6 py-2 rounded-lg font-bold">Agregar</button>
+                        </div>
+
+                        <!-- Lista de categorías existentes -->
+                        <div id="listaCategoriasConfig" class="space-y-2">
+                            <!-- Aquí se inyectarán con JS -->
+                        </div>
                     </div>
-                    <ul id="listaCategoriasConfig" class="divide-y divide-gray-100 dark:divide-slate-700">
-                        <!-- Aquí se cargarán las categorías con un botón de eliminar -->
-                    </ul>
                 </div>
             </div>
+
         </main>
     </div>
+    
     <!-- MODAL VENTA-->
     <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
@@ -264,15 +279,7 @@
                 <input id="prodModelo" class="border p-2 rounded">
                 <label class="text-xs text-gray-500 dark:text-gray-400">Categoría</label>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Categoría</label>
-                    <div class="flex gap-2">
-                        <select id="prodCategoria" class="border p-2 rounded">
-                            <option value="">Seleccionar categoría</option>
-                        </select>
-                        <button type="button" id="btnNuevaCategoria" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg font-bold">
-                            +
-                        </button>
-                    </div>
+                    <input type="text" id="prodCategoria" placeholder="Ej: AUDIO, ILUMINACIÓN, CABLES..." class="w-full border p-2 rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600">
                 </div>
                 <label class="text-xs text-gray-500 dark:text-gray-400">Precio</label>
                 <input id="prodPrecio" type="number" class="border p-2 rounded">

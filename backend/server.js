@@ -6,7 +6,6 @@ const db = require("./database/db");
 const clientesRoutes = require("./routes/clientesRoutes");
 const productosRoutes = require("./routes/productosRoutes");
 const ventasRoutes = require("./routes/ventasRoutes");
-const categoriasRoutes = require("./routes/categoriasRoutes");
 
 const app = express();
 app.use(cors());
@@ -20,8 +19,7 @@ app.use(express.static("frontend")); // Si tu HTML está en una carpeta 'fronten
 app.use("/clientes", clientesRoutes);
 app.use("/productos", productosRoutes);
 app.use("/ventas", ventasRoutes);
-app.use("/categorias", categoriasRoutes);
-//app.use("/categorias", require("./routes/categoriasRoutes"));
+
 
 // Nota: Ya no necesitás los app.post("/clientes") acá, 
 // porque ya deberían estar dentro de ./routes/clientesRoutes.js
