@@ -14,12 +14,17 @@ export async function cargarCategorias(){
 }
 
 
-export async function verificarStockBajo(){
+export async function verificarStockBajo() {
   const productos = await obtenerProductos();
-  const bajos = productos.filter(p => p.stock <= 2);
-  if(bajos.length === 0) return;
-  console.log("Productos con stock bajo:", bajos);
+  // Filtramos los productos cuyo stock sea menor o igual al stock_minimo
+  const alertaStock = productos.filter(p => p.stock <= p.stock_minimo && p.activo === 1);
+
+  if (alertaStock.length > 0) {
+    console.warn("⚠️ ¡Atención! Hay productos con stock bajo:", alertaStock);
+    // Aquí podrías mostrar un cartelito en el Dashboard luego
+  }
 }
+
 
 
 export async function cargarProductosSelect(){

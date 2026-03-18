@@ -4,6 +4,7 @@ export async function obtenerProductos() {
   return data;
 }
 
+
 export async function agregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
   const errorDiv = document.getElementById("errorProducto");
   const res = await fetch("http://localhost:3000/productos", {

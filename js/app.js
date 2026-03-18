@@ -7,6 +7,8 @@ import { agregarProducto as apiAgregarProducto } from "./productos.js";
 import { eliminarProducto as apiEliminarProducto, editarProducto as apiEditarProducto } from "./productos.js";
 import { renderProductos } from "./renderproductos.js";
 import { cargarClientes, guardarCliente } from "./modules/clientesUi.js";
+import { verificarStockBajo } from "./modules/productosUi.js";
+
 
 
 
@@ -25,7 +27,7 @@ window.editarProducto = async function(id){
   document.getElementById("prodNombre").value = p.nombre;
   document.getElementById("prodMarca").value = p.marca;
   document.getElementById("prodModelo").value = p.modelo;
-  await cargarCategorias();
+  await actualizarSelectCategorias();
   document.getElementById("prodCategoria").value = p.categoria;
   document.getElementById("prodPrecio").value = p.precio;
   document.getElementById("prodStock").value = p.stock;
@@ -67,7 +69,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     linkDashboard: document.getElementById("seccionDashboard"),
     linkClientes: document.getElementById("seccionClientes"),
     linkProductos: document.getElementById("seccionProductos"),
-    linkVentas: document.getElementById("seccionVentas")
+    linkVentas: document.getElementById("seccionVentas"),
+    linkConfig: document.getElementById("seccionConfig")
   };
 
   // Función para cambiar de pantalla
@@ -121,18 +124,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   });
 
-  // Cerrar al hacer clic fuera del modal (el fondo oscuro)
-  window.onclick = (e) => {
-    if (e.target.id.startsWith("modal")) {
-     toggleModal(e.target.id, false);
-     }
-  };
+
+  // Seleccionamos todos los modales (los que tienen la clase 'fixed')
+  document.querySelectorAll('.fixed').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      // 'e.target' es donde hiciste clic. 'modal' es el fondo.
+      // Si son lo mismo, significa que hiciste clic FUERA del cuadro blanco.
+      if (e.target === modal) {
+        toggleModal(modal.id, false);
+      }
+    });
+  });
+
   
 
   const btnNuevaCategoria = document.getElementById("btnNuevaCategoria");
 
   if (btnNuevaCategoria) {
     btnNuevaCategoria.onclick = async () => {
+      e.preventDefault(); // Evita cualquier acción por defecto
+      e.stopPropagation(); // 👈 Esto evita que el clic afecte al modal de fondo
       const nombre = prompt("Escribí el nombre de la nueva categoría:");
         
       if (nombre && nombre.trim() !== "") {
@@ -176,7 +187,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   await actualizarSelectCategorias();
   await verificarStockBajo();
-  initAutocomplete();
 
 
  
@@ -454,7 +464,7 @@ module.exports = db;
   cargarClientes();
   await renderProductos();
   await verificarStockBajo();
-  await cargarCategorias();
+  await actualizarSelectCategorias();
   
   
 });

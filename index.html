@@ -48,6 +48,9 @@
                 <a id="linkProductos" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
                     <span>📦 Inventario</span>
                 </a>
+                <a id="linkConfig" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                    <span>⚙️ Configuración</span>
+                </a>
             </nav>
             <!-- Interruptor de Modo Oscuro -->
             <div class="p-4 border-t border-gray-100 dark:border-slate-700">
@@ -58,11 +61,14 @@
         </aside>
         <!-- Área Principal -->
         <main class="flex-1 overflow-y-auto p-8">
+
+            <!-- SECCIÓN DASHBOARD (Oculta por defecto) -->
             <div id="seccionDashboard">
                 <header class="mb-8 flex justify-between items-center">
                 </header>
             </div>
-                <!-- SECCIÓN CLIENTES (Oculta por defecto) -->
+
+            <!-- SECCIÓN CLIENTES (Oculta por defecto) -->
             <div id="seccionClientes" class="hidden animate-fade-in">
                 <header class="mb-8 flex justify-between items-center">
                     <div>
@@ -91,7 +97,8 @@
                     </table>
                 </div>      
             </div>
-                <!-- SECCION VENTAS (Oculta por defecto) -->
+
+            <!-- SECCION VENTAS (Oculta por defecto) -->
             <div id="seccionVentas" class="hidden">
                 <header class="mb-8 flex justify-between items-center">
                     <div>
@@ -146,6 +153,22 @@
                     <tbody id="tablaProductosBody"></tbody>
                 </table>
             </section>
+
+            <!-- SECCION CONFIGURACIO (Oculta por defecto) -->
+            <div id="seccionConfig" class="hidden">
+                <h1 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Configuración del Sistema</h1>
+                <!-- Gestión de Categorías -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+                    <h2 class="text-lg font-semibold mb-4">Categorías de Productos</h2>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="nuevoNombreCategoria" placeholder="Nueva categoría..." class="border p-2 rounded flex-1 dark:bg-slate-700">
+                        <button id="btnGuardarCategoriaConfig" class="bg-naranja-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-naranja-600">Agregar</button>
+                    </div>
+                    <ul id="listaCategoriasConfig" class="divide-y divide-gray-100 dark:divide-slate-700">
+                        <!-- Aquí se cargarán las categorías con un botón de eliminar -->
+                    </ul>
+                </div>
+            </div>
         </main>
     </div>
     <!-- MODAL VENTA-->
