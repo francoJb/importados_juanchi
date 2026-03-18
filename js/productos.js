@@ -63,21 +63,33 @@ export async function editarProducto(id, nombre, marca, modelo, categoria, preci
   });
 }
 
-export async function descontarStock(carrito) {
+export async function descontarStock(id, cantidadRestar) {
+  // 1. Obtenemos todos los productos para encontrar el actual
   const productos = await obtenerProductos();
-  for (let item of carrito) {
-    const productoDB = productos.find(p => p.nombre === item.producto);
-    if (!productoDB) continue;
-    const nuevoStock = productoDB.stock - item.cantidad;
-    await editarProducto(
-      productoDB.codigo,
-      productoDB.id,
-      productoDB.nombre,
-      productoDB.marca,
-      productoDB.modelo,
-      productoDB.categoria,
-      productoDB.precio,
-      nuevoStock
-    );
+  const productoActual = productos.find(p => p.id == id);
+
+  if (!productoActual) {
+      console.error("Producto no encontrado para descontar stock");
+      return;
+  }
+
+  // 2. Calculamos el nuevo stock
+  const nuevoStock = productoActual.stock - cantidadRestar;
+
+  // 3. Enviamos la actualización al servidor
+  // ¡OJO! Aquí es donde probablemente llamabas a 'editarProducto' mal.
+  // Debemos llamar a la API directamente (fetch)
+  const response = await fetch(`http://localhost:3000/productos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...productoActual, // Mantenemos los otros datos igual (nombre, precio, etc)
+      stock: nuevoStock  // Solo sobreescribimos el stock
+    })
+  });
+
+  if (!response.ok) {
+      throw new Error("No se pudo actualizar el stock en el servidor");
   }
 }
+

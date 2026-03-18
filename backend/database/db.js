@@ -1,13 +1,53 @@
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./database.db", (err) => {
-  if (err) {
-    console.error("Error conectando a la base de datos", err);
-  } else {
-    console.log("Conectado a SQLite");
-  }
+const path = require("path");
+
+const dbPath = path.resolve(__dirname, "database.db");
+
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error("Error al conectar:", err.message);
+    } else {
+        console.log("Conectado a SQLite en:", dbPath);
+        crearTablas(); // Llamamos a la creación de tablas aquí
+    }
 });
+
+function crearTablas() {
+    db.serialize(() => {
+        // Tabla Productos con la columna 'activo'
+        db.run(`CREATE TABLE IF NOT EXISTS productos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT UNIQUE,
+            nombre TEXT,
+            marca TEXT,
+            modelo TEXT,
+            categoria TEXT,
+            precio REAL,
+            stock INTEGER,
+            stock_minimo INTEGER DEFAULT 1,
+            activo INTEGER DEFAULT 1
+        )`);
+
+        // Tabla Clientes
+        db.run(`CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT,
+            apellido TEXT,
+            dni TEXT,
+            direccion TEXT,
+            telefono TEXT,
+            email TEXT
+        )`);
+
+        // Tabla Categorias
+        db.run(`CREATE TABLE IF NOT EXISTS categorias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT UNIQUE NOT NULL
+        )`);
+
+
+        console.log("Tablas verificadas/creadas correctamente.");
+    });
+}
+
 module.exports = db;
-
-
-
-

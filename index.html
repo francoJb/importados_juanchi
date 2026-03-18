@@ -155,7 +155,7 @@
                 <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
                 <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">✕</button>
             </div>
-            <form id="formVenta" class="p-6 space-y-4">
+            <form id="formVenta" autocomplete="off" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Cliente</label>
                     <input type="text" id="inputCliente" placeholder="Consumidor Final" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
@@ -229,7 +229,7 @@
                 <h2 class="text-xl font-bold">Nuevo Producto</h2>
                 <button id="btnCerrarModalProducto">✖</button>
             </div>
-            <form id="formProducto" class="flex flex-col gap-2">
+            <form id="formProducto" autocomplete="off" class="flex flex-col gap-2">
                 <input type="hidden" id="prodId">
                 <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
                 <input id="prodCodigo" class="border p-2 rounded">
@@ -240,9 +240,17 @@
                 <label class="text-xs text-gray-500 dark:text-gray-400">Modelo</label>
                 <input id="prodModelo" class="border p-2 rounded">
                 <label class="text-xs text-gray-500 dark:text-gray-400">Categoría</label>
-                <select id="prodCategoria" class="border p-2 rounded">
-                    <option value="">Seleccionar categoría</option>
-                </select>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Categoría</label>
+                    <div class="flex gap-2">
+                        <select id="prodCategoria" class="border p-2 rounded">
+                            <option value="">Seleccionar categoría</option>
+                        </select>
+                        <button type="button" id="btnNuevaCategoria" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg font-bold">
+                            +
+                        </button>
+                    </div>
+                </div>
                 <label class="text-xs text-gray-500 dark:text-gray-400">Precio</label>
                 <input id="prodPrecio" type="number" class="border p-2 rounded">
                 <label class="text-xs text-gray-500 dark:text-gray-400">Stock</label>
@@ -266,7 +274,7 @@
                     ✕
                 </button>
             </div>
-            <form class="p-6 space-y-4">
+            <form autocomplete="off" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Nombre</label>
                     <input type="text" id="inputNombreCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
@@ -313,6 +321,9 @@
             <div id="detalleVenta"></div>
         </div>
     </div>
+    <!-- Scripts de lógica -->
+<script src="js/app.js" type="module"></script>
+
 </body>
 
 </html>
