@@ -68,12 +68,11 @@
                 </header>
             </div>
 
-            <!-- SECCIÓN CLIENTES (Oculta por defecto) -->
+            <!-- SECCION CLIENTES (Oculta por defecto) -->
             <div id="seccionClientes" class="hidden animate-fade-in">
                 <header class="mb-8 flex justify-between items-center">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Directorio de Clientes</h1>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Gestiona los contactos de JR Import</p>
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Clientes</h1>
                     </div>
                     <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                         + Nuevo Cliente
@@ -126,28 +125,27 @@
                 </div>
             </div>
 
-            <!-- SECCION PRODUCTOS (Oculta por defecto) -->
-            <section id="seccionProductos" class="hidden p-6">
-                <h2 class="text-2xl font-bold mb-4">Inventario</h2>    
-                <div class="mb-4"><input type="text" id="buscarProducto" placeholder="Buscar por descripcion, marca o modelo..."class="border p-2 rounded w-64"></div>
-                <div class="mb-4">
-                    <label class="mr-2 font-semibold">Filtrar por categoría:</label>
-                    <select id="filtroCategoria" class="border p-2 rounded">
-                        <option value="">Todas</option>
-                    </select>
+            <!-- SECCION INVENTARIO or defecto) -->
+            <section id="seccionProductos" class="hidden">
+                <header class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Inventario</h1>
+                    </div>
+                    <button id="btnAbrirModalProducto" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        + Nuevo Producto
+                    </button>
+                </header>
+                <div>
+                    <input type="text" id="buscarProducto" placeholder="Buscar por nombre, marca o categoría..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
                 </div>
-                <button
-                    id="btnAbrirModalProducto"class="bg-blue-500 text-white px-4 py-2 rounded mb-4">
-                    Agregar Producto
-                </button>
                 <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
                     <thead>
                         <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
                             <th class="p-3 border text-center">Código</th>
-                            <th class="p-3 border text-left">Descripción</th> <!-- Texto largo mejor a la izquierda -->
+                            <th class="p-3 border text-left">Descripción</th>
                             <th class="p-3 border text-left">Marca</th>
                             <th class="p-3 border text-left">Modelo</th>
-                            <th class="p-3 border text-left">Categoria</th> <!-- Números mejor a la derecha -->
+                            <th class="p-3 border text-left">Categoria</th>
                             <th class="p-3 border text-right">Costo</th>
                             <th class="p-3 border text-right">Precio</th>
                             <th class="p-3 border text-center">Stock</th>
@@ -165,28 +163,10 @@
                 <div class="flex gap-6">
                     <!-- Sub-menú de Configuración -->
                     <aside class="w-48 space-y-2">
-                        <button class="w-full text-left p-3 rounded-lg bg-naranja-500 text-white font-medium">📦 Categorías</button>
                         <button class="w-full text-left p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 cursor-not-allowed" title="Próximamente">👤 Usuarios (Pronto)</button>
                     </aside>
-
-                    <!-- Área de contenido de la Configuración -->
-                    <div class="flex-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-                        <h2 class="text-xl font-bold mb-4">Gestión de Categorías</h2>
-                        
-                        <!-- Formulario para agregar -->
-                        <div class="flex gap-2 mb-6">
-                            <input type="text" id="inputNuevaCat" placeholder="Ej: Electrónica, Ropa..." class="flex-1 border p-2 rounded-lg dark:bg-slate-700">
-                            <button id="btnGuardarCat" class="bg-naranja-500 hover:bg-naranja-600 text-white px-6 py-2 rounded-lg font-bold">Agregar</button>
-                        </div>
-
-                        <!-- Lista de categorías existentes -->
-                        <div id="listaCategoriasConfig" class="space-y-2">
-                            <!-- Aquí se inyectarán con JS -->
-                        </div>
-                    </div>
                 </div>
             </div>
-
         </main>
     </div>
     
@@ -350,46 +330,74 @@
     </div>
     
     <!-- MODAL CLIENTE -->
-    <div id="modalCliente" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-naranja-600">Nuevo Cliente</h2>
-                <button id="btnCerrarModalCliente" class="text-gray-400 hover:text-gray-600">
-                    ✕
-                </button>
-            </div>
-            <form autocomplete="off" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Nombre</label>
-                    <input type="text" id="inputNombreCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+    <div id="modalCliente" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+            <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+                <h2 class="text-xl font-bold uppercase tracking-wider">Ficha de Cliente</h2>
+                <button id="btnCerrarModalCliente" class="text-2xl hover:scale-110 transition-transform">❌</button>
+            </header>
+            <form id="formCliente" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
+                <input type="hidden" id="clienteId">
+                <!-- Columna Izquierda: Datos Personales -->
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-bold mb-1 italic">Nombre</label>
+                            <input type="text" id="clienteNombre" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1 italic">Apellido</label>
+                            <input type="text" id="clienteApellido" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">DNI / CUIL / CUIT</label>
+                        <input type="text" id="clienteCuit" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Dirección</label>
+                        <input type="text" id="clienteDireccion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Email</label>
+                        <input type="email" id="clienteEmail" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Apellido</label>
-                    <input type="text" id="inputApellidoCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                <!-- Columna Derecha: Datos Comerciales -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Teléfono / WhatsApp</label>
+                        <input type="text" id="clienteTelefono" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Categoría ARCA (Ex-AFIP)</label>
+                        <select id="clienteArca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            <option value="Consumidor Final">Consumidor Final</option>
+                            <option value="Monotributista">Monotributista</option>
+                            <option value="Responsable Inscripto">Responsable Inscripto</option>
+                            <option value="Exento">Exento</option>
+                        </select>
+                    </div>
+                    <!-- Sección Cuenta Corriente -->
+                    <div class="p-4 bg-orange-50 dark:bg-slate-900 rounded-xl border border-orange-200 dark:border-slate-700">
+                        <h3 class="text-sm font-bold mb-3 text-orange-700 dark:text-orange-400">💰 Estado de Cuenta Corriente</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-semibold">Saldo Pendiente:</span>
+                            <span id="clienteSaldo" class="text-lg font-black text-red-600">$ 0.00</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="clienteHabilitarCC" class="w-4 h-4 accent-orange-500" checked>
+                            <label for="clienteHabilitarCC" class="text-xs font-bold cursor-pointer">Habilitar crédito</label>
+                        </div>
+                    </div>
+                    <div class="pt-4 flex gap-2">
+                        <button type="submit" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 shadow-lg transition-all">💾 GUARDAR CLIENTE</button>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">DNI</label>
-                    <input type="number" id="inputDniCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Dirección</label>
-                    <input type="text" id="inputDireccionCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                </div> 
-                <div>
-                    <label class="block text-sm font-medium mb-1">Teléfono</label>
-                    <input type="number" id="inputTelefonoCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="inputEmailCliente" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                </div>
-                <button type="button" id="btnGuardarCliente"
-                    class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl">
-                    Guardar Cliente
-                </button>
             </form>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="./js/app.js"></script>
     

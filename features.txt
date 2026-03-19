@@ -1,8 +1,26 @@
 features:
 
--iniciar modal al editar producto en el medio de la pantalla, no en el costado
--leyenda "costo sin impuestos" calculo de costo- % iva
--en el modal agregar producto, el código ya existe, que tire alerta
--proveedor, con menú desplegable, con opción de buscar o agregar si no existe
--
+
+MOdal PRODUCTOS
+<OK>-iniciar modal al editar producto en el medio de la pantalla, no en el costado 
+    -leyenda "costo sin impuestos" calculo de costo- % iva
+    -en el modal agregar producto, el código ya existe, que tire alerta
+    -proveedor, con menú desplegable, con opción de buscar o agregar si no existe
+    -agregar LUPA y + en texbox PROVEEDORES, para buscar o agregar proveedor
+    -agregar LUPA y + en texbox CATEGORIAS, para buscar o agregar CATEGORIAS
+    -imagen en miñatura de producto
+
+
+
+LOGIN
+    -Empresa
+    -Usuario
+    -Contraseña
+
+
+SECCION VENTAS
+    - Filtros (x dia, desde-hasta, )
+    - campos LISTA DE VENTAS
+        Numero - Fecha - Total - Saldo - Entregado (si-no) - cliente - acciones (detalle - imprimir - eliminar [con confirmacion de ajuste de caja y registro de eliminacin])
+
 

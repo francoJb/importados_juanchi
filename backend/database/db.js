@@ -38,11 +38,15 @@ function crearTablas() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT,
             apellido TEXT,
-            dni TEXT,
+            cuit TEXT,
             direccion TEXT,
             telefono TEXT,
-            email TEXT
+            email TEXT,
+            arca TEXT DEFAULT 'Consumidor Final',
+            saldo REAL DEFAULT 0,
+            habilitar_cc INTEGER DEFAULT 1
         )`);
+
 
 
         console.log("Tablas verificadas/creadas correctamente.");

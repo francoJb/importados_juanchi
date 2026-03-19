@@ -10,6 +10,18 @@ import { cargarClientes, guardarCliente } from "./modules/clientesUi.js";
 import { verificarStockBajo } from "./modules/productosUi.js";
 
 
+// Función universal para abrir/cerrar cualquier modal
+  function toggleModal(idModal, mostrar = true) {
+    const modal = document.getElementById(idModal);
+    if (!modal) return;
+    if (mostrar) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex"); // Para que el centrado de Tailwind funcione
+    } else {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+  }
 
 
 window.eliminarProducto = async function(id){
@@ -37,7 +49,7 @@ window.editarProducto = async function(id){
   document.getElementById("prodIva").value = p.iva;
   document.getElementById("prodImagen").value = p.imagen_url;
   document.getElementById("prodControlStock").value = p.controlar_stock;
-  modalProducto.classList.remove("hidden");
+  toggleModal("modalProducto", true);
 }; 
 
 
@@ -88,18 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Función universal para abrir/cerrar cualquier modal
-  function toggleModal(idModal, mostrar = true) {
-    const modal = document.getElementById(idModal);
-    if (!modal) return;
-    if (mostrar) {
-      modal.classList.remove("hidden");
-      modal.classList.add("flex"); // Para que el centrado de Tailwind funcione
-    } else {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-  }
+
 
   // Abrir modales
   document.getElementById("btnAbrirModalCliente").onclick = () => toggleModal("modalCliente");
@@ -134,7 +135,7 @@ const inputBuscar = document.getElementById("buscarProducto");
       const productos = await obtenerProductos(); 
       // 2. Filtramos por múltiples campos
       const filtrados = productos.filter(p => 
-        p.nombre?.toLowerCase().includes(texto) ||
+        p.descripcion?.toLowerCase().includes(texto) ||
         p.marca?.toLowerCase().includes(texto) ||
         p.modelo?.toLowerCase().includes(texto)||
         p.categoria?.toLowerCase().includes(texto) ||
