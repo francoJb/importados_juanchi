@@ -1,0 +1,8 @@
+features:
+
+-iniciar modal al editar producto en el medio de la pantalla, no en el costado
+-leyenda "costo sin impuestos" calculo de costo- % iva
+-en el modal agregar producto, el código ya existe, que tire alerta
+-proveedor, con menú desplegable, con opción de buscar o agregar si no existe
+-
+

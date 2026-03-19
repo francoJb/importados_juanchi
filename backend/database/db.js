@@ -18,14 +18,19 @@ function crearTablas() {
         db.run(`CREATE TABLE IF NOT EXISTS productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             codigo TEXT UNIQUE,
-            nombre TEXT,
+            descripcion TEXT,
             marca TEXT,
             modelo TEXT,
             categoria TEXT,
+            costo REAL,
             precio REAL,
             stock INTEGER,
             stock_minimo INTEGER DEFAULT 1,
-            activo INTEGER DEFAULT 1
+            activo INTEGER DEFAULT 1,
+            proveedor TEXT,
+            iva REAL DEFAULT 21,
+            imagen_url TEXT,
+            controlar_stock INTEGER DEFAULT 1
         )`);
 
         // Tabla Clientes
@@ -37,12 +42,6 @@ function crearTablas() {
             direccion TEXT,
             telefono TEXT,
             email TEXT
-        )`);
-
-        // Tabla Categorias
-        db.run(`CREATE TABLE IF NOT EXISTS categorias (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT UNIQUE NOT NULL
         )`);
 
 

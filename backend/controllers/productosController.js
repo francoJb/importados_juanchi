@@ -9,26 +9,28 @@ exports.obtenerProductos = (req, res) => {
     res.json(rows);
   });
 };
+
+
 exports.crearProducto = (req, res) => {
-  const {codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo } = req.body;
+  const {codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock} = req.body;
   const categoriaLimpia = String(categoria || "").trim().toUpperCase() || "GENERAL";
     // 🔴 Validación básica
-  if (!codigo || !nombre || !precio) {
+  if (!codigo || !descripcion || !precio) {
     return res.status(400).json({
-      error: "Código, nombre y precio son obligatorios"
+      error: "Código, descripción y precio son obligatorios"
     });
   }
   // 🔴 Validación numérica
-  if (isNaN(precio) || isNaN(stock)) {
+  if (isNaN(costo) || isNaN(precio) || isNaN(stock)) {
     return res.status(400).json({
-      error: "Precio y stock deben ser números"
+      error: "Costo, precio y stock deben ser números"
     });
   }
 
   db.run(
-    `INSERT INTO productos (codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [codigo, nombre, marca, modelo, categoriaLimpia, precio, stock, stock_minimo],
+    `INSERT INTO productos (codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [codigo, descripcion, marca, modelo, categoriaLimpia, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock],
     function(err){
       // 🔴 Error de duplicado
       if (err && err.message.includes("UNIQUE")) {
@@ -46,6 +48,7 @@ exports.crearProducto = (req, res) => {
   );
 };
 
+
 exports.eliminarProducto = (req, res) => {
   const id = req.params.id;
   db.run(
@@ -58,20 +61,38 @@ exports.eliminarProducto = (req, res) => {
   );
 };
 
+
 exports.actualizarProducto = (req, res) => {
   const id = req.params.id;
-  const { nombre, marca, modelo, categoria, precio, stock } = req.body;
+  const { codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock } = req.body;
   const categoriaLimpia = String(categoria || "").trim().toUpperCase() || "GENERAL";
-  db.run(
-    `UPDATE productos
-     SET nombre=?, marca=?, modelo=?, categoria=?, precio=?, stock=?
-     WHERE id=?`,
-    [nombre, marca, modelo, categoriaLimpia, precio, stock, id],
-    function(err){
-      if(err){
-        return res.status(500).json(err);
-      }
-      res.json({ actualizado: true });
+  // Asegurate de que no haya comas antes del WHERE y que los nombres coincidan con la DB
+  const sql = `UPDATE productos 
+               SET codigo=?, descripcion=?, marca=?, modelo=?, categoria=?, costo=?, precio=?, stock=?, stock_minimo=?, proveedor=?, iva=?, imagen_url=?, controlar_stock=?
+               WHERE id=?`;
+  const valores = [
+    codigo,
+    descripcion,
+    marca,
+    modelo,
+    categoriaLimpia,
+    costo,
+    precio,
+    stock,
+    stock_minimo,
+    proveedor,
+    iva,
+    imagen_url,
+    controlar_stock,
+    id
+  ];
+  db.run(sql, valores, function(err) {
+    if (err) {
+      // Este log te dirá exactamente qué falló en la terminal de VS Code
+      console.error("Error en el UPDATE:", err.message); 
+      return res.status(500).json({ error: err.message });
     }
-  );
+    res.json({ actualizado: true });
+  });
 };
+

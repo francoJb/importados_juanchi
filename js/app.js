@@ -24,13 +24,19 @@ window.editarProducto = async function(id){
   const productos = await obtenerProductos();
   const p = productos.find(prod => prod.id == id);
   document.getElementById("prodId").value = p.id;
-  document.getElementById("prodNombre").value = p.nombre;
+  document.getElementById("prodCodigo").value = p.codigo;
+  document.getElementById("prodDescripcion").value = p.descripcion;
   document.getElementById("prodMarca").value = p.marca;
   document.getElementById("prodModelo").value = p.modelo;
   document.getElementById("prodCategoria").value = p.categoria;
+  document.getElementById("prodCosto").value = p.costo;
   document.getElementById("prodPrecio").value = p.precio;
   document.getElementById("prodStock").value = p.stock;
   document.getElementById("prodStockMinimo").value = p.stock_minimo;
+  document.getElementById("prodProveedor").value = p.proveedor;
+  document.getElementById("prodIva").value = p.iva;
+  document.getElementById("prodImagen").value = p.imagen_url;
+  document.getElementById("prodControlStock").value = p.controlar_stock;
   modalProducto.classList.remove("hidden");
 }; 
 
@@ -120,6 +126,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+const inputBuscar = document.getElementById("buscarProducto");
+  if (inputBuscar) {
+    inputBuscar.addEventListener("input", async (e) => {
+      const texto = e.target.value.toLowerCase().trim();
+      // 1. Obtenemos todos los productos (puedes usar una variable global si ya los tienes)
+      const productos = await obtenerProductos(); 
+      // 2. Filtramos por múltiples campos
+      const filtrados = productos.filter(p => 
+        p.nombre?.toLowerCase().includes(texto) ||
+        p.marca?.toLowerCase().includes(texto) ||
+        p.modelo?.toLowerCase().includes(texto)||
+        p.categoria?.toLowerCase().includes(texto) ||
+        p.codigo?.toLowerCase().includes(texto)
+      );
+      // 3. Volvemos a dibujar la tabla con los resultados filtrados
+      // Pasamos 'filtrados' a tu función de renderizado
+      renderProductos(filtrados); 
+    });
+  }
+
+
+  const inputPrecio = document.getElementById("prodPrecio");
+  const inputCosto = document.getElementById("prodCosto");
+  const avisoMargen = document.getElementById("avisoMargen");
+  function validarMargen() {
+    const precio = Number(inputPrecio.value);
+    const costo = Number(inputCosto.value);
+    // Si el precio es menor al costo (y ambos tienen valor), mostramos el aviso
+    if (precio > 0 && costo > 0 && precio < costo) {
+      avisoMargen.classList.remove("hidden");
+      inputPrecio.classList.add("border-red-500", "ring-1", "ring-red-500");
+    } else {
+      avisoMargen.classList.add("hidden");
+      inputPrecio.classList.remove("border-red-500", "ring-1", "ring-red-500");
+    }
+  }
+  // Escuchamos cuando escribís en cualquiera de los dos
+  inputPrecio.addEventListener("input", validarMargen);
+  inputCosto.addEventListener("input", validarMargen);
+
 
 
   async function cargarSugerenciasCategorias() {
@@ -159,7 +205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
       const item = {
-        producto: producto.nombre,
+        producto: producto.descripcion,
         precio: producto.precio,
         cantidad: 1
       };
@@ -180,14 +226,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     const filtrados = productos.filter(p =>
-      p.nombre.toLowerCase().includes(texto)
+      p.descripcion.toLowerCase().includes(texto)
     );
     filtrados.forEach(p => {
       const div = document.createElement("div");
       div.className = "p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-600";
-      div.textContent = `${p.nombre} (stock: ${p.stock})`;
+      div.textContent = `${p.descripcion} (stock: ${p.stock})`;
       div.addEventListener("click", () => {
-        inputProducto.value = p.nombre;
+        inputProducto.value = p.descripcion;
         document.getElementById("inputPrecio").value = p.precio;
         sugerencias.classList.add("hidden");
       });
@@ -209,13 +255,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (formVenta) {
     formVenta.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const nombreProducto = document.getElementById("inputProducto").value;
+      const descripcionProducto = document.getElementById("inputProducto").value;
       const precio = Number(document.getElementById("inputPrecio").value);
       const cantidad = Number(document.getElementById("inputCantidad").value);
 
       // 1. Validar stock antes de agregar al carrito
       const productos = await obtenerProductos();
-      const productoDB = productos.find(p => p.nombre === nombreProducto);
+      const productoDB = productos.find(p => p.descripcion === descripcionProducto);
 
       if (!productoDB || cantidad > productoDB.stock) {
         alert("⚠️ Stock insuficiente o producto no encontrado");
@@ -225,7 +271,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // 2. Agregar al carrito
       const item = { 
         id: productoDB.id, 
-        producto: nombreProducto, 
+        producto: descripcionProducto, 
         precio, 
         cantidad,
         subtotal: precio * cantidad 
@@ -250,7 +296,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const precio = Number(document.getElementById("inputPrecio").value);
     const cantidad = Number(document.getElementById("inputCantidad").value);
     const productos = await obtenerProductos();
-    const productoDB = productos.find(p => p.nombre === producto);
+    const productoDB = productos.find(p => p.descripcion === producto);
     if (!productoDB) {
       alert("Producto no encontrado en inventario");
       return;
@@ -342,24 +388,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       // 1. Capturamos los datos
       const id = document.getElementById("prodId").value;
       const codigo = document.getElementById("prodCodigo").value;
-      const nombre = document.getElementById("prodNombre").value;
+      const descripcion = document.getElementById("prodDescripcion").value;
       const marca = document.getElementById("prodMarca").value;
       const modelo = document.getElementById("prodModelo").value;
       const categoria = document.getElementById("prodCategoria").value;
+      const costo = Number(document.getElementById("prodCosto").value);
       const precio = Number(document.getElementById("prodPrecio").value);
       const stock = Number(document.getElementById("prodStock").value);
       const stock_minimo = Number(document.getElementById("prodStockMinimo").value);
+      const proveedor = document.getElementById("prodProveedor").value;
+      const iva =Number(document.getElementById("prodIva").value);
+      const imagen_url = document.getElementById("prodImagen").value;
+      const controlar_stock = document.getElementById("prodControlStock").checked ? 1 : 0;
+
 
       let ok;
 
       // 2. Decidimos si editamos o agregamos usando las funciones de la API
       if (id) {
         // Si hay ID, editamos el existente
-        ok = await apiEditarProducto(id, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
+        ok = await apiEditarProducto(id, codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock, id);
         await renderProductos(); // Refrescamos la tabla
       } else {
         // Si no hay ID, creamos uno nuevo
-        ok = await apiAgregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo);
+        ok = await apiAgregarProducto(codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock);
       }
 
       // 3. Si la operación fue exitosa, limpiamos y cerramos

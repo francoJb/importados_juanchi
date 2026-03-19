@@ -19,7 +19,7 @@ export function renderCarrito(productos) {
     total += subtotal;
     tabla.innerHTML += `
       <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
-        <td class="p-3">${p.producto}</td>
+        <td class="p-3">${p.descrlipcion}</td>
         <td class="p-3 text-center">${p.cantidad}</td>
         <td class="p-3 text-right">$${p.precio}</td>
         <td class="p-3 text-right">$${subtotal}</td>

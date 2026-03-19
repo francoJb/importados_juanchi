@@ -128,8 +128,8 @@
 
             <!-- SECCION PRODUCTOS (Oculta por defecto) -->
             <section id="seccionProductos" class="hidden p-6">
-                <h2 class="text-2xl font-bold mb-4">Productos</h2>    
-                <div class="mb-4"><input type="text" id="buscarProducto" placeholder="Buscar producto, marca o modelo..."class="border p-2 rounded w-64"></div>
+                <h2 class="text-2xl font-bold mb-4">Inventario</h2>    
+                <div class="mb-4"><input type="text" id="buscarProducto" placeholder="Buscar por descripcion, marca o modelo..."class="border p-2 rounded w-64"></div>
                 <div class="mb-4">
                     <label class="mr-2 font-semibold">Filtrar por categoría:</label>
                     <select id="filtroCategoria" class="border p-2 rounded">
@@ -140,14 +140,18 @@
                     id="btnAbrirModalProducto"class="bg-blue-500 text-white px-4 py-2 rounded mb-4">
                     Agregar Producto
                 </button>
-                <table class="w-full border">
+                <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
                     <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Producto</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th>Acciones</th>
+                        <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                            <th class="p-3 border text-center">Código</th>
+                            <th class="p-3 border text-left">Descripción</th> <!-- Texto largo mejor a la izquierda -->
+                            <th class="p-3 border text-left">Marca</th>
+                            <th class="p-3 border text-left">Modelo</th>
+                            <th class="p-3 border text-left">Categoria</th> <!-- Números mejor a la derecha -->
+                            <th class="p-3 border text-right">Costo</th>
+                            <th class="p-3 border text-right">Precio</th>
+                            <th class="p-3 border text-center">Stock</th>
+                            <th class="p-3 border text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody"></tbody>
@@ -261,36 +265,86 @@
     </div>
 
     <!-- MODAL PRODUCTO -->
-    <div id="modalProducto" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 p-6 rounded w-96">
-            <div class="flex justify-between mb-4">
-                <h2 class="text-xl font-bold">Nuevo Producto</h2>
-                <button id="btnCerrarModalProducto">✖</button>
-            </div>
-            <form id="formProducto" autocomplete="off" class="flex flex-col gap-2">
+    <div id="modalProducto" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+            <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+                <h2 class="text-xl font-bold uppercase tracking-wider">Gestión de Producto</h2>
+                <button id="btnCerrarModalProducto" class="text-2xl hover:scale-110 transition-transform">❌</button>
+            </header>
+            <form id="formProducto" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
                 <input type="hidden" id="prodId">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
-                <input id="prodCodigo" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Nombre</label>
-                <input id="prodNombre" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Marca</label>
-                <input id="prodMarca" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Modelo</label>
-                <input id="prodModelo" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Categoría</label>
-                <div class="mb-4">
-                    <input type="text" id="prodCategoria" placeholder="Ej: AUDIO, ILUMINACIÓN, CABLES..." class="w-full border p-2 rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600">
+                <!-- Columna Izquierda -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1 italic">Código / SKU</label>
+                        <input type="text" id="prodCodigo" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Descripción del Producto</label>
+                        <input type="text" id="prodDescripcion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Marca</label>
+                            <input type="text" id="prodMarca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Modelo</label>
+                            <input type="text" id="prodModelo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Proveedor</label>
+                        <input type="text" id="prodProveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="Nombre del proveedor">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Imagen (URL)</label>
+                        <input type="text" id="prodImagen" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="https://link-de-la-foto.jpg">
+                    </div>
                 </div>
-                <label class="text-xs text-gray-500 dark:text-gray-400">Precio</label>
-                <input id="prodPrecio" type="number" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Stock</label>
-                <input id="prodStock" type="number" class="border p-2 rounded">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Stock mínimo</label>
-                <input id="prodStockMinimo" type="number" class="border p-2 rounded">
-                <div id="errorProducto" style="color:red; display:none;"></div>
-                <button class="bg-green-500 text-white p-2 rounded mt-2">
-                    Guardar Producto
-                </button>
+                <!-- Columna Derecha -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Categoría</label>
+                        <input type="text" id="prodCategoria" list="listaCategorias" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        <datalist id="listaCategorias"></datalist>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Costo</label>
+                            <input type="number" id="prodCosto" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">IVA %</label>
+                            <input type="number" id="prodIva" value="21" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Venta</label>
+                            <input type="number" id="prodPrecio" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-bold text-naranja-600 transition-colors">       
+                            <p id="avisoMargen" class="text-[10px] text-red-500 font-bold mt-1 leading-tight hidden">
+                                ⚠️ PRECIO MENOR AL COSTO
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Stock Actual</label>
+                            <input type="number" id="prodStock" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Stock Mínimo</label>
+                            <input type="number" id="prodStockMinimo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                    </div>
+                    <!-- Checkbox de Control de Stock -->
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-600">
+                        <input type="checkbox" id="prodControlStock" class="w-5 h-5 accent-naranja-500" checked>
+                        <label for="prodControlStock" class="text-sm font-bold cursor-pointer">Activar Control de Stock</label>
+                    </div>
+                    <div class="pt-4 flex gap-2">
+                        <button type="submit" class="flex-1 bg-naranja-500 text-white font-bold py-3 rounded-xl hover:bg-naranja-600 shadow-lg transition-all">💾 GUARDAR PRODUCTO</button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

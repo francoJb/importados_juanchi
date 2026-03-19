@@ -34,8 +34,8 @@ export async function cargarProductosSelect(){
   select.innerHTML = "";
   productos.forEach(p => {
     const option = document.createElement("option");
-    option.value = p.nombre;
-    option.textContent = `${p.nombre} (stock: ${p.stock})`;
+    option.value = p.descripcion;
+    option.textContent = `${p.descripcion} (stock: ${p.stock})`;
     select.appendChild(option);
   });
 }
@@ -53,14 +53,14 @@ export function initAutocomplete(){
       return;
     }
     const filtrados = productos.filter(p =>
-      p.nombre.toLowerCase().includes(texto)
+      p.descripcion.toLowerCase().includes(texto)
     );
     filtrados.forEach(p => {
       const div = document.createElement("div");
       div.className = "p-2 cursor-pointer hover:bg-gray-200";
-      div.textContent = `${p.nombre} (stock: ${p.stock})`;
+      div.textContent = `${p.descripcion} (stock: ${p.stock})`;
       div.addEventListener("click", () => {
-        inputProducto.value = p.nombre;
+        inputProducto.value = p.descripcion;
         document.getElementById("inputPrecio").value = p.precio;
         sugerencias.classList.add("hidden");
       });

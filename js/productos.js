@@ -5,7 +5,7 @@ export async function obtenerProductos() {
 }
 
 
-export async function agregarProducto(codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
+export async function agregarProducto(codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock) {
   const errorDiv = document.getElementById("errorProducto");
   const res = await fetch("http://localhost:3000/productos", {
     method: "POST",
@@ -14,13 +14,18 @@ export async function agregarProducto(codigo, nombre, marca, modelo, categoria, 
     },
     body: JSON.stringify({
       codigo,
-      nombre,
+      descripcion,
       marca,
       modelo,
       categoria,
+      costo,
       precio,
       stock,
-      stock_minimo
+      stock_minimo,
+      proveedor,
+      iva,
+      imagen_url,
+      controlar_stock
     })
   });
   const data = await res.json();
@@ -39,25 +44,29 @@ export async function agregarProducto(codigo, nombre, marca, modelo, categoria, 
 }
 
 export async function eliminarProducto(id) {
-
   await fetch(`http://localhost:3000/productos/${id}`, {
     method: "DELETE"
   });
 }
 
-export async function editarProducto(id, codigo, nombre, marca, modelo, categoria, precio, stock, stock_minimo) {
+export async function editarProducto(id, codigo, descripcion, marca, modelo, categoria, costo, precio, stock, stock_minimo, proveedor, iva, imagen_url, controlar_stock) {
   const response = await fetch(`http://localhost:3000/productos/${id}`, {
     method: "PUT",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
       codigo,
-      nombre,
+      descripcion,
       marca,
       modelo,
       categoria,
+      costo,
       precio,
       stock,
-      stock_minimo
+      stock_minimo,
+      proveedor,
+      iva,
+      imagen_url,
+      controlar_stock
     })
   });
   return response.ok;
