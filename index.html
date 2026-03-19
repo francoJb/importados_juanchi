@@ -379,12 +379,24 @@
                         </select>
                     </div>
                     <!-- Sección Cuenta Corriente -->
+                    
+
                     <div class="p-4 bg-orange-50 dark:bg-slate-900 rounded-xl border border-orange-200 dark:border-slate-700">
-                        <h3 class="text-sm font-bold mb-3 text-orange-700 dark:text-orange-400">💰 Estado de Cuenta Corriente</h3>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-semibold">Saldo Pendiente:</span>
-                            <span id="clienteSaldo" class="text-lg font-black text-red-600">$ 0.00</span>
+                        <h3 class="text-sm font-bold mb-3 text-orange-700 dark:text-orange-400 uppercase tracking-tighter">💰 Cuenta Corriente</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <span class="text-[10px] font-bold block uppercase opacity-50">Saldo Actual</span>
+                                <span id="clienteSaldo" class="text-2xl font-black text-red-600">$ 0.00</span>
+                            </div>
+                            <!-- Botón de Cobro Rápido -->
+                            <button type="button" id="btnRegistrarCobro" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-md transition-all">
+                                💵 COBRAR
+                            </button>
                         </div>
+                    </div>
+
+
+
                         <div class="flex items-center gap-3">
                             <input type="checkbox" id="clienteHabilitarCC" class="w-4 h-4 accent-orange-500" checked>
                             <label for="clienteHabilitarCC" class="text-xs font-bold cursor-pointer">Habilitar crédito</label>

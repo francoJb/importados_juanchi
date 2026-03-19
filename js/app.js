@@ -127,6 +127,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  const btnRegistrarCobro = document.getElementById("btnRegistrarCobro");
+
+  btnRegistrarCobro.onclick = async () => {
+      const id = document.getElementById("clienteId").value;
+      const saldoActual = parseFloat(document.getElementById("clienteSaldo").innerText.replace("$ ", ""));
+
+      if (!id) return alert("❌ Primero selecciona un cliente existente.");
+      if (saldoActual <= 0) return alert("✅ Este cliente no tiene deuda.");
+
+      const montoCobro = prompt(`El saldo es $${saldoActual}. ¿Cuánto entrega el cliente?`);
+      const monto = parseFloat(montoCobro);
+
+      if (monto > 0 && monto <= saldoActual) {
+          // 1. Enviamos el cobro al servidor (necesitaremos una ruta nueva)
+          const res = await fetch(`http://localhost:3000/clientes/${id}/cobrar`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ monto })
+          });
+
+          if (res.ok) {
+              alert("✅ Cobro registrado correctamente.");
+              // 2. Actualizamos la visual del saldo sin cerrar el modal
+              const nuevoSaldo = saldoActual - monto;
+              document.getElementById("clienteSaldo").innerText = `$ ${nuevoSaldo.toFixed(2)}`;
+              await cargarClientes(); // Recarga la tabla de fondo
+          }
+      } else {
+          alert("❌ Monto inválido. Debe ser mayor a 0 y no mayor al saldo.");
+      }
+  };
+
+
+
+
+
+
+
+
 const inputBuscar = document.getElementById("buscarProducto");
   if (inputBuscar) {
     inputBuscar.addEventListener("input", async (e) => {
