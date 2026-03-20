@@ -1,173 +1,124 @@
 // js/app.js
-import { 
-    guardarCliente, 
-    registrarCobroAPI, 
-    obtenerClientes 
-} from "./clientes.js";
-import { renderClientes } from "./renderclientes.js";
+import { fetchProductos, guardarProductoAPI } from "./productos.js";
+import { dibujarProductos } from "./renderproductos.js";
 
-import { 
-    agregarAlCarrito, 
-    finalizarVentaAPI, 
-    limpiarCarrito, 
-    carrito 
-} from "./ventas.js";
-import { 
-    renderCarritoUI, 
-    renderHistorialVentas 
-} from "./renderventas.js";
-
-import { 
-    obtenerProductos, 
-    descontarStock, 
-    agregarProducto as apiAgregarProducto, 
-    editarProducto as apiEditarProducto,
-    eliminarProducto as apiEliminarProducto 
-} from "./productos.js";
-import { renderProductos } from "./renderproductos.js";
-import { verificarStockBajo } from "./modules/productosUi.js";
-
-// --- FUNCIONES GLOBALES PARA LA UI ---
-function toggleModal(idModal, mostrar = true) {
-    const modal = document.getElementById(idModal);
-    if (!modal) return;
+// --- UTILIDADES DE UI ---
+const toggleModal = (id, mostrar = true) => {
+    const modal = document.getElementById(id);
     modal.classList.toggle("hidden", !mostrar);
     modal.classList.toggle("flex", mostrar);
-}
+};
 
-// Hacer funciones accesibles desde el HTML (para botones en tablas)
-window.editarProducto = async (id) => {
-    const productos = await obtenerProductos();
+// Función global para cargar datos en el modal
+window.prepararEdicion = async (id) => {
+    const productos = await fetchProductos();
     const p = productos.find(prod => prod.id == id);
+    
     if (!p) return;
-    
+
+    // Llenamos el formulario con los datos guardados
     document.getElementById("prodId").value = p.id;
-    document.getElementById("prodCodigo").value = p.codigo;
-    document.getElementById("prodDescripcion").value = p.descripcion;
-    document.getElementById("prodPrecio").value = p.precio;
-    document.getElementById("prodStock").value = p.stock;
-    // ... completar el resto de campos si es necesario ...
-    toggleModal("modalProducto", true);
+    document.getElementById("prodCodigo").value = p.prodCodigo;
+    document.getElementById("prodDescripcion").value = p.prodDescripcion;
+    document.getElementById("prodMarca").value = p.prodMarca;
+    document.getElementById("prodModelo").value = p.prodModelo;
+    document.getElementById("prodPrecio").value = p.prodPrecio;
+    document.getElementById("prodCosto").value = p.prodCosto;
+    document.getElementById("prodStock").value = p.prodStock;
+    document.getElementById("prodStockMinimo").value = p.prodStockMinimo;
+    document.getElementById("prodControlStock").checked = p.prodControlStock;
+
+    // Abrimos el modal
+    const modal = document.getElementById("modalProducto");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
 };
 
-window.eliminarProducto = async (id) => {
-    if (confirm("¿Desea desactivar este producto?")) {
-        await apiEliminarProducto(id);
-        await renderProductos();
-    }
-};
 
-// --- INICIO DE LA APLICACIÓN ---
+
+// --- AL CARGAR EL DOCUMENTO ---
 document.addEventListener("DOMContentLoaded", async () => {
-
-    // 1. MODO OSCURO
-    const btnDarkMode = document.getElementById("btnDarkMode");
-    if (localStorage.getItem("darkMode") === "true") document.documentElement.classList.add("dark");
     
-    btnDarkMode.onclick = () => {
-        const isDark = document.documentElement.classList.toggle("dark");
-        localStorage.setItem("darkMode", isDark);
+    // 1. CARGA INICIAL
+    const productos = await fetchProductos();
+    dibujarProductos(productos);
+
+    // 2. NAVEGACIÓN (Solo para que puedas ver la sección de Inventario)
+    const linkProductos = document.getElementById("linkProductos");
+    const seccionProductos = document.getElementById("seccionProductos");
+    const seccionDashboard = document.getElementById("seccionDashboard");
+
+    linkProductos.onclick = () => {
+        seccionDashboard.classList.add("hidden");
+        seccionProductos.classList.remove("hidden");
     };
 
-    // 2. NAVEGACIÓN SPA
-    const secciones = {
-        linkDashboard: document.getElementById("seccionDashboard"),
-        linkClientes: document.getElementById("seccionClientes"),
-        linkProductos: document.getElementById("seccionProductos"),
-        linkVentas: document.getElementById("seccionVentas"),
-        linkConfig: document.getElementById("seccionConfig")
+    // 3. ABRIR/CERRAR MODAL
+    document.getElementById("btnAbrirModalProducto").onclick = () => {
+        document.getElementById("formProducto").reset();
+        document.getElementById("prodId").value = ""; // Limpiar ID por si es nuevo
+        toggleModal("modalProducto", true);
     };
 
-    async function cambiarPantalla(idLink) {
-        Object.values(secciones).forEach(s => s?.classList.add("hidden"));
-        const activa = secciones[idLink];
-        if (activa) {
-            activa.classList.remove("hidden");
-            if (idLink === "linkClientes") await renderClientes();
-            if (idLink === "linkProductos") await renderProductos();
-            if (idLink === "linkVentas") await renderHistorialVentas();
-        }
-    }
+    document.getElementById("btnCerrarModalProducto").onclick = () => toggleModal("modalProducto", false);
 
-    document.querySelector("nav").onclick = (e) => {
-        const link = e.target.closest("a");
-        if (link) { e.preventDefault(); cambiarPantalla(link.id); }
-    };
-
-    // 3. GESTIÓN DE MODALES
-    document.getElementById("btnAbrirModalCliente").onclick = () => toggleModal("modalCliente");
-    document.getElementById("btnAbrirModalProducto").onclick = () => toggleModal("modalProducto");
-    document.getElementById("btnAbrirModal").onclick = () => toggleModal("modalVenta");
-
-    document.querySelectorAll("[id^='btnCerrarModal']").forEach(btn => {
-        btn.onclick = () => toggleModal(btn.closest("[id^='modal']").id, false);
-    });
-
-    // 4. LÓGICA DE VENTAS (CARRITO)
-    const formVenta = document.getElementById("formVenta");
-    formVenta.onsubmit = async (e) => {
+    // 4. GUARDAR PRODUCTO (EVENTO SUBMIT)
+    const formProducto = document.getElementById("formProducto");
+    formProducto.onsubmit = async (e) => {
         e.preventDefault();
-        const desc = document.getElementById("inputProducto").value;
-        const cant = Number(document.getElementById("inputCantidad").value);
-        const precio = Number(document.getElementById("inputPrecio").value);
 
-        const prods = await obtenerProductos();
-        const pDB = prods.find(p => p.descripcion === desc);
-
-        if (!pDB || cant > pDB.stock) return alert("⚠️ Stock insuficiente");
-
-        agregarAlCarrito({ id: pDB.id, producto: desc, precio, cantidad: cant });
-        renderCarritoUI();
-        formVenta.reset();
-    };
-
-    document.getElementById("btnConfirmar").onclick = async () => {
-        if (carrito.length === 0) return alert("Carrito vacío");
-
-        for (const item of carrito) { await descontarStock(item.id, item.cantidad); }
-
-        const ok = await finalizarVentaAPI({
-            cliente: document.getElementById("inputCliente").value || "Consumidor Final",
-            total: carrito.reduce((acc, i) => acc + i.subtotal, 0),
-            fecha: new Date().toISOString()
-        });
-
-        if (ok) {
-            alert("✅ Venta exitosa");
-            limpiarCarrito();
-            renderCarritoUI();
-            toggleModal("modalVenta", false);
-            await renderHistorialVentas();
-        }
-    };
-
-    // 5. GESTIÓN DE CLIENTES (FORMULARIO)
-    document.getElementById("formCliente").onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById("clienteId").value;
+        const id = document.getElementById("prodId").value;
+        
+        // Capturamos los datos usando los IDs exactos de tu HTML
         const datos = {
-            nombre: document.getElementById("clienteNombre").value,
-            apellido: document.getElementById("clienteApellido").value,
-            cuit: document.getElementById("clienteCuit").value,
-            saldo: 0 // O el valor inicial que definas
+            prodCodigo: document.getElementById("prodCodigo").value,
+            prodDescripcion: document.getElementById("prodDescripcion").value,
+            prodMarca: document.getElementById("prodMarca").value,
+            prodModelo: document.getElementById("prodModelo").value,
+            prodProveedor: document.getElementById("prodProveedor").value,
+            prodCategoria: document.getElementById("prodCategoria").value,
+            prodCosto: Number(document.getElementById("prodCosto").value),
+            prodPrecio: Number(document.getElementById("prodPrecio").value),
+            prodStock: Number(document.getElementById("prodStock").value),
+            prodStockMinimo: Number(document.getElementById("prodStockMinimo").value),
+            prodControlStock: document.getElementById("prodControlStock").checked
         };
 
-        if (await guardarCliente(datos, id)) {
-            alert("✅ Cliente guardado");
-            toggleModal("modalCliente", false);
-            await renderClientes();
+        const exito = await guardarProductoAPI(datos, id || null);
+
+        if (exito) {
+            alert("✅ Producto guardado correctamente");
+            toggleModal("modalProducto", false);
+            formProducto.reset();
+            
+            // Recargar la tabla
+            const productosActualizados = await fetchProductos();
+            dibujarProductos(productosActualizados);
+        } else {
+            alert("❌ Error al guardar el producto");
         }
     };
 
-    // 6. BUSCADOR DE PRODUCTOS
-    document.getElementById("buscarProducto").oninput = async (e) => {
-        const txt = e.target.value.toLowerCase();
-        const prods = await obtenerProductos();
-        const filtrados = prods.filter(p => p.descripcion.toLowerCase().includes(txt) || p.codigo.includes(txt));
-        renderProductos(filtrados);
+
+    // --- LÓGICA DEL BUSCADOR ---
+    const inputBusqueda = document.getElementById("buscarProducto");
+
+    inputBusqueda.oninput = async (e) => {
+        const termino = e.target.value.toLowerCase();
+        const todosLosProductos = await fetchProductos(); // Traemos la lista fresca
+        
+        const filtrados = todosLosProductos.filter(p => 
+            p.prodDescripcion.toLowerCase().includes(termino) || 
+            p.prodCodigo.toLowerCase().includes(termino) ||
+            p.prodMarca.toLowerCase().includes(termino)
+        );
+        
+        dibujarProductos(filtrados); // Volvemos a dibujar solo los que coinciden
     };
 
-    // Carga inicial
-    await renderProductos();
-    await verificarStockBajo();
+
+
+    // 5. MODO OSCURO (Básico para que no te moleste la vista)
+    const btnDarkMode = document.getElementById("btnDarkMode");
+    btnDarkMode.onclick = () => document.documentElement.classList.toggle("dark");
 });

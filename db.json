@@ -1,0 +1,40 @@
+{
+  "productos": [
+    {
+      "id": 1774018784842,
+      "prodCodigo": "10(3923726843",
+      "prodDescripcion": "",
+      "prodMarca": "",
+      "prodModelo": "",
+      "prodProveedor": "",
+      "prodCategoria": "",
+      "prodCosto": 0,
+      "prodPrecio": 0,
+      "prodStock": 0,
+      "prodStockMinimo": 0,
+      "prodControlStock": true,
+      "stock": null,
+      "precio": null,
+      "costo": null
+    },
+    {
+      "id": 1774018874433,
+      "prodCodigo": "200324115",
+      "prodDescripcion": "Televisor 32\"",
+      "prodMarca": "Sanyo",
+      "prodModelo": "asd123",
+      "prodProveedor": "asdasdd",
+      "prodCategoria": "12312",
+      "prodCosto": 250000,
+      "prodPrecio": 340000,
+      "prodStock": 10,
+      "prodStockMinimo": 3,
+      "prodControlStock": true,
+      "stock": null,
+      "precio": null,
+      "costo": null
+    }
+  ],
+  "clientes": [],
+  "ventas": []
+}

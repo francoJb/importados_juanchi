@@ -1,13 +1,11 @@
-const express = require("express");
+// backend/routes/productosRoutes.js
+const express = require('express');
 const router = express.Router();
-const {
-  obtenerProductos,
-  crearProducto,
-  eliminarProducto,
-  actualizarProducto
-} = require("../controllers/productosController");
-router.get("/", obtenerProductos);
-router.post("/", crearProducto);
-router.delete("/:id", eliminarProducto);
-router.put("/:id", actualizarProducto);
+const productosController = require('../controllers/productosController');
+
+// Definimos las rutas
+router.get('/', productosController.obtenerProductos);
+router.post('/', productosController.crearProducto);
+router.put('/:id', productosController.editarProducto);
+
 module.exports = router;
