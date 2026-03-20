@@ -16,6 +16,9 @@ export function dibujarProductos(productos) {
                 <td class="p-3 border text-center ${p.prodStock <= p.prodStockMinimo ? 'text-red-600 font-black' : ''}">${p.prodStock}</td>
                 <td class="p-3 border text-center">
                     <button onclick="prepararEdicion(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">✏️</button>
+                    <button onclick="clonar(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">📑</button>
+                    <button onclick="balanceProducto(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">⚖️</button>
+                    <button onclick="eliminarProducto(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">🗑️</button>
                 </td>
             </tr>
         `;
