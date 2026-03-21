@@ -23,7 +23,7 @@ db.serialize(() => {
         control_stock INTEGER,
         stock INTEGER,
         stock_minimo INTEGER,
-        estado INTEGER
+        estado INTEGER DEFAULT 1
     )`);
 });
 
