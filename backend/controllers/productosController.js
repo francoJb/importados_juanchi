@@ -9,10 +9,10 @@ exports.obtenerProductos = (req, res) => {
 
 exports.crearProducto = (req, res) => {
     const p = req.body;
-    const sql = `INSERT INTO productos (prodCodigo, prodDescripcion, prodMarca, prodModelo, prodCategoria, prodCosto, prodPrecio, prodStock, prodStockMinimo, prodControlStock) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     
-    const params = [p.prodCodigo, p.prodDescripcion, p.prodMarca, p.prodModelo, p.prodCategoria, p.prodCosto, p.prodPrecio, p.prodStock, p.prodStockMinimo, p.prodControlStock ? 1 : 0];
+    const params = [p.sku, p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo, p.estado];
 
     db.run(sql, params, function(err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -23,9 +23,9 @@ exports.crearProducto = (req, res) => {
 exports.editarProducto = (req, res) => {
     const { id } = req.params;
     const p = req.body;
-    const sql = `UPDATE productos SET prodCodigo=?, prodDescripcion=?, prodMarca=?, prodModelo=?, prodCategoria=?, prodCosto=?, prodPrecio=?, prodStock=?, prodStockMinimo=?, prodControlStock=? WHERE id=?`;
+    const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=?, estado=?, WHERE id=?`;
     
-    const params = [p.prodCodigo, p.prodDescripcion, p.prodMarca, p.prodModelo, p.prodCategoria, p.prodCosto, p.prodPrecio, p.prodStock, p.prodStockMinimo, p.prodControlStock ? 1 : 0, id];
+    const params = [p.sku, p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo, p.estado, id];
 
     db.run(sql, params, function(err) {
         if (err) return res.status(500).json({ error: err.message });

@@ -11,16 +11,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        prodCodigo TEXT,
-        prodDescripcion TEXT NOT NULL,
-        prodMarca TEXT,
-        prodModelo TEXT,
-        prodCategoria TEXT,
-        prodCosto REAL,
-        prodPrecio REAL,
-        prodStock INTEGER,
-        prodStockMinimo INTEGER,
-        prodControlStock INTEGER
+        sku TEXT,
+        descripcion TEXT NOT NULL,
+        marca TEXT,
+        modelo TEXT,
+        categoria TEXT,
+        proveedor TEXT,
+        costo REAL,
+        precio_neto REAL,
+        iva REAL,
+        control_stock INTEGER,
+        stock INTEGER,
+        stock_minimo INTEGER,
+        estado INTEGER
     )`);
 });
 

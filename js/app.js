@@ -17,16 +17,20 @@ window.prepararEdicion = async (id) => {
     if (!p) return;
 
     // Llenamos el formulario con los datos guardados
-    document.getElementById("prodId").value = p.id;
-    document.getElementById("prodCodigo").value = p.prodCodigo;
-    document.getElementById("prodDescripcion").value = p.prodDescripcion;
-    document.getElementById("prodMarca").value = p.prodMarca;
-    document.getElementById("prodModelo").value = p.prodModelo;
-    document.getElementById("prodPrecio").value = p.prodPrecio;
-    document.getElementById("prodCosto").value = p.prodCosto;
-    document.getElementById("prodStock").value = p.prodStock;
-    document.getElementById("prodStockMinimo").value = p.prodStockMinimo;
-    document.getElementById("prodControlStock").checked = p.prodControlStock;
+    //document.getElementById("id").value = p.id;
+    document.getElementById("sku").value = p.sku;
+    document.getElementById("descripcion").value = p.descripcion;
+    document.getElementById("marca").value = p.marca;
+    document.getElementById("modelo").value = p.modelo;
+    document.getElementById("categoria").value = p.categoria;
+    document.getElementById("proveedor").value = p.proveedor;
+    document.getElementById("costo").value = p.costo;
+    document.getElementById("precio_neto").value = p.precio_neto;
+    document.getElementById("iva").value = p.iva;
+    document.getElementById("control_stock").checked = p.control_stock;
+    document.getElementById("stock").value = p.stock;
+    document.getElementById("stock_minimo").value = p.stock_minimo;
+    //document.getElementById("estado").checked = p.estado;
 
     // Abrimos el modal
     const modal = document.getElementById("modalProducto");
@@ -71,17 +75,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         // Capturamos los datos usando los IDs exactos de tu HTML
         const datos = {
-            prodCodigo: document.getElementById("prodCodigo").value,
-            prodDescripcion: document.getElementById("prodDescripcion").value,
-            prodMarca: document.getElementById("prodMarca").value,
-            prodModelo: document.getElementById("prodModelo").value,
-            prodProveedor: document.getElementById("prodProveedor").value,
-            prodCategoria: document.getElementById("prodCategoria").value,
-            prodCosto: Number(document.getElementById("prodCosto").value),
-            prodPrecio: Number(document.getElementById("prodPrecio").value),
-            prodStock: Number(document.getElementById("prodStock").value),
-            prodStockMinimo: Number(document.getElementById("prodStockMinimo").value),
-            prodControlStock: document.getElementById("prodControlStock").checked
+            sku: document.getElementById("sku").value,
+            descripcion: document.getElementById("descripcion").value,
+            marca: document.getElementById("marca").value,
+            modelo: document.getElementById("modelo").value,   
+            categoria: document.getElementById("categoria").value,
+            proveedor: document.getElementById("proveedor").value,
+            costo: Number(document.getElementById("costo").value),
+            precio_neto: Number(document.getElementById("precio_neto").value),
+            stock: Number(document.getElementById("stock").value),
+            stock_minimo: Number(document.getElementById("stock_minimo").value),
+            control_stock: document.getElementById("control_stock").checked
         };
 
         const exito = await guardarProductoAPI(datos, id || null);
