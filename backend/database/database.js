@@ -25,6 +25,19 @@ db.serialize(() => {
         stock_minimo INTEGER,
         estado INTEGER DEFAULT 1
     )`);
+    db.run(`CREATE TABLE IF NOT EXISTS clientes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT,
+        apellido TEXT NOT NULL,
+        telefono TEXT,
+        direccion TEXT,
+        dni TEXT UNIQUE NOT NULL,
+        cuit TEXT UNIQUE,
+        arca TEXT CHECK(arca IN ('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo')),
+        email TEXT,
+        fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP,
+        estado INTEGER DEFAULT 1
+    )`);
 });
 
 module.exports = db;
