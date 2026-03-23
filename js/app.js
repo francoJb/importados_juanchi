@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const id = document.getElementById("id").value;
         // Capturamos los datos usando los IDs exactos de tu HTML
         const datos = {
-            sku: document.getElementById("sku").value,
+            sku: document.getElementById("sku").value.trim(),
             descripcion: document.getElementById("descripcion").value,
             marca: document.getElementById("marca").value,
             modelo: document.getElementById("modelo").value,   
@@ -123,6 +123,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
         };
+        if (!datos.sku){
+            alert("⚠️ El SKU es obligatorio.");
+            document.getElementById("sku").focus();
+            return;
+        }
+        if (!datos.descripcion){
+            alert("⚠️ La descripcion es obligatoria.");
+            document.getElementById("descripcion").focus();
+            return;
+        }
+        
         const exito = await guardarProductoAPI(datos, id || null);
         if (exito) {
             alert("✅ Producto guardado correctamente");

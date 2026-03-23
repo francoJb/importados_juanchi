@@ -9,12 +9,25 @@ exports.obtenerProductos = (req, res) => {
 
 exports.crearProducto = (req, res) => {
     const p = req.body;
-    const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [p.sku, p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo];
-    db.run(sql, params, function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID, ...p });
+    if (!p.sku?.trim() || !p.descripcion){ //validacion campos vacios    
+        return res.status(400).json({ error: "SKU y Descripcion son obligatorios"})        
+    }
+    const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1"; //validacion de SKU 
+    db.get(checkSql, [p.sku.trim()], (err, row) => {
+        if (err) {
+            console.error("Error en checkSql:", err.message);
+            return res.status(500).json({error: err.message});
+        }
+        if (row){
+            return res.status(400).json({error: `El SKU "${p.sku}" ya esta registrado en otro producto`});
+        }
+        const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+        const params = [p.sku.trim(), p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo];
+        db.run(sql, params, function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.status(201).json({ id: this.lastID, ...p });
+        });
     });
 };
 
