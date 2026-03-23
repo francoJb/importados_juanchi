@@ -1,7 +1,7 @@
 const db = require('../database/database');
 
 exports.obtenerClientes = (req, res) => {
-    db.all("SELECT * FROM productos WHERE estado = 1", [], (err, rows) => {
+    db.all("SELECT * FROM clientes WHERE estado = 1", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -9,8 +9,8 @@ exports.obtenerClientes = (req, res) => {
 
 exports.crearCliente = (req, res) => {
     const p = req.body;
-    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta];
     db.run(sql, params, function(err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -21,7 +21,7 @@ exports.crearCliente = (req, res) => {
 exports.editarCliente = (req, res) => {
     const { id } = req.params;
     const p = req.body;
-    const sql = `UPDATE productos SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
+    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta ,id];
     db.run(sql, params, function(err) {
         if (err) return res.status(500).json({ error: err.message });

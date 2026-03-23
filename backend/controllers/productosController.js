@@ -43,7 +43,6 @@ exports.editarProducto = (req, res) => {
 };
 
 
-
 exports.eliminarProducto = (req, res) => {
     // 1. Obtenemos el ID que viene en la URL (ej: /api/productos/5)
     const { id } = req.params;

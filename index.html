@@ -36,7 +36,7 @@
             </div>
             <!-- Opciones del Menú -->
             <nav class="flex-1 p-4 space-y-2">
-                <a id="linkDashboard" href="#" class="flex items-center p-3 bg-naranja-500 text-white rounded-xl shadow-md">
+                <a id="linkDashboard" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
                     <span>📊 Dashboard</span>
                 </a>
                 <a id="linkClientes" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
@@ -69,7 +69,7 @@
             </div>
 
             <!-- SECCION CLIENTES (Oculta por defecto) -->
-            <div id="seccionClientes" class="hidden animate-fade-in">
+            <div id="seccionClientes" class="hidden">
                 <header class="mb-8 flex justify-between items-center">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Clientes</h1>
@@ -78,18 +78,20 @@
                         + Nuevo Cliente
                     </button>
                 </header>
+                 <div>
+                    <input type="text" id="buscarCliente" placeholder="Buscar por Nombre, apellido, DNI o CUIT..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
+                </div>
                 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-300 text-xs uppercase">
-                                <th class="p-4 font-semibold">ID</th>
-                                <th class="p-4 font-semibold">Nombre</th>
-                                <th class="p-4 font-semibold">Apellido</th>
-                                <th class="p-4 font-semibold">DNI</th>
-                                <th class="p-4 font-semibold">Dirección</th>
-                                <th class="p-4 font-semibold">Teléfono</th>
-                                <th class="p-4 font-semibold">Email</th>
-                                <th class="p-4 font-semibold text-right">Acciones</th>
+                            <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                                <th class="p-3 border text-center">Nombre</th>
+                                <th class="p-3 border text-center">Apellido</th>
+                                <th class="p-3 border text-center">DNI</th>
+                                <th class="p-3 border text-center">CUIT</th>
+                                <th class="p-3 border text-center">Teléfono</th>
+                                <th class="p-3 border text-center">Dirección</th>
+                                <th class="p-3 border text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaClientesBody" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
@@ -138,22 +140,24 @@
                 <div>
                     <input type="text" id="buscarProducto" placeholder="Buscar por Código, descripción, marca o categoría..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
                 </div>
-                <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
-                    <thead>
-                        <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
-                            <th class="p-3 border text-center">Código</th>
-                            <th class="p-3 border text-left">Descripción</th>
-                            <th class="p-3 border text-left">Marca</th>
-                            <th class="p-3 border text-left">Modelo</th>
-                            <th class="p-3 border text-left">Categoria</th>
-                            <th class="p-3 border text-right">Costo</th>
-                            <th class="p-3 border text-right">Precio</th>
-                            <th class="p-3 border text-center">Stock</th>
-                            <th class="p-3 border text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaProductosBody"></tbody>
-                </table>
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                                <th class="p-3 border text-center">Código</th>
+                                <th class="p-3 border text-center">Descripción</th>
+                                <th class="p-3 border text-center">Marca</th>
+                                <th class="p-3 border text-center">Modelo</th>
+                                <th class="p-3 border text-center">Categoria</th>
+                                <th class="p-3 border text-center">Costo</th>
+                                <th class="p-3 border text-center">Precio</th>
+                                <th class="p-3 border text-center">Stock</th>
+                                <th class="p-3 border text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductosBody"></tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- SECCION CONFIGURACION (Oculta por defecto) -->
@@ -352,7 +356,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-1">DNI</label>
-                        <input type="text" id="dni" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
+                        <input type="text" id="dni" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-1">Dirección</label>
@@ -368,6 +372,10 @@
                     <div>
                         <label class="block text-sm font-bold mb-1">Teléfono / WhatsApp</label>
                         <input type="text" id="telefono" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">CUIT / CUIL</label>
+                        <input type="text" id="cuit" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-1">Categoría ARCA (Ex-AFIP)</label>

@@ -11,10 +11,10 @@ const toggleModal = (id, mostrar = true) => {
     modal.classList.toggle("flex", mostrar);
 };
 
-// Función global para cargar datos en el modal
-window.prepararEdicion = async (id) => {
-    const productos = await fetchProductos();
-    const p = productos.find(prod => prod.id == id);
+
+window.prepararEdicionProducto = async (id) => { //carga datos modal productos
+    const producto = await fetchProductos();
+    const p = producto.find(prod => prod.id == id);
     if (!p) return;
     // Llenamos el formulario con los datos guardados
     document.getElementById("id").value = p.id;
@@ -34,6 +34,28 @@ window.prepararEdicion = async (id) => {
 
     // Abrimos el modal
     const modal = document.getElementById("modalProducto");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+};
+
+window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
+    const cliente = await fetchClientes();
+    const c = cliente.find(cli => cli.id == id);
+    if (!c) return;
+    // Llenamos el formulario con los datos guardados
+    document.getElementById("id").value = c.id;
+    document.getElementById("nombre").value = c.nombre;
+    document.getElementById("apellido").value = c.apellido;
+    document.getElementById("dni").value = c.dni;
+    document.getElementById("direccion").value = c.direccion;
+    document.getElementById("email").value = c.email;
+    document.getElementById("telefono").value = c.telefono;
+    document.getElementById("arca").value = c.arca;
+    document.getElementById("precio_neto").value = c.precio_neto;
+    //document.getElementById("fecha_alta").value = c.fecha_alta;
+
+    // Abrimos el modal
+    const modal = document.getElementById("modalCliente");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
 };
@@ -163,6 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             email: document.getElementById("email").value,   
             telefono: document.getElementById("telefono").value,
             arca: document.getElementById("arca").value,
+            cuit: document.getElementById("cuit").value
         };
         const exito = await guardarClienteAPI(datos, id || null);
         if (exito) {
@@ -179,7 +202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
 
-    // --- LÓGICA DEL BUSCADOR ---
+    // --- LÓGICA DEL BUSCADOR PRODUCTO---
     const inputBusqueda = document.getElementById("buscarProducto");
     inputBusqueda.oninput = async (e) => {
         const termino = e.target.value.toLowerCase();
@@ -193,7 +216,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
  
-    
     
 
     window.eliminarProducto = async (id, descripcion) => {
