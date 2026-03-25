@@ -35,7 +35,7 @@ db.serialize(() => {
         cuit TEXT UNIQUE,
         arca TEXT CHECK(arca IN ('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo')),
         email TEXT,
-        fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_alta TEXT
         estado INTEGER DEFAULT 1
     )`);
 });

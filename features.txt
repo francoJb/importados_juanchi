@@ -6,13 +6,26 @@ probar CRUD CLIEnTES
 
 MOdal PRODUCTOS
 <OK>-iniciar modal al editar producto en el medio de la pantalla, no en el costado 
+    -reparar (error cuando quiero eliminar un producto y el campo descripcion tiene " por ejemplo televisor 35") Uncaught SyntaxError: Invalid or unexpected token (at index.html:1:21)
+    -falta funcion clonarProducto()
+    -falta BALANCES
     -leyenda "costo sin impuestos" calculo de costo- % iva
     -en el modal agregar producto, el código ya existe, que tire alerta
     -proveedor, con menú desplegable, con opción de buscar o agregar si no existe
     -agregar LUPA y + en texbox PROVEEDORES, para buscar o agregar proveedor
     -agregar LUPA y + en texbox CATEGORIAS, para buscar o agregar CATEGORIAS
     -imagen en miñatura de producto
-
+    -agregar columbra en base de datos PRODUCTOS
+        -nro_motor TEXT
+        -nro_chasis TEXT
+        tambien interfaz en modal   
+            <div id="camposVehiculo" style="display: none;">
+                <label>Nro Chasis:</label>
+                <input type="text" id="nro_chasis">
+                
+                <label>Nro Motor:</label>
+                <input type="text" id="nro_motor">
+            </div>
 
 
 LOGIN

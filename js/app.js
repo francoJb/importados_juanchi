@@ -51,8 +51,7 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     document.getElementById("email").value = c.email;
     document.getElementById("telefono").value = c.telefono;
     document.getElementById("arca").value = c.arca;
-    document.getElementById("precio_neto").value = c.precio_neto;
-    //document.getElementById("fecha_alta").value = c.fecha_alta;
+    document.getElementById("fecha_alta").value = c.fecha_alta;
 
     // Abrimos el modal
     const modal = document.getElementById("modalCliente");
@@ -180,12 +179,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const datos = {
             nombre: document.getElementById("nombre").value,
             apellido: document.getElementById("apellido").value,
-            dni: document.getElementById("dni").value,
-            direccion: document.getElementById("direccion").value,
-            email: document.getElementById("email").value,   
             telefono: document.getElementById("telefono").value,
+            direccion: document.getElementById("direccion").value,
+            dni: document.getElementById("dni").value,
+            cuit: document.getElementById("cuit").value,
             arca: document.getElementById("arca").value,
-            cuit: document.getElementById("cuit").value
+            email: document.getElementById("email").value,
+            fecha_alta: document.getElementById("fecha_alta").value
+
         };
         const exito = await guardarClienteAPI(datos, id || null);
         if (exito) {
@@ -218,28 +219,28 @@ document.addEventListener("DOMContentLoaded", async () => {
  
     
 
-    window.eliminarProducto = async (id, descripcion) => {
-        // 1. El cartel de confirmación que pediste
-        const rta = confirm(`¿Estás seguro de que querés eliminar "${descripcion}"?`);
-        if (rta) {
-            try {
-                // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-                const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
-                    method: 'DELETE' // El método que definiste en tus rutas
-                });
-                if (response.ok) {
-                    alert("Producto eliminado con éxito.");
-                    // 3. Recargamos la lista para que el producto "desaparezca"
-                    const productosActualizados = await fetchProductos();
-                    dibujarProductos(productosActualizados);
-                } else {
-                    alert("No se pudo eliminar el producto.");
-                }
-            } catch (error) {
-                console.error("Error en la conexión:", error);
+    window.eliminarProducto = async (id, sku) => {
+    // 1. El cartel de confirmación
+    const rta = confirm(`¿Estás seguro de que querés eliminar el producto con código "${sku}"?`);
+    if (rta) {
+        try {
+            // 2. Avisamos al Backend
+            const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
+                method: 'DELETE' 
+            });
+            if (response.ok) {
+                alert("Producto eliminado con éxito.");
+                // 3. Recargamos la lista
+                const productosActualizados = await fetchProductos();
+                dibujarProductos(productosActualizados);
+            } else {
+                alert("No se pudo eliminar el producto.");
             }
+        } catch (error) {
+            console.error("Error en la conexión:", error);
         }
-    };
+    }
+};
 
     window.eliminarCliente = async (id, nombre) => {
         // 1. El cartel de confirmación
