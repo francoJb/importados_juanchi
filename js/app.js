@@ -43,7 +43,7 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     const c = cliente.find(cli => cli.id == id);
     if (!c) return;
     // Llenamos el formulario con los datos guardados
-    document.getElementById("id").value = c.id;
+    document.getElementById("clienteId").value = c.id;
     document.getElementById("nombre").value = c.nombre;
     document.getElementById("apellido").value = c.apellido;
     document.getElementById("dni").value = c.dni;
@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const formCliente = document.getElementById("formCliente");
     formCliente.onsubmit = async (e) => {
         e.preventDefault();
-        const id = document.getElementById("id").value;
+        const id = document.getElementById("clienteId").value;
         // Capturamos los datos usando los IDs exactos de tu HTML
         const datos = {
             nombre: document.getElementById("nombre").value,
@@ -205,16 +205,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- LÓGICA DEL BUSCADOR PRODUCTO---
     const inputBusqueda = document.getElementById("buscarProducto");
-    inputBusqueda.oninput = async (e) => {
-        const termino = e.target.value.toLowerCase();
-        const todosLosProductos = await fetchProductos(); // Traemos la lista fresca
-        const filtrados = todosLosProductos.filter(p => 
-            p.prodDescripcion.toLowerCase().includes(termino) || 
-            p.prodCodigo.toLowerCase().includes(termino) ||
-            p.prodMarca.toLowerCase().includes(termino)
-        );
-        dibujarProductos(filtrados); // Volvemos a dibujar solo los que coinciden
-    };
+    if (inputBusqueda) {
+        inputBusqueda.oninput = async (e) => {
+            const termino = e.target.value.toLowerCase();
+            const todosLosProductos = await fetchProductos();
+            const filtrados = todosLosProductos.filter(p => 
+                (p.descripcion || "").toLowerCase().includes(termino) || 
+                (p.sku || "").toLowerCase().includes(termino) ||
+                (p.marca || "").toLowerCase().includes(termino)
+            );
+            dibujarProductos(filtrados);
+        };
+    }
 
  
     

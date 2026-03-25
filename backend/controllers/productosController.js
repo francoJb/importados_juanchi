@@ -9,7 +9,7 @@ exports.obtenerProductos = (req, res) => {
 
 exports.crearProducto = (req, res) => {
     const p = req.body;
-    if (!p.sku?.trim() || !p.descripcion){ //validacion campos vacios    
+    if (!p.sku?.trim() || !p.descripcion?.trim()){ //validacion campos vacios    
         return res.status(400).json({ error: "SKU y Descripcion son obligatorios"})        
     }
     const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1"; //validacion de SKU 
@@ -26,7 +26,7 @@ exports.crearProducto = (req, res) => {
         const params = [p.sku.trim(), p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo];
         db.run(sql, params, function(err) {
             if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: this.lastID, ...p });
+            res.status(201).json({ id: this.lastID, ...p, control_stock: p.control_stock ? 1 : 0});
         });
     });
 };
