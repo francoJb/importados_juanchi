@@ -105,7 +105,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
                         </div>
-                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        <button id="btn-nueva-venta" class="bg-blue-600 text-white px-4 py-2 rounded">
                             + Nueva Venta
                         </button>
                     </header>
@@ -179,7 +179,7 @@
             <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
                 <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
                     <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
-                    <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">✕</button>
+                    <button id="btnCerrarModalVenta" class="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
                 <form id="formVenta" autocomplete="off" class="p-6 space-y-4">
                     <div>
@@ -297,8 +297,14 @@
                                 <option value="auto">Auto</option>
                             </select>
                     <div id="camposVehiculo" style="display:none;">
-                        <input type="text" id="nro_motor" placeholder="N° Motor">
-                        <input type="text" id="nro_chasis" placeholder="N° Chasis">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label class="block text-sm font-bold" style="margin-bottom: 0;">Nº Motor</label>
+                            <input type="text" id="nro_motor" placeholder="Ingresar Nº">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label class="block text-sm font-bold" style="margin-bottom: 0;">Nº Chasis</label>
+                            <input type="text" id="nro_chasis" placeholder="Ingresar Nº">
+                        </div>
                     </div>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
@@ -427,17 +433,54 @@
         
         
         <!-- MODAL DETALLE VENTA -->
-        <div id="modalDetalleVenta" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-[500px]">
-                <div class="flex justify-between mb-4">
-                    <h2 class="text-lg font-bold">Detalle de Venta</h2>
-                    <button id="cerrarDetalleVenta" class="text-red-500">✕</button>
+        <div id="modalVenta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <h2 class="text-2xl font-bold mb-4">Nueva Venta</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block font-semibold">Cliente:</label>
+                        <select id="venta-cliente" class="w-full border p-2 rounded"></select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold">Fecha:</label>
+                        <input type="date" id="venta-fecha" class="w-full border p-2 rounded">
+                    </div>
                 </div>
-                <div id="detalleVenta"></div>
+                <hr class="my-4">
+                <div class="flex gap-2 mb-4">
+                    <select id="venta-producto-select" class="flex-1 border p-2 rounded"></select>
+                    <input type="number" id="venta-cantidad" value="1" min="1" class="w-20 border p-2 rounded">
+                    <button id="btn-agregar-item" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        + Agregar
+                    </button>
+                </div>
+                <table class="w-full text-left border-collapse mb-4">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2">Producto</th>
+                            <th class="p-2">Cant.</th>
+                            <th class="p-2">Precio</th>
+                            <th class="p-2">Subtotal</th>
+                            <th class="p-2">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-items-venta">
+                        </tbody>
+                </table>
+                <div class="text-right text-2xl font-bold mb-6">
+                    Total: $<span id="venta-total">0.00</span>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="cerrarModalVenta()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
+                    <button id="btn-confirmar-venta" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                        Confirmar Venta
+                    </button>
+                </div>
             </div>
         </div>
-        <!-- Scripts de lógica -->
 
+
+        <!-- Scripts de lógica -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="js/app.js" type="module"></script>
 

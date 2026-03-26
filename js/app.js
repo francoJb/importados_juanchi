@@ -132,6 +132,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
+    // 3. ABRIR/CERRAR MODAL VENTAS
+    document.getElementById("btn-nueva-venta").onclick = () => {
+        document.getElementById("formVenta").reset();
+        document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
+        toggleModal("modalVenta", true);
+    };
+    document.getElementById("btnCerrarModalVenta").onclick = () => toggleModal("modalVenta", false);
+    
+
     const categoriaSelect = document.getElementById("categoria");
     const camposVehiculo = document.getElementById("camposVehiculo");
     const inputMotor = document.getElementById("nro_motor");
@@ -199,7 +208,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             dibujarProductos(productosActualizados);
         } else {
             alert("❌ Error al guardar el producto");
-        }
+        }// 3. ABRIR/CERRAR MODAL CLIENTE
+    document.getElementById("btnAbrirModalCliente").onclick = () => {
+        document.getElementById("formCliente").reset();
+        document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
+        toggleModal("modalCliente", true);
+    };
+    document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
     };
 
 
@@ -252,9 +267,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
     }
 
- 
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-eliminar");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const desc = btn.dataset.desc;
+        eliminarProducto(id, desc);
+    });
     
-
     window.eliminarProducto = async (id, sku) => {
     // 1. El cartel de confirmación
     const rta = confirm(`¿Estás seguro de que querés eliminar el producto con código "${sku}"?`);
@@ -278,17 +298,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    document.addEventListener("click", (e) => {
-        const btn = e.target.closest(".btn-eliminar");
+    document.addEventListener("click", (ec) => {
+        const btn = ec.target.closest(".btn-eliminarCli");
         if (!btn) return;
         const id = btn.dataset.id;
         const desc = btn.dataset.desc;
-        eliminarProducto(id, desc);
+        eliminarCliente(id, desc);
     });
 
     window.eliminarCliente = async (id, nombre) => {
         // 1. El cartel de confirmación
-        const rta = confirm(`¿Estás seguro de que querés eliminar "${nombre}"?, esa accion solo desactivara el cliente`);
+        const rta = confirm(`¿Estás seguro de que querés eliminar a "${nombre}"?, esa accion solo desactivara el cliente`);
         if (rta) {
             try {
                 // 2. Avisamos al Backend (Controller) que cambie el estado a 0
@@ -309,6 +329,52 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
+    let carritoVenta = [];
+    // Función para abrir y resetear el modal
+    window.abrirModalVenta = async () => {
+        document.getElementById("venta-fecha").valueAsDate = new Date();
+        carritoVenta = [];
+        renderizarCarrito();
+        
+        // Cargar select de clientes y productos (puedes reusar tus fetch)
+        const clientes = await fetchClientes(); // asumiendo que tienes esta función
+        const productos = await fetchProductos();
+        
+        // Llenar los selects...
+        const modal = document.getElementById("modalVenta");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+    };
+
+    // Agregar producto al carrito local
+    document.getElementById("btn-agregar-item").onclick = () => {
+        const select = document.getElementById("venta-producto-select");
+        const cantidad = parseInt(document.getElementById("venta-cantidad").value);
+        
+        // Lógica para buscar el producto elegido y hacer push a carritoVenta
+        // ... (después llamas a renderizarCarrito())
+    };
+
+    function renderizarCarrito() {
+        const tabla = document.getElementById("lista-items-venta");
+        tabla.innerHTML = "";
+        let total = 0;
+        
+        carritoVenta.forEach((item, index) => {
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            tabla.innerHTML += `
+                <tr>
+                    <td class="p-2">${item.descripcion}</td>
+                    <td class="p-2">${item.cantidad}</td>
+                    <td class="p-2">$${item.precio}</td>
+                    <td class="p-2">$${subtotal.toFixed(2)}</td>
+                    <td class="p-2"><button onclick="quitarItem(${index})" class="text-red-500">❌</button></td>
+                </tr>
+            `;
+        });
+        document.getElementById("venta-total").innerText = total.toFixed(2);
+    }
 
 
     // 5. MODO OSCURO (Básico para que no te moleste la vista)
