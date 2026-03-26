@@ -1,438 +1,446 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JR Import - Sistema de Ventas</title>
-    <!-- Importamos Tailwind CSS desde su CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script>
-        // Configuración para que Tailwind reconozca el modo oscuro por clase
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        naranja: {
-                            500: '#f97316',
-                            600: '#ea580c',
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>JR Import - Sistema de Ventas</title>
+        <!-- Importamos Tailwind CSS desde su CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        
+        <script>
+            // Configuración para que Tailwind reconozca el modo oscuro por clase
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            naranja: {
+                                500: '#f97316',
+                                600: '#ea580c',
+                            }
                         }
                     }
                 }
             }
-        }
-    </script>
-</head>
-<body class="bg-gray-100 dark:bg-slate-900 text-gray-800 dark:text-white transition-colors duration-300">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Aquí irán el Sidebar y el Contenido -->
-        <!-- Sidebar (Menú Lateral) -->
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
-            <!-- Logo de JR Import -->
-            <div class="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700">
-                <div class="w-8 h-8 bg-naranja-500 rounded-lg flex items-center justify-center text-white font-bold">JR</div>
-                  <span class="text-xl font-bold tracking-tight text-naranja-600">JR Import</span>
-            </div>
-            <!-- Opciones del Menú -->
-            <nav class="flex-1 p-4 space-y-2">
-                <a id="linkDashboard" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                    <span>📊 Dashboard</span>
-                </a>
-                <a id="linkClientes" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                    <span>👥 Clientes</span>
-                </a>
-                <a id="linkVentas" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                    <span>🛒 Ventas</span>
-                </a>
-                <a id="linkProductos" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                    <span>📦 Inventario</span>
-                </a>
-                <a id="linkConfig" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                    <span>⚙️ Configuración</span>
-                </a>
-            </nav>
-            <!-- Interruptor de Modo Oscuro -->
-            <div class="p-4 border-t border-gray-100 dark:border-slate-700">
-                <button id="btnDarkMode" class="w-full py-2 px-4 bg-gray-200 dark:bg-slate-700 rounded-lg text-sm font-medium">
-                    🌙 Cambiar Modo
-                </button>
-            </div>
-        </aside>
-        <!-- Área Principal -->
-        <main class="flex-1 overflow-y-auto p-8">
-
-            <!-- SECCIÓN DASHBOARD (Oculta por defecto) -->
-            <div id="seccionDashboard">
-                <header class="mb-8 flex justify-between items-center">
-                </header>
-            </div>
-
-            <!-- SECCION CLIENTES (Oculta por defecto) -->
-            <div id="seccionClientes" class="hidden">
-                <header class="mb-8 flex justify-between items-center">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Clientes</h1>
-                    </div>
-                    <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
-                        + Nuevo Cliente
+        </script>
+    </head>
+    <body class="bg-gray-100 dark:bg-slate-900 text-gray-800 dark:text-white transition-colors duration-300">
+        <div class="flex h-screen overflow-hidden">
+            <!-- Aquí irán el Sidebar y el Contenido -->
+            <!-- Sidebar (Menú Lateral) -->
+            <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
+                <!-- Logo de JR Import -->
+                <div class="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700">
+                    <div class="w-8 h-8 bg-naranja-500 rounded-lg flex items-center justify-center text-white font-bold">JR</div>
+                    <span class="text-xl font-bold tracking-tight text-naranja-600">JR Import</span>
+                </div>
+                <!-- Opciones del Menú -->
+                <nav class="flex-1 p-4 space-y-2">
+                    <a id="linkDashboard" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                        <span>📊 Dashboard</span>
+                    </a>
+                    <a id="linkClientes" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                        <span>👥 Clientes</span>
+                    </a>
+                    <a id="linkVentas" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                        <span>🛒 Ventas</span>
+                    </a>
+                    <a id="linkProductos" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                        <span>📦 Productos</span>
+                    </a>
+                    <a id="linkConfig" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                        <span>⚙️ Configuración</span>
+                    </a>
+                </nav>
+                <!-- Interruptor de Modo Oscuro -->
+                <div class="p-4 border-t border-gray-100 dark:border-slate-700">
+                    <button id="btnDarkMode" class="w-full py-2 px-4 bg-gray-200 dark:bg-slate-700 rounded-lg text-sm font-medium">
+                        🌙 Cambiar Modo
                     </button>
-                </header>
-                 <div>
-                    <input type="text" id="buscarCliente" placeholder="Buscar por Nombre, apellido, DNI o CUIT..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
                 </div>
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
-                                <th class="p-3 border text-center">Nombre</th>
-                                <th class="p-3 border text-center">Apellido</th>
-                                <th class="p-3 border text-center">DNI</th>
-                                <th class="p-3 border text-center">CUIT</th>
-                                <th class="p-3 border text-center">Teléfono</th>
-                                <th class="p-3 border text-center">Dirección</th>
-                                <th class="p-3 border text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaClientesBody" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
-                    </table>
-                </div>      
-            </div>
+            </aside>
+            <!-- Área Principal -->
+            <main class="flex-1 overflow-y-auto p-8">
 
-            <!-- SECCION VENTAS (Oculta por defecto) -->
-            <div id="seccionVentas" class="hidden">
-                <header class="mb-8 flex justify-between items-center">
+                <!-- SECCIÓN DASHBOARD (Oculta por defecto) -->
+                <div id="seccionDashboard">
+                    <header class="mb-8 flex justify-between items-center">
+                    </header>
+                </div>
+
+                <!-- SECCION CLIENTES (Oculta por defecto) -->
+                <div id="seccionClientes" class="hidden">
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Clientes</h1>
+                        </div>
+                        <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                            + Nuevo Cliente
+                        </button>
+                    </header>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
+                        <input type="text" id="buscarCliente" placeholder="Buscar por Nombre, apellido, DNI o CUIT..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
                     </div>
-                    <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
-                        + Nueva Venta
-                    </button>
-                </header>
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 dark:bg-slate-700 text-xs uppercase">
-                                <th class="p-4">N° Venta</th>
-                                <th class="p-4">Fecha</th>
-                                <th class="p-4 text-right">Total Venta</th>
-                                <th class="p-4 text-right">Saldo</th>
-                                <th class="p-4 text-center">Entregado</th>
-                                <th class="p-4">Cliente</th>
-                                <th class="p-4 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaVentasBody"></tbody>
-                    </table>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                                    <th class="p-3 border text-center">Nombre</th>
+                                    <th class="p-3 border text-center">Apellido</th>
+                                    <th class="p-3 border text-center">DNI</th>
+                                    <th class="p-3 border text-center">CUIT</th>
+                                    <th class="p-3 border text-center">Teléfono</th>
+                                    <th class="p-3 border text-center">Dirección</th>
+                                    <th class="p-3 border text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaClientesBody" class="divide-y divide-gray-100 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>      
                 </div>
-            </div>
 
-            <!-- SECCION INVENTARIO por defecto) -->
-            <section id="seccionProductos" class="hidden">
-                <header class="mb-8 flex justify-between items-center">
+                <!-- SECCION VENTAS (Oculta por defecto) -->
+                <div id="seccionVentas" class="hidden">
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
+                        </div>
+                        <button id="btnAbrirModal" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                            + Nueva Venta
+                        </button>
+                    </header>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 dark:bg-slate-700 text-xs uppercase">
+                                    <th class="p-4">N° Venta</th>
+                                    <th class="p-4">Fecha</th>
+                                    <th class="p-4 text-right">Total Venta</th>
+                                    <th class="p-4 text-right">Saldo</th>
+                                    <th class="p-4 text-center">Entregado</th>
+                                    <th class="p-4">Cliente</th>
+                                    <th class="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCION INVENTARIO por defecto) -->
+                <section id="seccionProductos" class="hidden">
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Inventario</h1>
+                        </div>
+                        <button id="btnAbrirModalProducto" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                            + Nuevo Producto
+                        </button>
+                    </header>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Inventario</h1>
+                        <input type="text" id="buscarProducto" placeholder="Buscar por Código, descripción, marca o categoría..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
                     </div>
-                    <button id="btnAbrirModalProducto" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
-                        + Nuevo Producto
-                    </button>
-                </header>
-                <div>
-                    <input type="text" id="buscarProducto" placeholder="Buscar por Código, descripción, marca o categoría..." class=" w-full border p-2 rounded-xl dark:bg-slate-700">
-                </div>
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                    <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
-                        <thead>
-                            <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
-                                <th class="p-3 border text-center">Código</th>
-                                <th class="p-3 border text-center">Descripción</th>
-                                <th class="p-3 border text-center">Marca</th>
-                                <th class="p-3 border text-center">Modelo</th>
-                                <th class="p-3 border text-center">Categoria</th>
-                                <th class="p-3 border text-center">Costo</th>
-                                <th class="p-3 border text-center">Precio</th>
-                                <th class="p-3 border text-center">Stock</th>
-                                <th class="p-3 border text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaProductosBody"></tbody>
-                    </table>
-                </div>
-            </section>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full border-collapse border border-gray-200 dark:border-slate-700">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                                    <th class="p-3 border text-center">Código</th>
+                                    <th class="p-3 border text-center">Descripción</th>
+                                    <th class="p-3 border text-center">Marca</th>
+                                    <th class="p-3 border text-center">Modelo</th>
+                                    <th class="p-3 border text-center">Categoria</th>
+                                    <th class="p-3 border text-center">Costo</th>
+                                    <th class="p-3 border text-center">Precio</th>
+                                    <th class="p-3 border text-center">Stock</th>
+                                    <th class="p-3 border text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProductosBody"></tbody>
+                        </table>
+                    </div>
+                </section>
 
-            <!-- SECCION CONFIGURACION (Oculta por defecto) -->
-            <div id="seccionConfig" class="hidden p-6">
-                <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Panel de Control</h1>
+                <!-- SECCION CONFIGURACION (Oculta por defecto) -->
+                <div id="seccionConfig" class="hidden p-6">
+                    <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Panel de Control</h1>
+                    
+                    <div class="flex gap-6">
+                        <!-- Sub-menú de Configuración -->
+                        <aside class="w-48 space-y-2">
+                            <button class="w-full text-left p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 cursor-not-allowed" title="Próximamente">👤 Usuarios (Pronto)</button>
+                        </aside>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- MODAL VENTA-->
+        <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
+                    <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+                <form id="formVenta" autocomplete="off" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Cliente</label>
+                        <input type="text" id="inputCliente" placeholder="Consumidor Final" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Catálogo</label>
+                        <input type="text" id="inputCatalogo" placeholder="Lista_1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                    </div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
+                    <input id="inputCodigoBarras" class="border p-2 rounded" placeholder="Escanear producto"/>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Producto</label>
+                        <input id="inputProducto" type="text" placeholder="Buscar producto..." class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                        <div id="sugerenciasProductos" class="absolute bg-white dark:bg-slate-700 border w-full rounded-lg shadow hidden z-50"></div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-1">Cantidad</label>
+                            <input type="number" id="inputCantidad" value="1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-1">Precio (ARS)</label>
+                            <input type="number" id="inputPrecio" readonly placeholder="0.00" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">
+                        Agregar Producto
+                    </button>
+                    <div class="mt-4">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left border-b">
+                                    <th class="py-2">Producto</th>
+                                    <th class="py-2 text-center">Cant.</th>
+                                    <th class="py-2 text-right">Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaCarrito"></tbody>
+                        </table>
+                        <div class="flex justify-end mt-4 text-lg font-bold">
+                            Total: <span id="totalVenta" class="ml-2">$0</span>
+                        </div>
+                    </div>
+                    <label class="text-xs text-gray-500">Forma de pago</label>
+                    <select id="formaPago" class="border p-2 rounded">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="qr">QR</option>
+                    </select>
+                    <label class="text-xs text-gray-500">Cuotas</label>
+                    <select id="cuotas" class="border p-2 rounded">
+                        <option value="1">1 cuota</option>
+                        <option value="3">3 cuotas</option>
+                        <option value="6">6 cuotas</option>
+                        <option value="12">12 cuotas</option>
+                    </select>
+                    <p id="valorCuota" class="text-sm font-semibold mt-2"></p>
+                    <button type="button" id="btnConfirmar" class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
+                        Confirmar Venta
+                    </button>
+                </form>
                 
-                <div class="flex gap-6">
-                    <!-- Sub-menú de Configuración -->
-                    <aside class="w-48 space-y-2">
-                        <button class="w-full text-left p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 cursor-not-allowed" title="Próximamente">👤 Usuarios (Pronto)</button>
-                    </aside>
-                </div>
             </div>
-        </main>
-    </div>
-    
-    <!-- MODAL VENTA-->
-    <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
-                <button id="btnCerrarModal" class="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
-            <form id="formVenta" autocomplete="off" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Cliente</label>
-                    <input type="text" id="inputCliente" placeholder="Consumidor Final" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                </div>
-                 <div>
-                    <label class="block text-sm font-medium mb-1">Catálogo</label>
-                    <input type="text" id="inputCatalogo" placeholder="Lista_1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                </div>
-                <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
-                <input id="inputCodigoBarras" class="border p-2 rounded" placeholder="Escanear producto"/>
-                 <div>
-                    <label class="block text-sm font-medium mb-1">Producto</label>
-                    <input id="inputProducto" type="text" placeholder="Buscar producto..." class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                    <div id="sugerenciasProductos" class="absolute bg-white dark:bg-slate-700 border w-full rounded-lg shadow hidden z-50"></div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium mb-1">Cantidad</label>
-                        <input type="number" id="inputCantidad" value="1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                    </div>
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium mb-1">Precio (ARS)</label>
-                        <input type="number" id="inputPrecio" readonly placeholder="0.00" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">
-                    Agregar Producto
-                </button>
-                <div class="mt-4">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left border-b">
-                                <th class="py-2">Producto</th>
-                                <th class="py-2 text-center">Cant.</th>
-                                <th class="py-2 text-right">Precio</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaCarrito"></tbody>
-                    </table>
-                    <div class="flex justify-end mt-4 text-lg font-bold">
-                        Total: <span id="totalVenta" class="ml-2">$0</span>
-                    </div>
-                </div>
-                <label class="text-xs text-gray-500">Forma de pago</label>
-                <select id="formaPago" class="border p-2 rounded">
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="tarjeta">Tarjeta</option>
-                    <option value="qr">QR</option>
-                </select>
-                <label class="text-xs text-gray-500">Cuotas</label>
-                <select id="cuotas" class="border p-2 rounded">
-                    <option value="1">1 cuota</option>
-                    <option value="3">3 cuotas</option>
-                    <option value="6">6 cuotas</option>
-                    <option value="12">12 cuotas</option>
-                </select>
-                <p id="valorCuota" class="text-sm font-semibold mt-2"></p>
-                <button type="button" id="btnConfirmar" class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
-                    Confirmar Venta
-                </button>
-            </form>
-            
         </div>
-    </div>
 
-    <!-- MODAL PRODUCTO -->
-    <div id="modalProducto" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
-            <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
-                <h2 class="text-xl font-bold uppercase tracking-wider">Gestión de Producto</h2>
-                <button id="btnCerrarModalProducto" class="text-2xl hover:scale-110 transition-transform">❌</button>
-            </header>
-            <form id="formProducto" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
-                <input type="hidden" id="id">
-                <!-- Columna Izquierda -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold mb-1 italic">Código / SKU</label>
-                        <input type="text" id="sku" required placeholder="Ingresa el codigo de tu producto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Descripción del Producto</label>
-                        <input type="text" id="descripcion" required placeholder="Ingresá la descripcion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
+        <!-- MODAL PRODUCTO -->
+        <div id="modalProducto" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+                <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+                    <h2 class="text-xl font-bold uppercase tracking-wider">Gestión de Producto</h2>
+                    <button id="btnCerrarModalProducto" class="text-2xl hover:scale-110 transition-transform">❌</button>
+                </header>
+                <form id="formProducto" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
+                    <input type="hidden" id="id">
+                    <!-- Columna Izquierda -->
+                    <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-bold mb-1">Marca</label>
-                            <input type="text" id="marca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            <label class="block text-sm font-bold mb-1 italic">Código / SKU</label>
+                            <input type="text" id="sku" required placeholder="Ingresa el codigo de tu producto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold mb-1">Modelo</label>
-                            <input type="text" id="modelo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            <label class="block text-sm font-bold mb-1">Descripción del Producto</label>
+                            <input type="text" id="descripcion" required placeholder="Ingresá la descripcion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Proveedor</label>
-                        <input type="text" id="proveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="Nombre del proveedor">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Imagen (URL)</label>
-                        <input disabled type="text" id="prodImagen" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="https://link-de-la-foto.jpg">
-                    </div>
-                </div>
-                <!-- Columna Derecha -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Categoría</label>
-                        <input type="text" id="categoria" list="listaCategorias" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        <datalist id="listaCategorias"></datalist>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-sm font-bold mb-1">Costo</label>
-                            <input type="number" id="costo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-1">IVA %</label>
-                            <input type="number" id="iva" value="21" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-1">Venta</label>
-                            <input type="number" id="precio_neto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-bold text-naranja-600 transition-colors">       
-                            <p id="avisoMargen" class="text-[10px] text-red-500 font-bold mt-1 leading-tight hidden">
-                                ⚠️ PRECIO MENOR AL COSTO
-                            </p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-sm font-bold mb-1">Stock Actual</label>
-                            <input type="number" id="stock" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-1">Stock Mínimo</label>
-                            <input type="number" id="stock_minimo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                    </div>
-                    <!-- Checkbox de Control de Stock -->
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-600">
-                        <input type="checkbox" id="control_stock" class="w-5 h-5 accent-naranja-500" checked>
-                        <label for="control_stock" class="text-sm font-bold cursor-pointer">Activar Control de Stock</label>
-                    </div>
-                    <div class="pt-4 flex gap-2">
-                        <button type="submit" class="flex-1 bg-naranja-500 text-white font-bold py-3 rounded-xl hover:bg-naranja-600 shadow-lg transition-all">💾 GUARDAR PRODUCTO</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- MODAL CLIENTE -->
-    <div id="modalCliente" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
-            <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
-                <h2 class="text-xl font-bold uppercase tracking-wider">Ficha de Cliente</h2>
-                <button id="btnCerrarModalCliente" class="text-2xl hover:scale-110 transition-transform">❌</button>
-            </header>
-            <form id="formCliente" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
-                <input type="hidden" id="clienteId">
-                <!-- Columna Izquierda: Datos Personales -->
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-sm font-bold mb-1 italic">Nombre</label>
-                            <input type="text" id="nombre" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-1 italic">Apellido</label>
-                            <input type="text" id="apellido" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">DNI</label>
-                        <input type="text" id="dni" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Dirección</label>
-                        <input type="text" id="direccion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Email</label>
-                        <input type="email" id="email" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                    </div>
-                </div>
-                <!-- Columna Derecha: Datos Comerciales -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Teléfono / WhatsApp</label>
-                        <input type="text" id="telefono" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">CUIT / CUIL</label>
-                        <input type="text" id="cuit" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Categoría ARCA (Ex-AFIP)</label>
-                        <select id="arca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                            <option value="Consumidor Final">Consumidor Final</option>
-                            <option value="Monotributista">Monotributista</option>
-                            <option value="Responsable Inscripto">Responsable Inscripto</option>
-                            <option value="Exento">Exento</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Fecha de alta</label>
-                        <input type="text" id="fecha_alta" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="DD/MM/AAAA">
-                    </div>
-                    <!-- Sección Cuenta Corriente -->
-                    <div class="p-4 bg-orange-50 dark:bg-slate-900 rounded-xl border border-orange-200 dark:border-slate-700">
-                        <h3 class="text-sm font-bold mb-3 text-orange-700 dark:text-orange-400 uppercase tracking-tighter">💰 Cuenta Corriente</h3>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <span class="text-[10px] font-bold block uppercase opacity-50">Saldo Actual</span>
-                                <span id="clienteSaldo" class="text-2xl font-black text-red-600">$ 0.00</span>
+                                <label class="block text-sm font-bold mb-1">Marca</label>
+                                <input type="text" id="marca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                             </div>
-                            <!-- Botón de Cobro Rápido -->
-                            <button type="button" id="btnRegistrarCobro" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-md transition-all">
-                                💵 COBRAR
-                            </button>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Modelo</label>
+                                <input type="text" id="modelo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Proveedor</label>
+                            <input type="text" id="proveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="Nombre del proveedor">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Imagen (URL)</label>
+                            <input disabled type="text" id="prodImagen" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="https://link-de-la-foto.jpg">
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" id="clienteHabilitarCC" class="w-4 h-4 accent-orange-500" checked>
-                        <label for="clienteHabilitarCC" class="text-xs font-bold cursor-pointer">Habilitar crédito</label>
+                    <!-- Columna Derecha -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Categoría</label>
+                            <select id="categoria">
+                                <option value="">Seleccione</option>
+                                <option value="electrodomestico">Electrodoméstico</option>
+                                <option value="moto">Moto</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                    <div id="camposVehiculo" style="display:none;">
+                        <input type="text" id="nro_motor" placeholder="N° Motor">
+                        <input type="text" id="nro_chasis" placeholder="N° Chasis">
                     </div>
-                    <div class="pt-4 flex gap-2">
-                        <button type="submit" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 shadow-lg transition-all">💾 GUARDAR CLIENTE</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Costo</label>
+                                <input type="number" id="costo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">IVA %</label>
+                                <input type="number" id="iva" value="21" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Venta</label>
+                                <input type="number" id="precio_neto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-bold text-naranja-600 transition-colors">       
+                                <p id="avisoMargen" class="text-[10px] text-red-500 font-bold mt-1 leading-tight hidden">
+                                    ⚠️ PRECIO MENOR AL COSTO
+                                </p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Stock Actual</label>
+                                <input type="number" id="stock" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Stock Mínimo</label>
+                                <input type="number" id="stock_minimo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                        </div>
+                        <!-- Checkbox de Control de Stock -->
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-600">
+                            <input type="checkbox" id="control_stock" class="w-5 h-5 accent-naranja-500" checked>
+                            <label for="control_stock" class="text-sm font-bold cursor-pointer">Activar Control de Stock</label>
+                        </div>
+                        <div class="pt-4 flex gap-2">
+                            <button type="submit" class="flex-1 bg-naranja-500 text-white font-bold py-3 rounded-xl hover:bg-naranja-600 shadow-lg transition-all">💾 GUARDAR PRODUCTO</button>
+                        </div>
                     </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    
-    
-    <!-- MODAL DETALLE VENTA -->
-    <div id="modalDetalleVenta" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-[500px]">
-            <div class="flex justify-between mb-4">
-                <h2 class="text-lg font-bold">Detalle de Venta</h2>
-                <button id="cerrarDetalleVenta" class="text-red-500">✕</button>
+                </form>
             </div>
-            <div id="detalleVenta"></div>
         </div>
-    </div>
-    <!-- Scripts de lógica -->
+        
+        <!-- MODAL CLIENTE -->
+        <div id="modalCliente" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+                <header class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+                    <h2 class="text-xl font-bold uppercase tracking-wider">Ficha de Cliente</h2>
+                    <button id="btnCerrarModalCliente" class="text-2xl hover:scale-110 transition-transform">❌</button>
+                </header>
+                <form id="formCliente" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
+                    <input type="hidden" id="clienteId">
+                    <!-- Columna Izquierda: Datos Personales -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-sm font-bold mb-1 italic">Nombre</label>
+                                <input type="text" id="nombre" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1 italic">Apellido</label>
+                                <input type="text" id="apellido" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">DNI</label>
+                            <input type="text" id="dni" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Dirección</label>
+                            <input type="text" id="direccion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Email</label>
+                            <input type="email" id="email" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                    </div>
+                    <!-- Columna Derecha: Datos Comerciales -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Teléfono / WhatsApp</label>
+                            <input type="text" id="telefono" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">CUIT / CUIL</label>
+                            <input type="text" id="cuit" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Categoría ARCA (Ex-AFIP)</label>
+                            <select id="arca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                <option value="Consumidor Final">Consumidor Final</option>
+                                <option value="Responsable Monotributo">Responsable Monotributo</option>
+                                <option value="IVA Responsable Inscripto">IVA Responsable Inscripto</option>
+                                <option value="Exento">Exento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Fecha de alta</label>
+                            <input type="text" id="fecha_alta" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="DD/MM/AAAA">
+                        </div>
+                        <!-- Sección Cuenta Corriente -->
+                        <div class="p-4 bg-orange-50 dark:bg-slate-900 rounded-xl border border-orange-200 dark:border-slate-700">
+                            <h3 class="text-sm font-bold mb-3 text-orange-700 dark:text-orange-400 uppercase tracking-tighter">💰 Cuenta Corriente</h3>
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <span class="text-[10px] font-bold block uppercase opacity-50">Saldo Actual</span>
+                                    <span id="clienteSaldo" class="text-2xl font-black text-red-600">$ 0.00</span>
+                                </div>
+                                <!-- Botón de Cobro Rápido -->
+                                <button type="button" id="btnRegistrarCobro" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-md transition-all">
+                                    💵 COBRAR
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="clienteHabilitarCC" class="w-4 h-4 accent-orange-500" checked>
+                            <label for="clienteHabilitarCC" class="text-xs font-bold cursor-pointer">Habilitar crédito</label>
+                        </div>
+                        <div class="pt-4 flex gap-2">
+                            <button type="submit" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 shadow-lg transition-all">💾 GUARDAR CLIENTE</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/app.js" type="module"></script>
+        
+        
+        <!-- MODAL DETALLE VENTA -->
+        <div id="modalDetalleVenta" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-[500px]">
+                <div class="flex justify-between mb-4">
+                    <h2 class="text-lg font-bold">Detalle de Venta</h2>
+                    <button id="cerrarDetalleVenta" class="text-red-500">✕</button>
+                </div>
+                <div id="detalleVenta"></div>
+            </div>
+        </div>
+        <!-- Scripts de lógica -->
 
-</body>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="js/app.js" type="module"></script>
+
+    </body>
 
 </html>

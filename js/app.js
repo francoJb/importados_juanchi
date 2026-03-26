@@ -123,7 +123,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
+    const categoriaSelect = document.getElementById("categoria");
+    const camposVehiculo = document.getElementById("camposVehiculo");
+    const inputMotor = document.getElementById("nro_motor");
+    const inputChasis = document.getElementById("nro_chasis");
+    function toggleCamposVehiculo() {
+        const categoria = categoriaSelect.value;
+        const esVehiculo = categoria === "moto" || categoria === "auto";
+        camposVehiculo.style.display = esVehiculo ? "block" : "none";
+        // 👉 hacer obligatorios o no
+        inputMotor.required = esVehiculo;
+        inputChasis.required = esVehiculo;
+        // 👉 limpiar si se ocultan (MUY IMPORTANTE)
+        if (!esVehiculo) {
+            inputMotor.value = "";
+            inputChasis.value = "";
+        }
+    }
 
+    // evento al cambiar categoría
+    categoriaSelect.addEventListener("change", toggleCamposVehiculo);
+
+    // 👉 IMPORTANTE: ejecutar al cargar (modo edición)
+    toggleCamposVehiculo();
 
     // 4. GUARDAR PRODUCTO (EVENTO SUBMIT)
     const formProducto = document.getElementById("formProducto");
@@ -225,24 +247,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. El cartel de confirmación
     const rta = confirm(`¿Estás seguro de que querés eliminar el producto con código "${sku}"?`);
     if (rta) {
-        try {
-            // 2. Avisamos al Backend
-            const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
-                method: 'DELETE' 
-            });
-            if (response.ok) {
-                alert("Producto eliminado con éxito.");
-                // 3. Recargamos la lista
-                const productosActualizados = await fetchProductos();
-                dibujarProductos(productosActualizados);
-            } else {
-                alert("No se pudo eliminar el producto.");
+            try {
+                // 2. Avisamos al Backend
+                const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
+                    method: 'DELETE' 
+                });
+                if (response.ok) {
+                    alert("Producto eliminado con éxito.");
+                    // 3. Recargamos la lista
+                    const productosActualizados = await fetchProductos();
+                    dibujarProductos(productosActualizados);
+                } else {
+                    alert("No se pudo eliminar el producto.");
+                }
+            } catch (error) {
+                console.error("Error en la conexión:", error);
             }
-        } catch (error) {
-            console.error("Error en la conexión:", error);
         }
-    }
-};
+    };
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-eliminar");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const desc = btn.dataset.desc;
+        eliminarProducto(id, desc);
+    });
 
     window.eliminarCliente = async (id, nombre) => {
         // 1. El cartel de confirmación

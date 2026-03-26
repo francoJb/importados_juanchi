@@ -9,11 +9,23 @@ export async function fetchClientes() {
 export async function guardarClienteAPI(datos, id = null) {
     const method = id ? "PUT" : "POST";
     const url = id ? `${API_URL}/${id}` : API_URL;
-    
-    const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-    });
-    return res.ok;
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datos)
+        });
+        if (!res.ok) {
+            let mensaje = "Error al guardar cliente";
+            try {
+                const errorData = await res.json();
+                mensaje = errorData.error || mensaje;
+            } catch {}
+            throw new Error(mensaje);
+        }
+        return true;
+    } catch (error) {
+        alert("❌ " + error.message);
+        return false;
+    }
 }

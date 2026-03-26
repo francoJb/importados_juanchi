@@ -17,8 +17,9 @@ export async function cargarCategorias(){
 export async function verificarStockBajo() {
   const productos = await obtenerProductos();
   // Filtramos los productos cuyo stock sea menor o igual al stock_minimo
-  const alertaStock = productos.filter(p => p.stock <= p.stock_minimo && p.activo === 1);
-
+  const alertaStock = productos.filter(p => 
+    p.stock <= p.stock_minimo && p.estado === 1
+  );
   if (alertaStock.length > 0) {
     console.warn("⚠️ ¡Atención! Hay productos con stock bajo:", alertaStock);
     // Aquí podrías mostrar un cartelito en el Dashboard luego
@@ -43,7 +44,7 @@ export async function cargarProductosSelect(){
 export function initAutocomplete(){
   const inputProducto = document.getElementById("inputProducto");
   const sugerencias = document.getElementById("sugerenciasProductos");
-  if(!inputProducto) return;
+  if(!inputProducto || !sugerencias) return;
   inputProducto.addEventListener("input", async () => {
     const texto = inputProducto.value.toLowerCase();
     const productos = await obtenerProductos();
@@ -53,7 +54,7 @@ export function initAutocomplete(){
       return;
     }
     const filtrados = productos.filter(p =>
-      p.descripcion.toLowerCase().includes(texto)
+      (p.descripcion || "").toLowerCase().includes(texto)
     );
     filtrados.forEach(p => {
       const div = document.createElement("div");
@@ -61,7 +62,7 @@ export function initAutocomplete(){
       div.textContent = `${p.descripcion} (stock: ${p.stock})`;
       div.addEventListener("click", () => {
         inputProducto.value = p.descripcion;
-        document.getElementById("inputPrecio").value = p.precio;
+        document.getElementById("inputPrecio").value = p.precio_neto;
         sugerencias.classList.add("hidden");
       });
       sugerencias.appendChild(div);

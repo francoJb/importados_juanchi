@@ -10,32 +10,37 @@ const db = new sqlite3.Database(dbPath, (err) => {
 // Crear tablas iniciales
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sku TEXT,
-        descripcion TEXT NOT NULL,
-        marca TEXT,
-        modelo TEXT,
-        categoria TEXT,
-        proveedor TEXT,
-        costo REAL,
-        precio_neto REAL,
-        iva REAL,
-        control_stock INTEGER,
-        stock INTEGER,
-        stock_minimo INTEGER,
-        estado INTEGER DEFAULT 1
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sku TEXT,
+    descripcion TEXT NOT NULL,
+    marca TEXT,
+    modelo TEXT,
+    categoria TEXT,
+    proveedor TEXT,
+    costo REAL,
+    precio_neto REAL,
+    iva REAL,
+    control_stock INTEGER,
+    stock INTEGER,
+    stock_minimo INTEGER,
+    nro_chasis TEXT,
+    nro_motor TEXT,
+    estado INTEGER DEFAULT 1,
+    CHECK (
+        categoria NOT IN ('moto', 'auto') 
+        OR (nro_motor IS NOT NULL AND TRIM(nro_motor) <> '' AND nro_chasis IS NOT NULL AND TRIM(nro_chasis) <> ''))
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
+        nombre TEXT NOT NULL,
         apellido TEXT NOT NULL,
         telefono TEXT,
         direccion TEXT,
         dni TEXT UNIQUE NOT NULL,
         cuit TEXT UNIQUE,
-        arca TEXT CHECK(arca IN ('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo')),
+        arca TEXT CHECK(arca IN ('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo', 'Exento')),
         email TEXT,
-        fecha_alta TEXT
+        fecha_alta TEXT DEFAULT (date('now')),
         estado INTEGER DEFAULT 1
     )`);
 });

@@ -9,11 +9,23 @@ exports.obtenerClientes = (req, res) => {
 
 exports.crearCliente = (req, res) => {
     const p = req.body;
+    if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
+        return res.status(400).json({ error: "Nombre, apellido y DNI son obligatorios" });
+    }
     const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta, estado)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta];
+    const fecha = p.fecha_alta || new Date().toISOString().split('T')[0];
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha];
     db.run(sql, params, function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            if (err.message.includes("UNIQUE")) {
+                return res.status(400).json({ error: "DNI o CUIT ya registrado" });
+            }
+            if (err.message.includes("CHECK")) {
+                return res.status(400).json({ error: "Condición fiscal inválida" });
+            }
+            return res.status(500).json({ error: err.message });
+        }
         res.status(201).json({ id: this.lastID, ...p });
     });
 };
@@ -21,10 +33,15 @@ exports.crearCliente = (req, res) => {
 exports.editarCliente = (req, res) => {
     const { id } = req.params;
     const p = req.body;
+    if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
+        return res.status(400).json({ error: "Datos inválidos" });
+    }
     const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta ,id];
     db.run(sql, params, function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) {
+            return res.status(404).json({ mensaje: "Cliente no encontrado" });
+        }
         res.json({ mensaje: "Actualizado", cambios: this.changes });
     });
 };

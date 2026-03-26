@@ -12,6 +12,13 @@ exports.crearProducto = (req, res) => {
     if (!p.sku?.trim() || !p.descripcion?.trim()){ //validacion campos vacios    
         return res.status(400).json({ error: "SKU y Descripcion son obligatorios"})        
     }
+    if (["moto", "auto"].includes(p.categoria)) {
+    if (!p.nro_motor?.trim() || !p.nro_chasis?.trim()) {
+        return res.status(400).json({
+            error: "Motor y chasis son obligatorios para motos y autos"
+        });
+    }
+}
     const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1"; //validacion de SKU 
     db.get(checkSql, [p.sku.trim()], (err, row) => {
         if (err) {
@@ -34,6 +41,9 @@ exports.crearProducto = (req, res) => {
 exports.editarProducto = (req, res) => {
     const { id } = req.params;
     const p = req.body;
+    if (!p.sku?.trim() || !p.descripcion?.trim()) {
+        return res.status(400).json({ error: "SKU y Descripcion son obligatorios"});
+    }
     const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE id=?`;
     const params = [p.sku, p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo, id];
     db.run(sql, params, function(err) {
