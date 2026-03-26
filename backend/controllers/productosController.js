@@ -1,78 +1,128 @@
 const db = require('../database/database');
 
-exports.obtenerProductos = (req, res) => {
-    db.all("SELECT * FROM productos WHERE estado = 1", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+exports.obtenerProductos = async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT * FROM productos WHERE estado = 1");
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
-exports.crearProducto = (req, res) => {
+exports.crearProducto = async (req, res) => {
     const p = req.body;
-    if (!p.sku?.trim() || !p.descripcion?.trim()){ //validacion campos vacios    
-        return res.status(400).json({ error: "SKU y Descripcion son obligatorios"})        
-    }
-    if (["moto", "auto"].includes(p.categoria)) {
-    if (!p.nro_motor?.trim() || !p.nro_chasis?.trim()) {
-        return res.status(400).json({
-            error: "Motor y chasis son obligatorios para motos y autos"
-        });
-    }
-}
-    const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1"; //validacion de SKU 
-    db.get(checkSql, [p.sku.trim()], (err, row) => {
-        if (err) {
-            console.error("Error en checkSql:", err.message);
-            return res.status(500).json({error: err.message});
-        }
-        if (row){
-            return res.status(400).json({error: `El SKU "${p.sku}" ya esta registrado en otro producto`});
-        }
-        const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
-        const params = [p.sku.trim(), p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo];
-        db.run(sql, params, function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: this.lastID, ...p, control_stock: p.control_stock ? 1 : 0});
-        });
-    });
-};
 
-exports.editarProducto = (req, res) => {
-    const { id } = req.params;
-    const p = req.body;
+    // 1. Validaciones básicas
     if (!p.sku?.trim() || !p.descripcion?.trim()) {
-        return res.status(400).json({ error: "SKU y Descripcion son obligatorios"});
+        return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
     }
-    const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE id=?`;
-    const params = [p.sku, p.descripcion, p.marca, p.modelo, p.categoria, p.proveedor, p.costo, p.precio_neto, p.iva, p.control_stock ? 1 : 0, p.stock, p.stock_minimo, id];
-    db.run(sql, params, function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ mensaje: "Actualizado", cambios: this.changes });
-    });
+
+    if (["moto", "auto"].includes(p.categoria)) {
+        if (!p.nro_motor?.trim() || !p.nro_chasis?.trim()) {
+            return res.status(400).json({
+                error: "Motor y chasis son obligatorios para motos y autos"
+            });
+        }
+    }
+
+    try {
+        // 2. Validación de SKU manual (opcional, MySQL UNIQUE también lo frenaría)
+        const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1";
+        const [existing] = await db.query(checkSql, [p.sku.trim()]);
+        
+        if (existing.length > 0) {
+            return res.status(400).json({ error: `El SKU "${p.sku}" ya esta registrado en otro producto` });
+        }
+
+        // 3. Inserción
+        const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, nro_chasis, nro_motor, estado) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+        
+        const params = [
+            p.sku.trim(), 
+            p.descripcion, 
+            p.marca, 
+            p.modelo, 
+            p.categoria, 
+            p.proveedor, 
+            p.costo || 0, 
+            p.precio_neto || 0, 
+            p.iva || 21, 
+            p.control_stock ? 1 : 0, 
+            p.stock || 0, 
+            p.stock_minimo || 0,
+            p.nro_chasis || null,
+            p.nro_motor || null
+        ];
+
+        const [result] = await db.query(sql, params);
+        
+        res.status(201).json({ 
+            id: result.insertId, 
+            ...p, 
+            control_stock: p.control_stock ? 1 : 0 
+        });
+
+    } catch (err) {
+        console.error("Error al crear producto:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 };
 
-
-exports.eliminarProducto = (req, res) => {
-    // 1. Obtenemos el ID que viene en la URL (ej: /api/productos/5)
+exports.editarProducto = async (req, res) => {
     const { id } = req.params;
-    // 2. Definimos el SQL para la "Baja Lógica" (poner estado en 0)
-    const sql = `UPDATE productos SET estado = 0 WHERE id = ?`;
-    // 3. Le pedimos a SQLite que ejecute el cambio
-    db.run(sql, [id], function(err) {
-        if (err) {
-            // Si hay un error de base de datos, avisamos al frontend
-            console.error("Error al desactivar producto:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        // Si no se cambió ninguna fila, es porque el ID no existía
-        if (this.changes === 0) {
+    const p = req.body;
+
+    if (!p.sku?.trim() || !p.descripcion?.trim()) {
+        return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
+    }
+
+    const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=?, nro_chasis=?, nro_motor=? WHERE id=?`;
+    
+    const params = [
+        p.sku, 
+        p.descripcion, 
+        p.marca, 
+        p.modelo, 
+        p.categoria, 
+        p.proveedor, 
+        p.costo, 
+        p.precio_neto, 
+        p.iva, 
+        p.control_stock ? 1 : 0, 
+        p.stock, 
+        p.stock_minimo, 
+        p.nro_chasis,
+        p.nro_motor,
+        id
+    ];
+
+    try {
+        const [result] = await db.query(sql, params);
+        if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Producto no encontrado" });
         }
-        // Si todo salió bien, respondemos con éxito
+        res.json({ mensaje: "Actualizado", cambios: result.affectedRows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.eliminarProducto = async (req, res) => {
+    const { id } = req.params;
+    const sql = `UPDATE productos SET estado = 0 WHERE id = ?`;
+
+    try {
+        const [result] = await db.query(sql, [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensaje: "Producto no encontrado" });
+        }
         res.json({ 
             mensaje: "Producto desactivado correctamente",
             id: id 
         });
-    });
+    } catch (err) {
+        console.error("Error al desactivar producto:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 };

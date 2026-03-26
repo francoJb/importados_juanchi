@@ -1,71 +1,83 @@
 const db = require('../database/database');
 
-exports.obtenerClientes = (req, res) => {
-    db.all("SELECT * FROM clientes WHERE estado = 1", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+exports.obtenerClientes = async (req, res) => {
+    try {
+        // En MySQL usamos await y desestructuramos [rows]
+        const [rows] = await db.query("SELECT * FROM clientes WHERE estado = 1");
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
-exports.crearCliente = (req, res) => {
+exports.crearCliente = async (req, res) => {
     const p = req.body;
+    
     if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
         return res.status(400).json({ error: "Nombre, apellido y DNI son obligatorios" });
     }
+
     const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta, estado)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+    
+    // MySQL acepta la fecha en formato YYYY-MM-DD directamente
     const fecha = p.fecha_alta || new Date().toISOString().split('T')[0];
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha];
-    db.run(sql, params, function(err) {
-        if (err) {
-            if (err.message.includes("UNIQUE")) {
-                return res.status(400).json({ error: "DNI o CUIT ya registrado" });
-            }
-            if (err.message.includes("CHECK")) {
-                return res.status(400).json({ error: "Condición fiscal inválida" });
-            }
-            return res.status(500).json({ error: err.message });
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, fecha];
+
+    try {
+        const [result] = await db.query(sql, params);
+        // En MySQL el ID generado está en result.insertId
+        res.status(201).json({ id: result.insertId, ...p });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: "DNI o CUIT ya registrado" });
         }
-        res.status(201).json({ id: this.lastID, ...p });
-    });
+        // MySQL usa ENUM, si el valor no coincide daría error aquí
+        if (err.code === 'ER_WARN_DATA_TRUNCATED') {
+            return res.status(400).json({ error: "Condición fiscal inválida" });
+        }
+        res.status(500).json({ error: err.message });
+    }
 };
 
-exports.editarCliente = (req, res) => {
+exports.editarCliente = async (req, res) => {
     const { id } = req.params;
     const p = req.body;
+
     if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
         return res.status(400).json({ error: "Datos inválidos" });
     }
+
     const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta ,id];
-    db.run(sql, params, function(err) {
-        if (this.changes === 0) {
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta, id];
+
+    try {
+        const [result] = await db.query(sql, params);
+        // En MySQL los cambios están en result.affectedRows
+        if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Cliente no encontrado" });
         }
-        res.json({ mensaje: "Actualizado", cambios: this.changes });
-    });
+        res.json({ mensaje: "Actualizado", cambios: result.affectedRows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
-exports.eliminarCliente = (req, res) => {
-    // 1. Obtenemos el ID que viene en la URL
+exports.eliminarCliente = async (req, res) => {
     const { id } = req.params;
-    // 2. Definimos el SQL para la "Baja Lógica" (poner estado en 0)
     const sql = `UPDATE clientes SET estado = 0 WHERE id = ?`;
-    // 3. Le pedimos a SQLite que ejecute el cambio
-    db.run(sql, [id], function(err) {
-        if (err) {
-            // Si hay un error de base de datos, avisamos al frontend
-            console.error("Error al desactivar cliente:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        // Si no se cambió ninguna fila, es porque el ID no existía
-        if (this.changes === 0) {
+
+    try {
+        const [result] = await db.query(sql, [id]);
+        if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Cliente no encontrado" });
         }
-        // Si todo salió bien, respondemos con éxito
         res.json({ 
             mensaje: "Cliente desactivado correctamente",
             id: id 
         });
-    });
+    } catch (err) {
+        console.error("Error al desactivar cliente:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 };

@@ -12,17 +12,18 @@ const toggleModal = (id, mostrar = true) => {
 };
 
 
-window.prepararEdicionProducto = async (id) => { //carga datos modal productos
-    const producto = await fetchProductos();
-    const p = producto.find(prod => prod.id == id);
+window.prepararEdicionProducto = async (id) => { 
+    const productos = await fetchProductos(); // Traemos la lista
+    const p = productos.find(prod => prod.id == id);
     if (!p) return;
-    // Llenamos el formulario con los datos guardados
+
+    // Llenamos el formulario (lo que ya tenías)
     document.getElementById("id").value = p.id;
     document.getElementById("sku").value = p.sku;
     document.getElementById("descripcion").value = p.descripcion;
     document.getElementById("marca").value = p.marca;
     document.getElementById("modelo").value = p.modelo;
-    document.getElementById("categoria").value = p.categoria;
+    document.getElementById("categoria").value = p.categoria; // <-- Se asigna aquí
     document.getElementById("proveedor").value = p.proveedor;
     document.getElementById("costo").value = p.costo;
     document.getElementById("precio_neto").value = p.precio_neto;
@@ -30,7 +31,14 @@ window.prepararEdicionProducto = async (id) => { //carga datos modal productos
     document.getElementById("control_stock").checked = p.control_stock;
     document.getElementById("stock").value = p.stock;
     document.getElementById("stock_minimo").value = p.stock_minimo;
-    //document.getElementById("estado").checked = p.estado;
+    document.getElementById("nro_motor").value = p.nro_motor || "";
+    document.getElementById("nro_chasis").value = p.nro_chasis || "";
+
+    // --- LA PARTE NUEVA ---
+    // Disparamos el evento 'change' manualmente para que el código que oculta/muestra
+    // el div de chasis y motor se ejecute ahora mismo.
+    document.getElementById("categoria").dispatchEvent(new Event('change'));
+    // ----------------------
 
     // Abrimos el modal
     const modal = document.getElementById("modalProducto");
@@ -50,6 +58,7 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     document.getElementById("direccion").value = c.direccion;
     document.getElementById("email").value = c.email;
     document.getElementById("telefono").value = c.telefono;
+    document.getElementById("cuit").value = c.cuit;
     document.getElementById("arca").value = c.arca;
     document.getElementById("fecha_alta").value = c.fecha_alta;
 
@@ -165,6 +174,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
+            nro_chasis: document.getElementById("nro_chasis")?.value || null,
+            nro_motor: document.getElementById("nro_motor")?.value || null
         };
         if (!datos.sku){
             alert("⚠️ El SKU es obligatorio.");
@@ -208,6 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             arca: document.getElementById("arca").value,
             email: document.getElementById("email").value,
             fecha_alta: document.getElementById("fecha_alta").value
+            
 
         };
         const exito = await guardarClienteAPI(datos, id || null);
