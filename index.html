@@ -109,65 +109,119 @@
                             + Nueva Venta
                         </button>
                     </header>
-                    <div id="pantallaGenerarVenta" class="hidden min-h-screen bg-gray-50 dark:bg-slate-900 p-6">
-                        <div class="max-w-6xl mx-auto">
-                            <div class="flex justify-between items-center mb-6">
-                                <h2 class="text-3xl font-black text-gray-800 dark:text-white">Nueva Factura</h2>
-                                <button onclick="cerrarPantallaVenta()" class="text-red-500 hover:text-red-700 font-bold">
-                                    ✕ Cancelar y Volver
-                                </button>
-                            </div>
+                    <div id="pantallaGenerarVenta" class="hidden min-h-screen bg-gray-50 dark:bg-slate-900">
+                        <header class="bg-gray-800 text-white p-4 shadow-lg flex justify-between items-center">
+                            <h2 class="text-xl font-bold">NUEVA VENTA</h2>
+                            <span id="reloj-venta" class="text-sm text-gray-400"></span>
+                        </header>
 
-                            <div class="grid grid-cols-12 gap-6">
-                                <div class="col-span-12 lg:col-span-8 space-y-4">
-                                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                                        <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">Cliente</label>
-                                        <select id="v-cliente-select" class="w-full p-2 border rounded-lg bg-transparent">
+                        <div class="grid grid-cols-12 gap-6 p-6">
+                            
+                            <aside class="col-span-12 lg:col-span-3 space-y-5 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border dark:border-slate-700">
+                                
+                                <div class="border-b dark:border-slate-700 pb-4">
+                                    <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Cliente</label>
+                                    <div class="flex gap-1">
+                                        <select id="v-cliente-select" class="flex-1 p-2 text-sm border rounded bg-transparent font-medium text-blue-600 dark:text-blue-400">
                                             <option value="0">Consumidor Final</option>
                                         </select>
+                                        <button onclick="abrirBuscadorCliente()" title="Busqueda avanzada..."
+                                            class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                            🔍
+                                        </button>
                                     </div>
-
-                                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                                        <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">Buscar Producto (SKU o Nombre)</label>
-                                        <div class="flex gap-2">
-                                            <select id="v-producto-select" class="flex-1 p-2 border rounded-lg bg-transparent"></select>
-                                            <input type="number" id="v-cantidad" value="1" min="1" class="w-20 p-2 border rounded-lg text-center bg-transparent">
-                                            <button onclick="agregarItemVenta()" class="bg-blue-600 text-white px-6 rounded-lg font-bold">Añadir</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                                        <table class="w-full text-left">
-                                            <thead class="bg-gray-50 dark:bg-slate-700 text-xs uppercase">
-                                                <tr>
-                                                    <th class="p-4">Descripción</th>
-                                                    <th class="p-4">Marca</th>
-                                                    <th class="p-4">Modelo</th>
-                                                    <th class="p-4 text-center">Cant.</th>
-                                                    <th class="p-4 text-right">Precio Unit.</th>
-                                                    <th class="p-4 text-right">Subtotal</th>
-                                                    <th class="p-4 text-center">Acción</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="v-items-body"></tbody>
-                                        </table>
-                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">Presione Enter o la lupa para buscar</p>
                                 </div>
 
-                                <div class="col-span-12 lg:col-span-4">
-                                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 sticky top-6">
-                                        <h3 class="text-lg font-bold mb-4 border-b pb-2">Resumen</h3>
-                                        <div class="space-y-4">
-                                            <div class="flex justify-between text-2xl font-black text-blue-600">
-                                                <span>TOTAL:</span>
-                                                <span id="v-total-pantalla">$0.00</span>
-                                            </div>
-                                            <button onclick="abrirModalPago()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-xl shadow-lg hover:bg-green-700 transition-all">
-                                                CREAR VENTA
-                                            </button>
-                                        </div>
+                                <div>
+                                    <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Producto</label>
+                                    <div class="flex gap-1">
+                                        <input type="text" id="v-sku-directo" placeholder="Ingrese SKU..."
+                                            onkeypress="checkEnterVenta(event)"
+                                            class="flex-1 p-2 text-sm border rounded bg-transparent font-mono focus:border-blue-500 outline-none">
+                                        
+                                        <button onclick="abrirBuscadorProductos()" title="Buscar en catálogo"
+                                            class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                            🔍
+                                        </button>
                                     </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">Presione Enter o la lupa para buscar</p>
                                 </div>
+
+                                <div class="border-t border-b dark:border-slate-700 py-4">
+                                    <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Total (Pesos)</label>
+                                    <div class="text-4xl font-bold text-blue-700 dark:text-blue-500" id="v-total-pantalla">$0.00</div>
+                                </div>
+
+                                <div class="flex gap-2 pt-4">
+                                    <button onclick="cerrarPantallaVenta()" class="bg-gray-300 hover:bg-gray-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                        Volver
+                                    </button>
+                                    <button onclick="abrirModalPago()" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                        Crear
+                                    </button>
+                                </div>
+                            </aside>
+
+                            <section class="col-span-12 lg:col-span-9 space-y-6">
+                                
+                                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border dark:border-slate-700">
+                                    <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-2">Observaciones</label>
+                                    <textarea id="v-observaciones" rows="2" class="w-full p-3 border rounded-lg bg-transparent text-sm" placeholder="Opcional..."></textarea>
+                                </div>
+
+                                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-gray-50 dark:bg-slate-700/50 text-xs uppercase text-gray-500 dark:text-gray-300">
+                                            <tr>
+                                                <th class="p-4">Código</th>
+                                                <th class="p-4 w-1/2">Descripción</th>
+                                                <th class="p-4 text-right">Precio</th>
+                                                <th class="p-4 text-center">Cantidad (0)</th>
+                                                <th class="p-4 text-right">Total</th>
+                                                <th class="p-4 text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="v-items-body">
+                                            <tr id="v-items-vacio">
+                                                <td colspan="6" class="text-center py-12 text-gray-400 dark:text-slate-600 italic">
+                                                    No hay datos cargados en la venta actual.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div id="modalBuscadorProductos" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-slate-800 w-full max-w-5xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                            
+                            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
+                                <h3 class="text-lg font-bold">Seleccionar Producto</h3>
+                                <button onclick="cerrarBuscadorProductos()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+                            </div>
+
+                            <div class="p-4 bg-white dark:bg-slate-800">
+                                <input type="text" id="inputFiltroBusqueda" onkeyup="filtrarProductosModal()" 
+                                    placeholder="Filtrar por SKU, Marca o Descripción..." 
+                                    class="w-full p-3 rounded-xl border dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-4">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="sticky top-0 bg-gray-100 dark:bg-slate-700 uppercase text-xs font-bold">
+                                        <tr>
+                                            <th class="p-3">SKU / Código</th>
+                                            <th class="p-3">Descripción</th>
+                                            <th class="p-3 text-right">Stock</th>
+                                            <th class="p-3 text-right">Precio</th>
+                                            <th class="p-3 text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaBuscadorBody">
+                                        </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

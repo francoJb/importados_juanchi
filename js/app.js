@@ -72,6 +72,45 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
 // --- AL CARGAR EL DOCUMENTO ---
 document.addEventListener("DOMContentLoaded", async () => {
     
+    
+    window.volverALista = () => {
+        // Si el carrito tiene productos, pedimos confirmación
+        if (carritoVenta.length > 0) {
+            const confirmar = confirm("⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?");
+            if (!confirmar) return; // Si dice que no, nos quedamos en la pantalla
+        }
+        
+        // Si está vacío o confirmó, cerramos la pantalla
+        cerrarPantallaVenta(); 
+    };
+
+    // Escuchador de teclado global
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "Escape" || e.keyCode === 27) {
+            
+            // 1. Si el buscador de productos está abierto, lo cierra
+            const modalBusqueda = document.getElementById("modalBuscadorProductos");
+            if (modalBusqueda && !modalBusqueda.classList.contains("hidden")) {
+                cerrarBuscadorProductos();
+                return; // Detenemos aquí para que no cierre todo lo demás de un tiro
+            }
+
+            // 2. Si el modal de pago está abierto, lo cierra
+            const modalPago = document.getElementById("modalPago");
+            if (modalPago && !modalPago.classList.contains("hidden")) {
+                cerrarModalPago();
+                return;
+            }
+        
+            // 3. Si estás en la pantalla de Nueva Venta, vuelve al inicio
+            // Solo si no hay un modal encima
+            const pantallaVenta = document.getElementById("pantallaGenerarVenta");
+            if (pantallaVenta && !pantallaVenta.classList.contains("hidden")) {
+                volverALista(); 
+            }
+        }
+    });
+    
     // 1. CARGA INICIAL
     const productos = await fetchProductos();
     dibujarProductos(productos);
@@ -343,6 +382,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
     
+    // 1. Reloj profesional
+    if(document.getElementById("pantallaGenerarVenta")){
+        setInterval(() => {
+            const reloj = document.getElementById("reloj-venta");
+            if(reloj) reloj.innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    }
 
     let carritoVenta = [];
 
@@ -362,56 +408,215 @@ document.addEventListener("DOMContentLoaded", async () => {
         seccionVentas.classList.remove("hidden");
 
         // 2. SEGUNDO: Dentro de la sección Ventas, ocultamos el historial y mostramos la facturación
+        const headerVentas = seccionVentas.querySelector("header"); // El que dice "VENTAS" y "+ Nueva Venta"
         const tablaHistorial = seccionVentas.querySelector("header").nextElementSibling; // El div de la tabla
         const pantallaGenerarVenta = document.getElementById("pantallaGenerarVenta");
-
+        if (headerVentas) headerVentas.classList.add("hidden");
         if (tablaHistorial) tablaHistorial.classList.add("hidden");
         if (pantallaGenerarVenta) {
             pantallaGenerarVenta.classList.remove("hidden");
             // Movemos el scroll al inicio por si acaso
             window.scrollTo(0, 0);
         }
+        window.cerrarPantallaVenta = () => {
+        document.getElementById("pantallaGenerarVenta").classList.add("hidden");
+        document.getElementById("seccionVentas").classList.remove("hidden");
+        if (headerVentas) headerVentas.classList.remove("hidden");
+    };
+
+        window.checkEnterVenta = async (e) => {
+            // Si la tecla presionada es Enter (código 13)
+            if (e.keyCode === 13) {
+                const skuIngresado = e.target.value.trim().toUpperCase();
+                if (!skuIngresado) return;
+
+                // Buscamos en la lista de productos que ya tenemos cargada
+                const productos = await fetchProductos();
+                const p = productos.find(item => item.sku.toUpperCase() === skuIngresado);
+
+                if (p) {
+                    // Si existe, lo agregamos
+                    const nuevoItem = {
+                        id: p.id,
+                        sku: p.sku,
+                        desc: p.descripcion,
+                        precio: parseFloat(p.precio_neto),
+                        cantidad: 1,
+                        subtotal: parseFloat(p.precio_neto)
+                    };
+
+                    carritoVenta.push(nuevoItem);
+                    actualizarTablaVenta();
+                    
+                    // Limpiamos el input para la siguiente carga
+                    e.target.value = "";
+                    console.log("Producto cargado con éxito vía SKU");
+                } else {
+                    // Si no existe, avisamos y abrimos el buscador automático para ayudar
+                    alert("⚠️ El SKU no existe. Abriendo buscador avanzado...");
+                    abrirBuscadorProductos();
+                    // Opcional: pasar lo que escribió el usuario al filtro del modal
+                    document.getElementById("inputFiltroBusqueda").value = skuIngresado;
+                    filtrarProductosModal();
+                }
+            }
+        };
+        
+        const [clientes, productos] = await Promise.all([fetchClientes(), fetchProductos()]);
+    
+        // Llenar Clientes con color azul
+        const selectC = document.getElementById("v-cliente-select");
+        selectC.innerHTML = '<option value="0" class="text-blue-600">Consumidor Final</option>';
+        clientes.forEach(c => {
+            selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
+        });
+
+        // Llenar Productos con SKU (Código) y Descripción
+        const selectP = document.getElementById("v-producto-select");
+        selectP.innerHTML = '<option value="">--- Buscar producto ---</option>';
+        productos.forEach(p => {
+            // Guardamos el SKU en data-sku
+            selectP.innerHTML += `<option value="${p.id}" data-precio="${p.precio_neto}" data-desc="${p.descripcion}" data-sku="${p.sku}">
+                ${p.sku} | ${p.descripcion}
+            </option>`;
+        });
 
         // 3. TERCERO: Cargamos los datos (Tu lógica de siempre)
         cargarDatosParaVenta(); 
     };
 
+
+    // 1. Abrir y llenar el modal
+    window.abrirBuscadorProductos = async () => {
+        const productos = await fetchProductos(); // Trae los productos de la DB
+        const modal = document.getElementById("modalBuscadorProductos");
+        const tbody = document.getElementById("tablaBuscadorBody");
+
+        tbody.innerHTML = productos.map(p => `
+            <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                <td class="p-3 font-mono font-bold text-blue-600">${p.sku}</td>
+                <td class="p-3">${p.descripcion} <br> <small class="text-gray-400">${p.marca} ${p.modelo}</small></td>
+                <td class="p-3 text-right ${p.stock <= p.stock_minimo ? 'text-red-500 font-bold' : ''}">${p.stock}</td>
+                <td class="p-3 text-right font-bold text-green-600">$${p.precio_neto}</td>
+                <td class="p-3 text-center">
+                    <button onclick="seleccionarProductoDesdeModal('${p.sku}')" 
+                        class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
+                        Seleccionar
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        modal.classList.remove("hidden");
+        document.getElementById("inputFiltroBusqueda").focus();
+    };
+
+    // 2. Función para cuando hacés clic en "Seleccionar"
+    window.seleccionarProductoDesdeModal = async (sku) => {
+        // Buscamos el producto completo por su SKU
+        const productos = await fetchProductos();
+        const p = productos.find(item => item.sku === sku);
+
+        if (p) {
+            // Creamos el objeto para el carrito
+            const nuevoItem = {
+                id: p.id,
+                sku: p.sku,
+                desc: p.descripcion,
+                precio: parseFloat(p.precio_neto),
+                cantidad: 1,
+                subtotal: parseFloat(p.precio_neto)
+            };
+
+            // Agregamos al array global de la venta
+            carritoVenta.push(nuevoItem);
+            
+            // Actualizamos la tabla de la pantalla de ventas
+            actualizarTablaVenta();
+            
+            // Cerramos el modal
+            cerrarBuscadorProductos();
+        }
+    };
+
+    // 3. Filtro rápido dentro del modal
+    window.filtrarProductosModal = () => {
+        const texto = document.getElementById("inputFiltroBusqueda").value.toLowerCase();
+        const filas = document.querySelectorAll("#tablaBuscadorBody tr");
+
+        filas.forEach(fila => {
+            const contenido = fila.textContent.toLowerCase();
+            fila.style.display = contenido.includes(texto) ? "" : "none";
+        });
+    };
+
+    window.cerrarBuscadorProductos = () => {
+        document.getElementById("modalBuscadorProductos").classList.add("hidden");
+    };
+
     // Agregar item al carrito
     window.agregarItemVenta = () => {
         const select = document.getElementById("v-producto-select");
-        const id = select.value;
-        if(!id) return;
+        if(!select.value) return;
 
         const opt = select.options[select.selectedIndex];
         const item = {
-            id: id,
+            id: select.value,
+            sku: opt.dataset.sku, // Capturamos el Código
             desc: opt.dataset.desc,
             precio: parseFloat(opt.dataset.precio),
-            cantidad: parseInt(document.getElementById("v-cantidad").value),
+            cantidad: 1, // Por defecto 1 como en la imagen
         };
         item.subtotal = item.precio * item.cantidad;
 
         carritoVenta.push(item);
         actualizarTablaVenta();
+        // Limpiar buscador
+        select.value = "";
     };
 
     function actualizarTablaVenta() {
         const body = document.getElementById("v-items-body");
+        const labelTotal = document.getElementById("v-total-pantalla");
+        const headerCantidad = document.querySelector("#pantallaGenerarVenta th:nth-child(4)");
+
+        if(carritoVenta.length === 0) {
+            body.innerHTML = `<tr id="v-items-vacio"><td colspan="6" class="text-center py-12 text-gray-400 italic">No hay datos</td></tr>`;
+            labelTotal.innerText = "$0.00";
+            if(headerCantidad) headerCantidad.innerText = "Cantidad (0)";
+            return;
+        }
+
         body.innerHTML = carritoVenta.map((item, index) => `
-            <tr class="border-b dark:border-slate-700">
-                <td class="p-4 font-medium">${item.desc}</td>
-                <td class="p-4 text-center">${item.cantidad}</td>
-                <td class="p-4 text-right">$${item.precio.toFixed(2)}</td>
-                <td class="p-4 text-right font-bold">$${item.subtotal.toFixed(2)}</td>
+            <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                <td class="p-4 text-gray-500 dark:text-gray-400 font-mono">${item.sku}</td>
+                <td class="p-4 font-medium text-gray-900 dark:text-white">${item.desc}</td>
+                <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>
                 <td class="p-4 text-center">
-                    <button onclick="quitarItemVenta(${index})" class="text-red-500">✕</button>
+                    <input type="number" value="${item.cantidad}" min="1" onchange="cambiarCantidad(${index}, this.value)" class="w-16 p-1 text-center border rounded bg-transparent font-bold text-blue-600">
+                </td>
+                <td class="p-4 text-right font-black text-gray-900 dark:text-white font-mono">$${item.subtotal.toFixed(2)}</td>
+                <td class="p-4 text-center">
+                    <button onclick="quitarItemVenta(${index})" class="text-red-500 hover:text-red-700 text-xs"> 🗑️ </button> 
                 </td>
             </tr>
         `).join('');
 
         const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
-        document.getElementById("v-total-pantalla").innerText = `$${total.toFixed(2)}`;
+        const cantItems = carritoVenta.reduce((sum, i) => sum + i.cantidad, 0);
+
+        labelTotal.innerText = `$${total.toFixed(2)}`;
+        if(headerCantidad) headerCantidad.innerText = `Cantidad (${cantItems})`;
     }
+    
+    window.cambiarCantidad = (index, nuevaCantidad) => {
+        const cant = parseInt(nuevaCantidad);
+        if(cant > 0) {
+            carritoVenta[index].cantidad = cant;
+            carritoVenta[index].subtotal = carritoVenta[index].precio * cant;
+            actualizarTablaVenta();
+        }
+    };
 
     // Lógica de Pago
     window.abrirModalPago = () => {
@@ -429,11 +634,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
-
-    window.cerrarPantallaVenta = () => {
-        document.getElementById("pantallaGenerarVenta").classList.add("hidden");
-        document.getElementById("seccionVentas").classList.remove("hidden");
-    };
 
     // 5. MODO OSCURO (Básico para que no te moleste la vista)
     const btnDarkMode = document.getElementById("btnDarkMode");
