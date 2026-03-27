@@ -132,15 +132,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
-    // 3. ABRIR/CERRAR MODAL VENTAS
-    document.getElementById("btn-nueva-venta").onclick = () => {
-        document.getElementById("formVenta").reset();
-        document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
-        toggleModal("modalVenta", true);
-    };
-    document.getElementById("btnCerrarModalVenta").onclick = () => toggleModal("modalVenta", false);
-    
-
     const categoriaSelect = document.getElementById("categoria");
     const camposVehiculo = document.getElementById("camposVehiculo");
     const inputMotor = document.getElementById("nro_motor");
@@ -267,6 +258,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
     }
 
+    // --- LÓGICA DEL BUSCADOR CLIENTES---
+    const inputBusquedaCliente = document.getElementById("buscarCliente");
+    if (inputBusquedaCliente) {
+        inputBusquedaCliente.oninput = async (e) => {
+            const termino = e.target.value.toLowerCase();
+            const todosLosClientes = await fetchClientes();
+            const filtrados = todosLosClientes.filter(p => 
+                (p.nombre || "").toLowerCase().includes(termino) || 
+                (p.apellido || "").toLowerCase().includes(termino) ||
+                (p.dni || "").toLowerCase().includes(termino)
+            );
+            dibujarClientes(filtrados);
+        };
+    }
+
+
     document.addEventListener("click", (e) => {
         const btn = e.target.closest(".btn-eliminar");
         if (!btn) return;
@@ -329,53 +336,98 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    let carritoVenta = [];
-    // Función para abrir y resetear el modal
-    window.abrirModalVenta = async () => {
-        document.getElementById("venta-fecha").valueAsDate = new Date();
-        carritoVenta = [];
-        renderizarCarrito();
-        
-        // Cargar select de clientes y productos (puedes reusar tus fetch)
-        const clientes = await fetchClientes(); // asumiendo que tienes esta función
-        const productos = await fetchProductos();
-        
-        // Llenar los selects...
-        const modal = document.getElementById("modalVenta");
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-    };
 
-    // Agregar producto al carrito local
-    document.getElementById("btn-agregar-item").onclick = () => {
-        const select = document.getElementById("venta-producto-select");
-        const cantidad = parseInt(document.getElementById("venta-cantidad").value);
-        
-        // Lógica para buscar el producto elegido y hacer push a carritoVenta
-        // ... (después llamas a renderizarCarrito())
-    };
-
-    function renderizarCarrito() {
-        const tabla = document.getElementById("lista-items-venta");
-        tabla.innerHTML = "";
-        let total = 0;
-        
-        carritoVenta.forEach((item, index) => {
-            const subtotal = item.precio * item.cantidad;
-            total += subtotal;
-            tabla.innerHTML += `
-                <tr>
-                    <td class="p-2">${item.descripcion}</td>
-                    <td class="p-2">${item.cantidad}</td>
-                    <td class="p-2">$${item.precio}</td>
-                    <td class="p-2">$${subtotal.toFixed(2)}</td>
-                    <td class="p-2"><button onclick="quitarItem(${index})" class="text-red-500">❌</button></td>
-                </tr>
-            `;
+    const btnAbrirVenta = document.getElementById("btn-nueva-venta");
+    if (btnAbrirVenta) {
+        btnAbrirVenta.addEventListener("click", () => {
+            mostrarPantallaVenta(); 
         });
-        document.getElementById("venta-total").innerText = total.toFixed(2);
     }
 
+    let carritoVenta = [];
+
+    // Abrir la pantalla completa
+    window.mostrarPantallaVenta = async () => {
+        document.getElementById("seccionVentas").classList.add("hidden");
+        document.getElementById("pantallaGenerarVenta").classList.remove("hidden");
+        
+        carritoVenta = [];
+        actualizarTablaVenta();
+
+        // Cargar Clientes y Productos
+        const [clientes, productos] = await Promise.all([fetchClientes(), fetchProductos()]);
+        
+        const selectC = document.getElementById("v-cliente-select");
+        selectC.innerHTML = '<option value="0">Consumidor Final</option>';
+        clientes.forEach(c => {
+            selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido} (DNI: ${c.dni})</option>`;
+        });
+
+        const selectP = document.getElementById("v-producto-select");
+        selectP.innerHTML = '<option value="">Buscar producto...</option>';
+        productos.forEach(p => {
+            selectP.innerHTML += `<option value="${p.id}" data-precio="${p.precio_neto}" data-desc="${p.descripcion}">${p.sku} - ${p.descripcion}</option>`;
+        });
+    };
+
+    // Agregar item al carrito
+    window.agregarItemVenta = () => {
+        const select = document.getElementById("v-producto-select");
+        const id = select.value;
+        if(!id) return;
+
+        const opt = select.options[select.selectedIndex];
+        const item = {
+            id: id,
+            desc: opt.dataset.desc,
+            precio: parseFloat(opt.dataset.precio),
+            cantidad: parseInt(document.getElementById("v-cantidad").value),
+        };
+        item.subtotal = item.precio * item.cantidad;
+
+        carritoVenta.push(item);
+        actualizarTablaVenta();
+    };
+
+    function actualizarTablaVenta() {
+        const body = document.getElementById("v-items-body");
+        body.innerHTML = carritoVenta.map((item, index) => `
+            <tr class="border-b dark:border-slate-700">
+                <td class="p-4 font-medium">${item.desc}</td>
+                <td class="p-4 text-center">${item.cantidad}</td>
+                <td class="p-4 text-right">$${item.precio.toFixed(2)}</td>
+                <td class="p-4 text-right font-bold">$${item.subtotal.toFixed(2)}</td>
+                <td class="p-4 text-center">
+                    <button onclick="quitarItemVenta(${index})" class="text-red-500">✕</button>
+                </td>
+            </tr>
+        `).join('');
+
+        const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
+        document.getElementById("v-total-pantalla").innerText = `$${total.toFixed(2)}`;
+    }
+
+    // Lógica de Pago
+    window.abrirModalPago = () => {
+        if(carritoVenta.length === 0) return alert("El carrito está vacío");
+        
+        const total = document.getElementById("v-total-pantalla").innerText;
+        document.getElementById("v-monto-final").innerText = total;
+        
+        // Habilitar Cuenta Corriente solo si el cliente no es "Consumidor Final" (id 0)
+        const idCliente = document.getElementById("v-cliente-select").value;
+        const optCtaCte = document.getElementById("opt-cta-cte");
+        optCtaCte.disabled = (idCliente === "0");
+
+        document.getElementById("modalPago").classList.remove("hidden");
+    };
+
+    window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
+
+    window.cerrarPantallaVenta = () => {
+        document.getElementById("pantallaGenerarVenta").classList.add("hidden");
+        document.getElementById("seccionVentas").classList.remove("hidden");
+    };
 
     // 5. MODO OSCURO (Básico para que no te moleste la vista)
     const btnDarkMode = document.getElementById("btnDarkMode");

@@ -103,12 +103,99 @@
                 <div id="seccionVentas" class="hidden">
                     <header class="mb-8 flex justify-between items-center">
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Historial de Ventas</h1>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Ventas</h1>
                         </div>
-                        <button id="btn-nueva-venta" class="bg-blue-600 text-white px-4 py-2 rounded">
+                        <button id="btn-nueva-venta" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                             + Nueva Venta
                         </button>
                     </header>
+                    <div id="pantallaGenerarVenta" class="hidden min-h-screen bg-gray-50 dark:bg-slate-900 p-6">
+                        <div class="max-w-6xl mx-auto">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-3xl font-black text-gray-800 dark:text-white">Nueva Factura</h2>
+                                <button onclick="cerrarPantallaVenta()" class="text-red-500 hover:text-red-700 font-bold">
+                                    ✕ Cancelar y Volver
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-12 gap-6">
+                                <div class="col-span-12 lg:col-span-8 space-y-4">
+                                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                                        <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">Cliente</label>
+                                        <select id="v-cliente-select" class="w-full p-2 border rounded-lg bg-transparent">
+                                            <option value="0">Consumidor Final</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                                        <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">Buscar Producto (SKU o Nombre)</label>
+                                        <div class="flex gap-2">
+                                            <select id="v-producto-select" class="flex-1 p-2 border rounded-lg bg-transparent"></select>
+                                            <input type="number" id="v-cantidad" value="1" min="1" class="w-20 p-2 border rounded-lg text-center bg-transparent">
+                                            <button onclick="agregarItemVenta()" class="bg-blue-600 text-white px-6 rounded-lg font-bold">Añadir</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                                        <table class="w-full text-left">
+                                            <thead class="bg-gray-50 dark:bg-slate-700 text-xs uppercase">
+                                                <tr>
+                                                    <th class="p-4">Descripción</th>
+                                                    <th class="p-4">Marca</th>
+                                                    <th class="p-4">Modelo</th>
+                                                    <th class="p-4 text-center">Cant.</th>
+                                                    <th class="p-4 text-right">Precio Unit.</th>
+                                                    <th class="p-4 text-right">Subtotal</th>
+                                                    <th class="p-4 text-center">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="v-items-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="col-span-12 lg:col-span-4">
+                                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 sticky top-6">
+                                        <h3 class="text-lg font-bold mb-4 border-b pb-2">Resumen</h3>
+                                        <div class="space-y-4">
+                                            <div class="flex justify-between text-2xl font-black text-blue-600">
+                                                <span>TOTAL:</span>
+                                                <span id="v-total-pantalla">$0.00</span>
+                                            </div>
+                                            <button onclick="abrirModalPago()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-xl shadow-lg hover:bg-green-700 transition-all">
+                                                CREAR VENTA
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="modalPago" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl">
+                            <h3 class="text-xl font-bold mb-4">Confirmar Pago</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm mb-1">Método de Pago:</label>
+                                    <select id="v-metodo-pago" class="w-full p-3 border rounded-xl dark:bg-slate-700">
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                        <option value="QR">QR</option>
+                                        <option id="opt-cta-cte" value="Cuenta Corriente" disabled title="Solo para clientes registrados">Cuenta Corriente</option>
+                                    </select>
+                                </div>
+                                <div class="text-center py-4">
+                                    <p class="text-sm text-gray-500">Monto Final a cobrar:</p>
+                                    <p id="v-monto-final" class="text-3xl font-black text-green-600">$0.00</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="cerrarModalPago()" class="flex-1 py-3 bg-gray-100 dark:bg-slate-700 rounded-xl">Volver</button>
+                                    <button onclick="confirmarVentaFinal()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">CERRAR VENTA</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -127,11 +214,11 @@
                     </div>
                 </div>
 
-                <!-- SECCION INVENTARIO por defecto) -->
+                <!-- SECCION PRODUCTOS (oculta por defecto) -->
                 <section id="seccionProductos" class="hidden">
                     <header class="mb-8 flex justify-between items-center">
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Inventario</h1>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Productos</h1>
                         </div>
                         <button id="btnAbrirModalProducto" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                             + Nuevo Producto
@@ -174,80 +261,6 @@
             </main>
         </div>
         
-        <!-- MODAL VENTA-->
-        <div id="modalVenta" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-                <div class="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-naranja-600">Registrar Venta</h2>
-                    <button id="btnCerrarModalVenta" class="text-gray-400 hover:text-gray-600">✕</button>
-                </div>
-                <form id="formVenta" autocomplete="off" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Cliente</label>
-                        <input type="text" id="inputCliente" placeholder="Consumidor Final" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Catálogo</label>
-                        <input type="text" id="inputCatalogo" placeholder="Lista_1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                    </div>
-                    <label class="text-xs text-gray-500 dark:text-gray-400">Código de barras</label>
-                    <input id="inputCodigoBarras" class="border p-2 rounded" placeholder="Escanear producto"/>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Producto</label>
-                        <input id="inputProducto" type="text" placeholder="Buscar producto..." class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600">
-                        <div id="sugerenciasProductos" class="absolute bg-white dark:bg-slate-700 border w-full rounded-lg shadow hidden z-50"></div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium mb-1">Cantidad</label>
-                            <input type="number" id="inputCantidad" value="1" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium mb-1">Precio (ARS)</label>
-                            <input type="number" id="inputPrecio" readonly placeholder="0.00" class="w-full p-3 rounded-lg border dark:bg-slate-700 dark:border-slate-600 outline-none focus:ring-2 focus:ring-naranja-500">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">
-                        Agregar Producto
-                    </button>
-                    <div class="mt-4">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="text-left border-b">
-                                    <th class="py-2">Producto</th>
-                                    <th class="py-2 text-center">Cant.</th>
-                                    <th class="py-2 text-right">Precio</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaCarrito"></tbody>
-                        </table>
-                        <div class="flex justify-end mt-4 text-lg font-bold">
-                            Total: <span id="totalVenta" class="ml-2">$0</span>
-                        </div>
-                    </div>
-                    <label class="text-xs text-gray-500">Forma de pago</label>
-                    <select id="formaPago" class="border p-2 rounded">
-                        <option value="efectivo">Efectivo</option>
-                        <option value="transferencia">Transferencia</option>
-                        <option value="tarjeta">Tarjeta</option>
-                        <option value="qr">QR</option>
-                    </select>
-                    <label class="text-xs text-gray-500">Cuotas</label>
-                    <select id="cuotas" class="border p-2 rounded">
-                        <option value="1">1 cuota</option>
-                        <option value="3">3 cuotas</option>
-                        <option value="6">6 cuotas</option>
-                        <option value="12">12 cuotas</option>
-                    </select>
-                    <p id="valorCuota" class="text-sm font-semibold mt-2"></p>
-                    <button type="button" id="btnConfirmar" class="w-full bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-3 rounded-xl transition-all mt-4">
-                        Confirmar Venta
-                    </button>
-                </form>
-                
-            </div>
-        </div>
-
         <!-- MODAL PRODUCTO -->
         <div id="modalProducto" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
@@ -429,56 +442,6 @@
                 </form>
             </div>
         </div>
-
-        
-        
-        <!-- MODAL DETALLE VENTA -->
-        <div id="modalVenta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <h2 class="text-2xl font-bold mb-4">Nueva Venta</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block font-semibold">Cliente:</label>
-                        <select id="venta-cliente" class="w-full border p-2 rounded"></select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold">Fecha:</label>
-                        <input type="date" id="venta-fecha" class="w-full border p-2 rounded">
-                    </div>
-                </div>
-                <hr class="my-4">
-                <div class="flex gap-2 mb-4">
-                    <select id="venta-producto-select" class="flex-1 border p-2 rounded"></select>
-                    <input type="number" id="venta-cantidad" value="1" min="1" class="w-20 border p-2 rounded">
-                    <button id="btn-agregar-item" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                        + Agregar
-                    </button>
-                </div>
-                <table class="w-full text-left border-collapse mb-4">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="p-2">Producto</th>
-                            <th class="p-2">Cant.</th>
-                            <th class="p-2">Precio</th>
-                            <th class="p-2">Subtotal</th>
-                            <th class="p-2">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-items-venta">
-                        </tbody>
-                </table>
-                <div class="text-right text-2xl font-bold mb-6">
-                    Total: $<span id="venta-total">0.00</span>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button onclick="cerrarModalVenta()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-                    <button id="btn-confirmar-venta" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                        Confirmar Venta
-                    </button>
-                </div>
-            </div>
-        </div>
-
 
         <!-- Scripts de lógica -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
