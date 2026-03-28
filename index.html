@@ -114,34 +114,29 @@
                             <h2 class="text-xl font-bold">NUEVA VENTA</h2>
                             <span id="reloj-venta" class="text-sm text-gray-400"></span>
                         </header>
-
                         <div class="grid grid-cols-12 gap-6 p-6">
-                            
-                            <aside class="col-span-12 lg:col-span-3 space-y-5 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border dark:border-slate-700">
-                                
+                            <aside class="col-span-12 lg:col-span-3 space-y-5 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border dark:border-slate-700">                             
                                 <div class="border-b dark:border-slate-700 pb-4">
                                     <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Cliente</label>
                                     <div class="flex gap-1">
                                         <select id="v-cliente-select" class="flex-1 p-2 text-sm border rounded bg-transparent font-medium text-blue-600 dark:text-blue-400">
                                             <option value="0">Consumidor Final</option>
                                         </select>
-                                        <button onclick="abrirBuscadorCliente()" title="Busqueda avanzada..."
+                                        <button onclick="abrirBuscadorClientes()" title="Busqueda avanzada..."
                                             class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                                             🔍
                                         </button>
                                     </div>
                                     <p class="text-[10px] text-gray-400 mt-1">Presione Enter o la lupa para buscar</p>
                                 </div>
-
                                 <div>
                                     <label class="block text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Producto</label>
                                     <div class="flex gap-1">
-                                        <input type="text" id="v-sku-directo" placeholder="Ingrese SKU..."
+                                        <input type="text" id="v-sku-directo" placeholder="Ingrese SKU..." 
                                             onkeypress="checkEnterVenta(event)"
                                             class="flex-1 p-2 text-sm border rounded bg-transparent font-mono focus:border-blue-500 outline-none">
                                         
-                                        <button onclick="abrirBuscadorProductos()" title="Buscar en catálogo"
-                                            class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                        <button onclick="abrirBuscadorProductos()" type="button" class="bg-blue-600 text-white p-2 rounded">
                                             🔍
                                         </button>
                                     </div>
@@ -225,27 +220,77 @@
                             </div>
                         </div>
                     </div>
+                    <div id="modalBuscadorClientes" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-slate-800 w-full max-w-5xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                            
+                            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
+                                <h3 class="text-lg font-bold">Seleccionar Cliente</h3>
+                                <button onclick="cerrarBuscadorClientes()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+                            </div>
+                            <div class="p-4 bg-white dark:bg-slate-800">
+                                <input type="text" id="inputFiltroBusqueda" onkeyup="filtrarClientesModal()" 
+                                    placeholder="Filtrar por nombre, apellido o DNI" 
+                                    class="w-full p-3 rounded-xl border dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
 
-                    <div id="modalPago" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-                        <div class="bg-white dark:bg-slate-800 w-full max-w-md p-6 rounded-2xl shadow-2xl">
-                            <h3 class="text-xl font-bold mb-4">Confirmar Pago</h3>
-                            <div class="space-y-4">
+                            <div class="flex-1 overflow-y-auto p-4">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="sticky top-0 bg-gray-100 dark:bg-slate-700 uppercase text-xs font-bold">
+                                        <tr>
+                                            <th class="p-3">Nombreo</th>
+                                            <th class="p-3">Apellido</th>
+                                            <th class="p-3">Direccion</th>
+                                            <th class="p-3 text-center">DNI</th>
+                                            <th class="p-3 text-center">CUIL/CUIT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaBuscadorBody">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="modalPago" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+                            <div class="bg-blue-600 p-4 text-white">
+                                <h3 class="text-xl font-bold flex items-center gap-2">
+                                    💰 Finalizar Venta
+                                </h3>
+                            </div>
+                            <div class="p-6 space-y-5">
+                                <div class="flex justify-between items-center bg-gray-50 dark:bg-slate-900 p-4 rounded-xl">
+                                    <span class="text-gray-500 uppercase text-xs font-bold">Total a Cobrar:</span>
+                                    <span id="pago-total-monto" class="text-3xl font-black text-blue-600">$0.00</span>
+                                </div>
                                 <div>
-                                    <label class="block text-sm mb-1">Método de Pago:</label>
-                                    <select id="v-metodo-pago" class="w-full p-3 border rounded-xl dark:bg-slate-700">
+                                    <label class="block text-sm font-medium mb-2">Forma de Pago</label>
+                                    <select id="pago-metodo" onchange="toggleCamposCtaCte()" class="w-full p-3 rounded-xl border dark:border-slate-700 bg-transparent text-lg focus:ring-2 focus:ring-blue-500">
                                         <option value="Efectivo">Efectivo</option>
                                         <option value="Transferencia">Transferencia</option>
                                         <option value="QR">QR</option>
-                                        <option id="opt-cta-cte" value="Cuenta Corriente" disabled title="Solo para clientes registrados">Cuenta Corriente</option>
+                                        <option value="Tarjeta">Tarjeta</option>
+                                        <option id="opt-cta-cte" value="Cuenta Corriente">Cuenta Corriente (Fiado)</option>
                                     </select>
                                 </div>
-                                <div class="text-center py-4">
-                                    <p class="text-sm text-gray-500">Monto Final a cobrar:</p>
-                                    <p id="v-monto-final" class="text-3xl font-black text-green-600">$0.00</p>
+                                <div id="campos-ctacte" class="hidden space-y-4 border-l-4 border-yellow-500 pl-4 bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-r-xl">
+                                    <p class="text-xs text-yellow-700 dark:text-yellow-400 font-bold uppercase">Configuración de Deuda</p>
+                                    <div>
+                                        <label class="block text-sm mb-1">¿Entrega algo de dinero ahora?</label>
+                                        <input type="number" id="pago-entrega" value="0" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold text-green-600">
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span>Saldo que irá a Cta. Cte:</span>
+                                        <span id="pago-saldo-final" class="font-bold text-red-500">$0.00</span>
+                                    </div>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button onclick="cerrarModalPago()" class="flex-1 py-3 bg-gray-100 dark:bg-slate-700 rounded-xl">Volver</button>
-                                    <button onclick="confirmarVentaFinal()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">CERRAR VENTA</button>
+                                <div class="grid grid-cols-2 gap-3 pt-4">
+                                    <button onclick="cerrarModalPago()" class="py-3 bg-gray-100 dark:bg-slate-700 rounded-xl font-bold uppercase text-sm">
+                                        Cancelar
+                                    </button>
+                                    <button onclick="procesarVentaFinal()" id="btn-confirmar-final" class="py-3 bg-blue-600 text-white rounded-xl font-bold uppercase text-sm hover:bg-blue-700 shadow-lg shadow-blue-500/30">
+                                        Confirmar Venta
+                                    </button>
                                 </div>
                             </div>
                         </div>
