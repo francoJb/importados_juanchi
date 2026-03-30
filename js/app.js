@@ -32,13 +32,6 @@ window.prepararEdicionProducto = async (id) => {
     document.getElementById("control_stock").checked = p.control_stock;
     document.getElementById("stock").value = p.stock;
     document.getElementById("stock_minimo").value = p.stock_minimo;
-    document.getElementById("nro_motor").value = p.nro_motor || "";
-    document.getElementById("nro_chasis").value = p.nro_chasis || "";
-
-    // --- LA PARTE NUEVA ---
-    // Disparamos el evento 'change' manualmente para que el código que oculta/muestra
-    // el div de chasis y motor se ejecute ahora mismo.
-    document.getElementById("categoria").dispatchEvent(new Event('change'));
     // ----------------------
 
     // Abrimos el modal
@@ -179,29 +172,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
-    const categoriaSelect = document.getElementById("categoria");
-    const camposVehiculo = document.getElementById("camposVehiculo");
-    const inputMotor = document.getElementById("nro_motor");
-    const inputChasis = document.getElementById("nro_chasis");
-    function toggleCamposVehiculo() {
-        const categoria = categoriaSelect.value;
-        const esVehiculo = categoria === "moto" || categoria === "auto";
-        camposVehiculo.style.display = esVehiculo ? "block" : "none";
-        // 👉 hacer obligatorios o no
-        inputMotor.required = esVehiculo;
-        inputChasis.required = esVehiculo;
-        // 👉 limpiar si se ocultan (MUY IMPORTANTE)
-        if (!esVehiculo) {
-            inputMotor.value = "";
-            inputChasis.value = "";
-        }
-    }
-
-    // evento al cambiar categoría
-    categoriaSelect.addEventListener("change", toggleCamposVehiculo);
-
-    // 👉 IMPORTANTE: ejecutar al cargar (modo edición)
-    toggleCamposVehiculo();
 
     // 4. GUARDAR PRODUCTO (EVENTO SUBMIT)
     const formProducto = document.getElementById("formProducto");
@@ -221,8 +191,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
-            nro_chasis: document.getElementById("nro_chasis")?.value || null,
-            nro_motor: document.getElementById("nro_motor")?.value || null
         };
         if (!datos.sku){
             alert("⚠️ El SKU es obligatorio.");

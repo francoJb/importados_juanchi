@@ -112,7 +112,7 @@
                     <div id="pantallaGenerarVenta" class="hidden min-h-screen bg-gray-50 dark:bg-slate-900">
                         <header class="bg-gray-800 text-white p-4 shadow-lg flex justify-between items-center">
                             <h2 class="text-xl font-bold">NUEVA VENTA</h2>
-                            <span id="reloj-venta" class="text-sm text-gray-400"></span>
+                            <span id="reloj-venta" class="text-lg text-gray-400"></span>
                         </header>
                         <div class="grid grid-cols-12 gap-6 p-6">
                             <aside class="col-span-12 lg:col-span-3 space-y-5 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border dark:border-slate-700">                             
@@ -136,7 +136,7 @@
                                             onkeypress="checkEnterVenta(event)"
                                             class="flex-1 p-2 text-sm border rounded bg-transparent font-mono focus:border-blue-500 outline-none">
                                         
-                                        <button onclick="abrirBuscadorProductos()" type="button" class="bg-blue-600 text-white p-2 rounded">
+                                        <button onclick="abrirBuscadorProductos()" type="button" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                                             🔍
                                         </button>
                                     </div>
@@ -405,19 +405,7 @@
                             <select id="categoria">
                                 <option value="">Seleccione</option>
                                 <option value="electrodomestico">Electrodoméstico</option>
-                                <option value="moto">Moto</option>
-                                <option value="auto">Auto</option>
                             </select>
-                    <div id="camposVehiculo" style="display:none;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label class="block text-sm font-bold" style="margin-bottom: 0;">Nº Motor</label>
-                            <input type="text" id="nro_motor" placeholder="Ingresar Nº">
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label class="block text-sm font-bold" style="margin-bottom: 0;">Nº Chasis</label>
-                            <input type="text" id="nro_chasis" placeholder="Ingresar Nº">
-                        </div>
-                    </div>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <div>

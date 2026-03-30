@@ -17,14 +17,6 @@ exports.crearProducto = async (req, res) => {
         return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
     }
 
-    if (["moto", "auto"].includes(p.categoria)) {
-        if (!p.nro_motor?.trim() || !p.nro_chasis?.trim()) {
-            return res.status(400).json({
-                error: "Motor y chasis son obligatorios para motos y autos"
-            });
-        }
-    }
-
     try {
         // 2. Validación de SKU manual (opcional, MySQL UNIQUE también lo frenaría)
         const checkSql = "SELECT id FROM productos WHERE sku = ? AND estado = 1";
@@ -35,8 +27,8 @@ exports.crearProducto = async (req, res) => {
         }
 
         // 3. Inserción
-        const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, nro_chasis, nro_motor, estado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+        const sql = `INSERT INTO productos (sku, descripcion, marca, modelo, categoria, proveedor, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
         
         const params = [
             p.sku.trim(), 
@@ -50,9 +42,7 @@ exports.crearProducto = async (req, res) => {
             p.iva || 21, 
             p.control_stock ? 1 : 0, 
             p.stock || 0, 
-            p.stock_minimo || 0,
-            p.nro_chasis || null,
-            p.nro_motor || null
+            p.stock_minimo || 0
         ];
 
         const [result] = await db.query(sql, params);
@@ -77,7 +67,7 @@ exports.editarProducto = async (req, res) => {
         return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
     }
 
-    const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=?, nro_chasis=?, nro_motor=? WHERE id=?`;
+    const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria=?, proveedor=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE id=?`;
     
     const params = [
         p.sku, 
@@ -92,8 +82,6 @@ exports.editarProducto = async (req, res) => {
         p.control_stock ? 1 : 0, 
         p.stock, 
         p.stock_minimo, 
-        p.nro_chasis,
-        p.nro_motor,
         id
     ];
 

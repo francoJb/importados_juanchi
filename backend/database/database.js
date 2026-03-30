@@ -32,8 +32,6 @@ const configurarTablas = async () => {
                 control_stock TINYINT(1) DEFAULT 1,
                 stock INT DEFAULT 0,
                 stock_minimo INT DEFAULT 0,
-                nro_chasis VARCHAR(100),
-                nro_motor VARCHAR(100),
                 estado TINYINT(1) DEFAULT 1
             )
         `);
