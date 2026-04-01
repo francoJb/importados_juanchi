@@ -4,10 +4,10 @@ const cors = require('cors'); // Necesario para que el frontend pueda hablar con
 const app = express();
 const productosRoutes = require('./routes/productosRoutes');
 const clientesRoutes = require('./routes/clientesRoutes');
+const ventasRoutes = require('./routes/ventasRoutes');
 app.use(cors()); // Permite peticiones desde el frontend (React)
 app.use(express.json());// Permite leer datos en formato JSON en el cuerpo de la petición
-
-// RUTAS
+app.use('/api/ventas', ventasRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/clientes', clientesRoutes);
 

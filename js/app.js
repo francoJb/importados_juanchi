@@ -671,6 +671,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Escuchar cambios en el input de entrega para recalcular en vivo
     document.getElementById("pago-entrega")?.addEventListener("input", calcularSaldoCtaCte);
 
+    window.procesarVentaFinal = async () => {
+        const btnConfirmar = document.getElementById("btn-confirmar-final");
+        const idCliente = parseInt(document.getElementById("v-cliente-select").value);
+        const metodoPago = document.getElementById("pago-metodo").value;
+        const entregaInicial = parseFloat(document.getElementById("pago-entrega").value) || 0;
+        const observaciones = document.getElementById("v-observaciones").value;
+        
+        // Calculamos el total real del carrito
+        const totalVenta = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
+
+        // 1. Validación de seguridad extra
+        if (carritoVenta.length === 0) return alert("El carrito está vacío.");
+        if (metodoPago === "Cuenta Corriente" && idCliente === 0) {
+            return alert("Error: No se puede fiar a un Consumidor Final.");
+        }
+
+        // Bloqueamos el botón para evitar doble clic y duplicados en la DB
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerText = "Procesando...";
+
+        // 2. Preparamos el paquete de datos
+        const datosVenta = {
+            cliente_id: idCliente,
+            total: totalVenta,
+            metodo_pago: metodoPago,
+            entrega_inicial: entregaInicial, // Importante para Cta Cte
+            observaciones: observaciones,
+            items: carritoVenta.map(item => ({
+                id: item.id,
+                cantidad: item.cantidad,
+                precio: item.precio
+            }))
+        };
+
+        try {
+            // 3. Enviamos al servidor (Ruta que crearemos en el Controller)
+            const respuesta = await fetch("http://localhost:3000/api/ventas", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datosVenta)
+            });
+
+            const resultado = await respuesta.json();
+
+            if (respuesta.ok) {
+                alert("✅ Venta realizada con éxito.");
+                
+                // Limpiamos todo y volvemos al historial
+                carritoVenta = [];
+                cerrarModalPago();
+                cerrarPantallaVenta();
+                
+                // Si tenés una función para refrescar la tabla de historial, llamala acá
+                if (typeof obtenerVentas === "function") obtenerVentas();
+                
+            } else {
+                throw new Error(resultado.error || "Error desconocido al guardar.");
+            }
+        } catch (error) {
+            alert("❌ Error al procesar venta: " + error.message);
+        } finally {
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerText = "Confirmar Venta";
+        }
+    };
+
     window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
 
     // 5. MODO OSCURO (Básico para que no te moleste la vista)
