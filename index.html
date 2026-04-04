@@ -98,6 +98,45 @@
                         </table>
                     </div>      
                 </div>
+                <div id="pantalla-balance-cliente" class="seccion-pantalla hidden p-6 animate-fade-in">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 class="text-3xl font-black text-gray-800 dark:text-white" id="ba-nombre-cliente">Balance de Cliente</h1>
+                            <p class="text-gray-500 text-sm">Historial completo de movimientos y saldos</p>
+                        </div>
+                        
+                        <button onclick="volverAClientes()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2">
+                            ⬅️ VOLVER A CLIENTES
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-b-4 border-red-500">
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest">Saldo Deudor Actual</span>
+                            <p id="ba-saldo-total" class="text-3xl font-mono font-black text-red-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-b-4 border-green-500">
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest">Total Pagado</span>
+                            <p id="ba-total-pagos" class="text-3xl font-mono font-black text-green-600 mt-2">$0.00</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 dark:bg-slate-900/50 text-xs font-bold uppercase text-gray-500 border-b dark:border-slate-700">
+                                    <th class="p-4">Fecha / Hora</th>
+                                    <th class="p-4">Concepto / Comprobante</th>
+                                    <th class="p-4 text-right">Debe (+)</th>
+                                    <th class="p-4 text-right">Haber (-)</th>
+                                    <th class="p-4 text-right text-blue-600">Saldo Acumulado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ba-tabla-body" class="divide-y dark:divide-slate-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
 
                 <!-- SECCION VENTAS (Oculta por defecto) -->
                 <div id="seccionVentas" class="hidden">
@@ -308,7 +347,7 @@
                                     <th class="p-4 text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablaVentasBody"></tbody>
+                            <tbody id="cuerpo-tabla-ventas"></tbody>
                         </table>
                     </div>
                 </div>
@@ -527,6 +566,67 @@
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div id="modal-detalle-venta" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
+                    <div>
+                        <h2 class="text-2xl font-black text-gray-800 dark:text-white" id="md-titulo">Detalle de Venta #--</h2>
+                        <p class="text-sm text-gray-500" id="md-fecha">--/--/---- --:--</p>
+                    </div>
+                    <button onclick="cerrarModalDetalle()" class="text-gray-400 hover:text-red-500 transition-colors text-2xl">&times;</button>
+                </div>
+
+                <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white dark:bg-slate-800">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold uppercase text-gray-400">Cliente</label>
+                        <p class="font-medium text-gray-900 dark:text-white" id="md-cliente">--</p>
+                    </div>
+                    <div class="space-y-1 text-center">
+                        <label class="text-xs font-bold uppercase text-gray-400">Estado de Venta</label>
+                        <div id="md-estado">--</div>
+                    </div>
+                    <div class="space-y-1 text-right border-l dark:border-slate-700 pl-6">
+                        <label class="text-xs font-bold uppercase text-gray-400">Pendiente de Pago</label>
+                        <p class="text-xl font-mono font-black text-red-600" id="md-pendiente">$0.00</p>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs font-bold uppercase text-gray-400 border-b dark:border-slate-700">
+                                <th class="pb-3">SKU</th>
+                                <th class="pb-3">Descripción</th>
+                                <th class="pb-3 text-right">Precio</th>
+                                <th class="pb-3 text-center">Cant.</th>
+                                <th class="pb-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="md-items-body" class="divide-y dark:divide-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="p-6 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase text-gray-400 block mb-1">Observaciones</label>
+                        <p class="text-sm italic text-gray-600 dark:text-gray-300" id="md-observaciones">Sin observaciones.</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <button id="btn-md-cobrar" class="hidden bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105 flex items-center gap-2">
+                            <span>💵</span> REGISTRAR PAGO
+                        </button>
+
+                        <div class="text-right">
+                            <p class="text-gray-400 text-sm">Total Final</p>
+                            <p class="text-3xl font-black text-blue-600 font-mono" id="md-total-final">$0.00</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

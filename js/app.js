@@ -73,8 +73,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             const confirmar = confirm("⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?");
             if (!confirmar) return; // Si dice que no, nos quedamos en la pantalla
         }
-        
-        // Si está vacío o confirmó, cerramos la pantalla
         cerrarPantallaVenta(); 
     };
 
@@ -124,8 +122,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const seccionDashboard = document.getElementById("seccionDashboard");
     const linkClientes = document.getElementById("linkClientes");
     const seccionClientes = document.getElementById("seccionClientes");
-    const linkVentas = document.getElementById("linkVentas")
-    const seccionVentas = document.getElementById("seccionVentas")
+    const linkVentas = document.getElementById("linkVentas");
+    const seccionVentas = document.getElementById("seccionVentas");
 
     linkDashboard.onclick = () => {
         seccionDashboard.classList.remove("hidden");
@@ -153,8 +151,63 @@ document.addEventListener("DOMContentLoaded", async () => {
         seccionVentas.classList.remove("hidden");
         seccionProductos.classList.add("hidden");
         seccionClientes.classList.add("hidden");
+        window.listarVentas();
     };
 
+    // 1. Función que dispara el botón "Balance" desde la tabla de clientes
+    window.irABalanceCliente = async (id, nombre, apellido) => {
+        // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
+        document.getElementById("seccionClientes").classList.add("hidden");
+        
+        // Mostramos Balance
+        const pantallaBalance = document.getElementById("pantalla-balance-cliente");
+        pantallaBalance.classList.remove("hidden");
+
+        // Actualizamos el nombre en la cabecera
+        document.getElementById("ba-nombre-cliente").innerText = `Balance: ${nombre} ${apellido}`;
+
+        // Cargamos los datos reales
+        await cargarDatosBalance(id);
+    };
+
+    // 2. Función para volver (Botón arriba a la derecha)
+    window.volverAClientes = () => {
+        document.getElementById("pantalla-balance-cliente").classList.add("hidden");
+        document.getElementById("seccionClientes").classList.remove("hidden");
+    };
+
+    // 3. Carga de datos desde la API
+    async function cargarDatosBalance(clienteId) {
+        try {
+            const res = await fetch(`http://localhost:3000/api/clientes/${clienteId}/cuenta-corriente`);
+            const data = await res.json();
+
+            // Llenar tarjetas superiores
+            document.getElementById("ba-saldo-total").innerText = `$${parseFloat(data.saldoTotal).toFixed(2)}`;
+            
+            // Calcular total pagado (suma de haber)
+            const totalPagado = data.movimientos.reduce((sum, m) => sum + parseFloat(m.haber), 0);
+            document.getElementById("ba-total-pagos").innerText = `$${totalPagado.toFixed(2)}`;
+
+            // Llenar tabla
+            const body = document.getElementById("ba-tabla-body");
+            body.innerHTML = data.movimientos.map(m => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
+                    <td class="p-4 text-gray-500">${new Date(m.fecha).toLocaleString('es-AR')}</td>
+                    <td class="p-4">
+                        <span class="font-bold dark:text-white">${m.descripcion}</span>
+                        ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Venta #${m.venta_id}</span>` : ''}
+                    </td>
+                    <td class="p-4 text-right font-mono text-red-500">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
+                    <td class="p-4 text-right font-mono text-green-500">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>
+                    <td class="p-4 text-right font-black font-mono dark:text-white bg-blue-50/30 dark:bg-blue-900/10">$${parseFloat(m.saldo_acumulado).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error("Error al cargar balance:", error);
+        }
+    }
 
     // 3. ABRIR/CERRAR MODAL PRODUTO
     document.getElementById("btnAbrirModalProducto").onclick = () => {
@@ -353,7 +406,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnAbrirVenta = document.getElementById("btn-nueva-venta");
     if (btnAbrirVenta) {
         btnAbrirVenta.addEventListener("click", () => {
-            mostrarPantallaVenta(); 
+            mostrarPantallaVenta();
         });
     }
     
@@ -403,6 +456,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("seccionClientes"),
             document.getElementById("seccionVentas")
         ];
+        await window.listarVentas();
+        document.getElementById("pantallaGenerarVenta").classList.remove("hidden");
 
         // Ocultamos todas y mostramos la de Ventas
         todasLasSecciones.forEach(s => s?.classList.add("hidden"));
@@ -735,9 +790,153 @@ document.addEventListener("DOMContentLoaded", async () => {
             btnConfirmar.disabled = false;
             btnConfirmar.innerText = "Confirmar Venta";
         }
+        const res = await response.json();
+        if (res.success) {
+            window.listarVentas();
+            alert("Venta creada con éxito");
+            cerrarModalPago();
+            // Volver a la lista de ventas
+        }
     };
 
     window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
+
+    window.verDetalleVenta = async (id) => {
+        try {
+            // 1. Buscamos los datos de la venta (la cabecera)
+            const resVenta = await fetch(`http://localhost:3000/api/ventas`);
+            const ventas = await resVenta.json();
+            const venta = ventas.find(v => v.id === id);
+
+            // 2. Buscamos los productos del detalle
+            const resDetalle = await fetch(`http://localhost:3000/api/ventas/${id}/detalle`);
+            const detalles = await resDetalle.json();
+
+            if (!venta) return alert("Venta no encontrada");
+
+            // 3. Llenamos la información general
+            document.getElementById("md-titulo").innerText = `Detalle de Venta #${venta.id}`;
+            document.getElementById("md-fecha").innerText = new Date(venta.fecha).toLocaleString('es-AR');
+            document.getElementById("md-cliente").innerText = venta.cliente_nombre ? `${venta.cliente_nombre} ${venta.cliente_apellido}` : "Consumidor Final";
+            document.getElementById("md-total-final").innerText = `$${parseFloat(venta.total).toFixed(2)}`;
+            document.getElementById("md-pendiente").innerText = `$${parseFloat(venta.saldo_pendiente).toFixed(2)}`;
+            document.getElementById("md-observaciones").innerText = venta.observaciones || "Sin observaciones registradas.";
+
+            // Estado visual (badge)
+            const saldo = parseFloat(venta.saldo_pendiente);
+            const contenedorEstado = document.getElementById("md-estado");
+            // Agregá esto también en la lógica del saldo
+            const txtPendiente = document.getElementById("md-pendiente");
+            if (saldo > 0) {
+                txtPendiente.classList.add("text-red-600", "animate-pulse"); // Titila suavemente si debe plata
+            } else {
+                txtPendiente.classList.remove("text-red-600", "animate-pulse");
+                txtPendiente.classList.add("text-gray-400");
+            }
+           
+            // ... código anterior de verDetalleVenta ...
+
+            const btnCobrar = document.getElementById("btn-md-cobrar");
+            if (saldo > 0) {
+                btnCobrar.classList.remove("hidden");
+                const idDelCliente = venta.cliente_id;
+                
+                // Al hacer clic, cerramos este modal y abrimos el de cobranza
+                btnCobrar.onclick = () => {
+                    cerrarModalDetalle();
+                    abrirPantallaCobranza(venta.id, idDelCliente, saldo);
+                };
+            } else {
+                btnCobrar.classList.add("hidden");
+            }
+
+            // Finalmente mostramos el modal
+            document.getElementById("modal-detalle-venta").classList.remove("hidden");
+
+            if (saldo <= 0) {
+                // VENTA COBRADA TOTALMENTE
+                contenedorEstado.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <span class="px-4 py-1 bg-green-500 text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
+                            FINALIZADA
+                        </span>
+                        <span class="text-[10px] text-green-600 mt-1 font-bold">Cobro Total</span>
+                    </div>`;
+            } else if (saldo < parseFloat(venta.total)) {
+                // VENTA PAGADA PARCIALMENTE
+                contenedorEstado.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <span class="px-4 py-1 bg-orange-500 text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
+                            PAGO PARCIAL
+                        </span>
+                        <span class="text-[10px] text-orange-600 mt-1 font-bold">Pendiente de Cobro</span>
+                    </div>`;
+            } else {
+                // NO PAGÓ NADA (DEUDA TOTAL)
+                contenedorEstado.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <span class="px-4 py-1 bg-red-500 text-white rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
+                            PENDIENTE
+                        </span>
+                        <span class="text-[10px] text-red-600 mt-1 font-bold">Cuenta Corriente</span>
+                    </div>`;
+            }
+            // 4. Llenamos la tabla de productos
+            const body = document.getElementById("md-items-body");
+            body.innerHTML = detalles.map(d => `
+                <tr class="text-sm">
+                    <td class="py-4 font-mono text-gray-500">${d.sku}</td>
+                    <td class="py-4 font-medium dark:text-white">${d.descripcion}</td>
+                    <td class="py-4 text-right font-mono">$${parseFloat(d.precio_unitario).toFixed(2)}</td>
+                    <td class="py-4 text-center font-bold text-blue-600">x${d.cantidad}</td>
+                    <td class="py-4 text-right font-black dark:text-white font-mono">$${(d.cantidad * d.precio_unitario).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            // 5. Mostrar el modal
+            document.getElementById("modal-detalle-venta").classList.remove("hidden");
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error al cargar el detalle.");
+        }
+    };
+
+    window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente) => {
+        const monto = prompt(`Registrar pago...\nSaldo: $${saldoPendiente}`);
+        if (!monto || isNaN(monto) || monto <= 0) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/ventas/${ventaId}/pago`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monto }) // Solo mandamos el monto
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert("¡Pago de $" + monto + " registrado!");
+                window.listarVentas(); // Refrescar la tabla principal
+            } else {
+                alert("Error: " + data.error);
+            }
+        } catch (error) {
+            alert("Error de conexión");
+        }
+    };
+
+    window.cerrarModalDetalle = () => {
+        document.getElementById("modal-detalle-venta").classList.add("hidden");
+    };
+    window.imprimirVenta = (id) => {
+        alert("Generando PDF para la venta " + id);
+    };
+    window.eliminarVenta = async (id) => {
+        if(confirm("¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.")){
+            // Aquí irá el fetch DELETE a tu API
+        }
+    };
+
 
     // 5. MODO OSCURO (Básico para que no te moleste la vista)
     const btnDarkMode = document.getElementById("btnDarkMode");

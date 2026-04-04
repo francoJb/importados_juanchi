@@ -81,3 +81,35 @@ exports.eliminarCliente = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.obtenerCuentaCorriente = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.query(`
+            SELECT 
+                id, 
+                fecha, 
+                descripcion, 
+                venta_id, 
+                debe, 
+                haber, 
+                saldo_acumulado 
+            FROM cuenta_corriente 
+            WHERE cliente_id = ? 
+            ORDER BY fecha DESC`, 
+        [id]);
+
+        // También traemos el saldo total actual para mostrarlo arriba
+        const [saldoTotal] = await db.query(
+            "SELECT IFNULL(SUM(debe - haber), 0) as total FROM cuenta_corriente WHERE cliente_id = ?",
+            [id]
+        );
+
+        res.json({
+            movimientos: rows,
+            saldoTotal: saldoTotal[0].total
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

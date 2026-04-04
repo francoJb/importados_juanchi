@@ -15,12 +15,11 @@ const db = mysql.createPool({
 const configurarTablas = async () => {
     try {
         console.log("⏳ Verificando tablas en MySQL...");
-        
-        // Tabla de Productos
+        // 1. TABLA DE PRODUCTOS (Tu estructura original)
         await db.query(`
             CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                sku VARCHAR(50),
+                sku VARCHAR(50) UNIQUE,
                 descripcion VARCHAR(255) NOT NULL,
                 marca VARCHAR(100),
                 modelo VARCHAR(100),
@@ -35,8 +34,7 @@ const configurarTablas = async () => {
                 estado TINYINT(1) DEFAULT 1
             )
         `);
-
-        // Tabla de Clientes
+        // 2. TABLA DE CLIENTES (Tu estructura original)
         await db.query(`
             CREATE TABLE IF NOT EXISTS clientes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,8 +50,48 @@ const configurarTablas = async () => {
                 estado TINYINT(1) DEFAULT 1
             )
         `);
-
-        console.log("✅ MySQL está listo y con las tablas creadas.");
+        // 3. TABLA DE VENTAS (Agregada)
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS ventas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NULL,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                total DECIMAL(12, 2) NOT NULL,
+                metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente') NOT NULL,
+                estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
+                saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
+                observaciones TEXT,
+                CONSTRAINT fk_venta_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+            )
+        `);
+        // 4. TABLA DE DETALLE_VENTAS (Agregada)
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS detalle_ventas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                venta_id INT NOT NULL,
+                producto_id INT NOT NULL,
+                cantidad INT NOT NULL,
+                precio_unitario DECIMAL(12, 2) NOT NULL,
+                CONSTRAINT fk_detalle_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
+                CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id)
+            )
+        `);
+        // 5. TABLA DE CUENTA_CORRIENTE (Agregada)
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS cuenta_corriente (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cliente_id INT NOT NULL,
+                venta_id INT NULL,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                descripcion VARCHAR(255),
+                debe DECIMAL(12, 2) DEFAULT 0.00,
+                haber DECIMAL(12, 2) DEFAULT 0.00,
+                saldo_acumulado DECIMAL(12, 2),
+                CONSTRAINT fk_cc_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+                CONSTRAINT fk_cc_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
+            )
+        `);
+        console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
     }

@@ -14,7 +14,7 @@ export function dibujarClientes(clientes) {
                 <td class="p-3 border text-left">${p.direccion}</td>
                 <td class="p-3 border text-center">
                     <button onclick="prepararEdicionCliente(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">✏️</button>
-                    <button onclick="balanceCliente(${p.id})" class="text-blue-500 hover:scale-125 transition-transform">⚖️</button>
+                    <button onclick="irABalanceCliente(${p.id}, '${p.nombre}', '${p.apellido}')" title="Ver Balance / CC" class="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors">📊</button>
                     <button class="btn-eliminarCli" "text-blue-500 hover:scale-125 transition-transform" data-id="${p.id}" data-desc="${p.nombre}"> 🗑️</button>
                 </td>
             </tr>

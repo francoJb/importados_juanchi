@@ -37,3 +37,49 @@ export function actualizarTablaVenta(carritoVenta) {
     labelTotal.innerText = `$${total.toFixed(2)}`;
     if (headerCantidad) headerCantidad.innerText = `Cantidad (${cantItems})`;
 }
+
+window.listarVentas = async () => {
+    const cuerpoTabla = document.getElementById("cuerpo-tabla-ventas"); // Asegurate que este sea el ID de tu <tbody>
+    if (!cuerpoTabla) return;
+
+    try {
+        const res = await fetch('http://localhost:3000/api/ventas');
+        const ventas = await res.json();
+
+        cuerpoTabla.innerHTML = ""; // Limpiamos la tabla
+
+        ventas.forEach(v => {
+            const fechaFormateada = new Date(v.fecha).toLocaleString();
+            const cliente = v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido}` : "Consumidor Final";
+            
+            // Lógica para el estado de entrega (puedes ajustarla según tu necesidad)
+            const estadoEntrega = v.estado_pago === 'Pagado' 
+                ? '<span class="text-green-600 font-bold">Entregado</span>' 
+                : '<span class="text-orange-500 font-bold">Pendiente</span>';
+
+            cuerpoTabla.innerHTML += `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-2 text-center">#${v.id}</td>
+                    <td class="p-2">${fechaFormateada}</td>
+                    <td class="p-2 font-bold">$${v.total}</td>
+                    <td class="p-2 text-red-600">$${v.saldo_pendiente}</td>
+                    <td class="p-2 text-center">${estadoEntrega}</td>
+                    <td class="p-2">${cliente}</td>
+                    <td class="p-2 flex gap-2 justify-center">
+                        <button onclick="verDetalleVenta(${v.id})" title="Ver Detalle" class="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200">
+                           👁️
+                        </button>
+                        <button onclick="imprimirVenta(${v.id})" title="Imprimir" class="bg-gray-100 text-gray-600 p-1 rounded hover:bg-gray-200">
+                           🖨️
+                        </button>
+                        <button onclick="eliminarVenta(${v.id})" title="Eliminar" class="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200">
+                           🗑️
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Error al listar ventas:", error);
+    }
+};
