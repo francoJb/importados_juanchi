@@ -532,7 +532,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             const clientes = await fetchClientes(); // Trae los productos de la DB
             const modal = document.getElementById("modalBuscadorClientes");
             const tbody = document.getElementById("tablaBuscadorBody");
-
             tbody.innerHTML = clientes.map(c => `
                 <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                     <td class="p-3 font-mono font-bold text-blue-600">${c.nombre}</td>
@@ -540,21 +539,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <td class="p-3 text-right ${c.direccion}</td>
                     <td class="p-3 text-right font-bold text-green-600">$${c.dni}</td>
                     <td class="p-3 text-center">
-                        <button onclick="seleccionarProductoDesdeModal('${c.idCliente}')" 
+                        <button onclick="seleccionarClienteDesdeModal('${c.idCliente}')" 
                             class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
                             Seleccionar
                         </button>
                     </td>
                 </tr>
             `).join('');
-
             modal.classList.remove("hidden");
             document.getElementById("inputFiltroBusqueda").focus();
         };
         window.cerrarBuscadorClientes = () => {
             document.getElementById("modalBuscadorClientes").classList.add("hidden");
         };
-
         // Llenar Productos con SKU (Código) y Descripción
         const inputSku = document.getElementById("v-sku-directo");
         if (inputSku) {
@@ -563,7 +560,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             console.warn("No se encontró 'v-sku-directo'. Asegúrate de que el input de SKU tenga ese ID.");
         }
-
         // 3. TERCERO: Cargamos los datos (Tu lógica de siempre)
         cargarDatosParaVenta(); 
     };

@@ -9,11 +9,12 @@ export function actualizarTablaVenta(carritoVenta) {
 
     if (carritoVenta.length === 0) {
         body.innerHTML = `<tr id="v-items-vacio"><td colspan="6" class="text-center py-12 text-gray-400 italic">No hay datos</td></tr>`;
-        labelTotal.innerText = "$0.00";
+        if (labelTotal) labelTotal.innerText = "$0.00";
         if (headerCantidad) headerCantidad.innerText = "Cantidad (0)";
         return;
     }
 
+    // 1. Renderizamos el HTML
     body.innerHTML = carritoVenta.map((item, index) => `
         <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
             <td class="p-4 text-gray-500 dark:text-gray-400 font-mono">${item.sku}</td>
@@ -26,16 +27,46 @@ export function actualizarTablaVenta(carritoVenta) {
             </td>
             <td class="p-4 text-right font-black text-gray-900 dark:text-white font-mono">$${item.subtotal.toFixed(2)}</td>
             <td class="p-4 text-center">
-                <button class="btn-quitar" "text-red-500 hover:text-red-700 text-xs" data-index="${index}">🗑️</button>
+                <button class="btn-quitar text-red-500 hover:text-red-700 text-xs" data-index="${index}">🗑️</button>
             </td>
         </tr>
     `).join('');
 
+    // 2. Calculamos totales para los labels
     const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
     const cantItems = carritoVenta.reduce((sum, i) => sum + i.cantidad, 0);
 
-    labelTotal.innerText = `$${total.toFixed(2)}`;
+    if (labelTotal) labelTotal.innerText = `$${total.toFixed(2)}`;
     if (headerCantidad) headerCantidad.innerText = `Cantidad (${cantItems})`;
+
+    // --- AQUÍ ESTÁ EL TRUCO PARA QUE SEA DINÁMICO ---
+
+    // 3. Escuchamos cambios en los inputs de cantidad
+    document.querySelectorAll('.input-cantidad').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const index = e.target.dataset.index;
+            const nuevaCantidad = parseInt(e.target.value);
+
+            if (nuevaCantidad > 0) {
+                // Actualizamos el objeto en el array
+                carritoVenta[index].cantidad = nuevaCantidad;
+                // Recalculamos su subtotal
+                carritoVenta[index].subtotal = nuevaCantidad * carritoVenta[index].precio;
+                
+                // Volvemos a llamar a la función para refrescar la vista
+                actualizarTablaVenta(carritoVenta);
+            }
+        });
+    });
+
+    // 4. Escuchamos clics en los botones de quitar (opcional pero recomendado)
+    document.querySelectorAll('.btn-quitar').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = e.target.dataset.index;
+            carritoVenta.splice(index, 1); // Borramos el item del array
+            actualizarTablaVenta(carritoVenta); // Refrescamos
+        });
+    });
 }
 
 window.listarVentas = async () => {
