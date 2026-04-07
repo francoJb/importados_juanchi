@@ -92,10 +92,10 @@ window.listarVentas = async () => {
                 <tr class="border-b hover:bg-gray-50">
                     <td class="p-2 text-center">#${v.id}</td>
                     <td class="p-2">${fechaFormateada}</td>
-                    <td class="p-2 font-bold">$${v.total}</td>
-                    <td class="p-2 text-red-600">$${v.saldo_pendiente}</td>
+                    <td class="p-2 text-right">$${v.total}</td>
+                    <td class="p-2 text-right text-red-600">$${v.saldo_pendiente}</td>
                     <td class="p-2 text-center">${estadoEntrega}</td>
-                    <td class="p-2">${cliente}</td>
+                    <td class="p-2 text-center">${cliente}</td>
                     <td class="p-2 flex gap-2 justify-center">
                         <button onclick="verDetalleVenta(${v.id})" title="Ver Detalle" class="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200">
                            👁️

@@ -62,11 +62,11 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     modal.classList.add("flex");
 };
 
-
 // --- AL CARGAR EL DOCUMENTO ---
 document.addEventListener("DOMContentLoaded", async () => {
     
-    
+    let carritoVenta = [];
+
     window.volverALista = () => {
         // Si el carrito tiene productos, pedimos confirmación
         if (carritoVenta.length > 0) {
@@ -268,12 +268,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             alert("❌ Error al guardar el producto");
         }
-        // 3. ABRIR/CERRAR MODAL CLIENTE
-        document.getElementById("btnAbrirModalCliente").onclick = () => {
-            document.getElementById("formCliente").reset();
-            document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
-            toggleModal("modalCliente", true);
-        };
+        
         document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
     };
 
@@ -418,7 +413,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 1000);
     }
 
-    let carritoVenta = [];
 
     // Definimos la función con window. para que mostrarPantallaVenta la encuentre
     window.cargarDatosParaVenta = async () => {
@@ -513,7 +507,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     alert("⚠️ El SKU no existe. Abriendo buscador avanzado...");
                     abrirBuscadorProductos();
                     // Opcional: pasar lo que escribió el usuario al filtro del modal
-                    document.getElementById("inputFiltroBusqueda").value = skuIngresado;
+                    document.getElementById("inputFiltroProductos").value = skuIngresado;
                     filtrarProductosModal();
                 }
             }
@@ -531,15 +525,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.abrirBuscadorClientes = async () => {
             const clientes = await fetchClientes(); // Trae los productos de la DB
             const modal = document.getElementById("modalBuscadorClientes");
-            const tbody = document.getElementById("tablaBuscadorBody");
+            const tbody = document.getElementById("tablaBuscadorClientes");
             tbody.innerHTML = clientes.map(c => `
                 <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                     <td class="p-3 font-mono font-bold text-blue-600">${c.nombre}</td>
                     <td class="p-3">${c.apellido}</td>
                     <td class="p-3 text-right ${c.direccion}</td>
-                    <td class="p-3 text-right font-bold text-green-600">$${c.dni}</td>
+                    <td class="p-3 text-right font-bold text-green-600">${c.dni}</td>
                     <td class="p-3 text-center">
-                        <button onclick="seleccionarClienteDesdeModal('${c.idCliente}')" 
+                        <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
                             class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
                             Seleccionar
                         </button>
@@ -547,7 +541,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </tr>
             `).join('');
             modal.classList.remove("hidden");
-            document.getElementById("inputFiltroBusqueda").focus();
+            document.getElementById("inputFiltroProductos").focus();
         };
         window.cerrarBuscadorClientes = () => {
             document.getElementById("modalBuscadorClientes").classList.add("hidden");
@@ -569,17 +563,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.abrirBuscadorProductos = async () => {
         const productos = await fetchProductos(); // Trae los productos de la DB
         const modal = document.getElementById("modalBuscadorProductos");
-        const tbody = document.getElementById("tablaBuscadorBody");
+        const tbody = document.getElementById("tablaBuscadorProductos");
 
         tbody.innerHTML = productos.map(p => `
             <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                <td class="p-3 font-mono font-bold text-blue-600">${p.sku}</td>
-                <td class="p-3">${p.descripcion} <br> <small class="text-gray-400">${p.marca} ${p.modelo}</small></td>
+                <td class="p-3">${p.sku}</td>
+                <td class="p-3">${p.descripcion}</td>
+                <td class="p-3">${p.marca}</td>
                 <td class="p-3 text-right ${p.stock <= p.stock_minimo ? 'text-red-500 font-bold' : ''}">${p.stock}</td>
-                <td class="p-3 text-right font-bold text-green-600">$${p.precio_neto}</td>
+                <td class="p-3 text-right">${p.precio_neto}</td>
                 <td class="p-3 text-center">
                     <button onclick="seleccionarProductoDesdeModal('${p.sku}')" 
-                        class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
+                        class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
                         Seleccionar
                     </button>
                 </td>
@@ -587,7 +582,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         `).join('');
 
         modal.classList.remove("hidden");
-        document.getElementById("inputFiltroBusqueda").focus();
+        document.getElementById("inputFiltroProductos").focus();
     };
 
     // 2. Función para cuando hacés clic en "Seleccionar"
@@ -620,8 +615,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 3. Filtro rápido dentro del modal
     window.filtrarProductosModal = () => {
-        const texto = document.getElementById("inputFiltroBusqueda").value.toLowerCase();
-        const filas = document.querySelectorAll("#tablaBuscadorBody tr");
+        const texto = document.getElementById("inputFiltroProductos").value.toLowerCase();
+        const filas = document.querySelectorAll("tablaBuscadorProductos");
 
         filas.forEach(fila => {
             const contenido = fila.textContent.toLowerCase();
@@ -786,13 +781,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             btnConfirmar.disabled = false;
             btnConfirmar.innerText = "Confirmar Venta";
         }
-        const res = await response.json();
-        if (res.success) {
-            window.listarVentas();
-            alert("Venta creada con éxito");
-            cerrarModalPago();
-            // Volver a la lista de ventas
-        }
+
     };
 
     window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
