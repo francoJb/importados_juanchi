@@ -89,7 +89,7 @@ window.listarVentas = async () => {
                 : '<span class="text-orange-500 font-bold">Pendiente</span>';
 
             cuerpoTabla.innerHTML += `
-                <tr class="border-b hover:bg-gray-50">
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td class="p-2 text-center">#${v.id}</td>
                     <td class="p-2">${fechaFormateada}</td>
                     <td class="p-2 text-right">$${v.total}</td>
