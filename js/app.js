@@ -1,18 +1,54 @@
-// js/app.js
+// ==========================================
+// 1. IMPORTACIONES Y CONFIGURACIÓN INICIAL
+// ==========================================
 import { fetchProductos, guardarProductoAPI } from "./productos.js";
 import { dibujarProductos } from "./renderproductos.js";
 import { fetchClientes, guardarClienteAPI } from "./clientes.js";
 import { dibujarClientes } from "./renderclientes.js";
 import { actualizarTablaVenta } from "./renderventas.js";
 
-// --- UTILIDADES DE UI ---
+
+
+// ==========================================
+// 2. UTILIDADES GENERALES (UI Y NAVEGACIÓN)
+// ==========================================
 const toggleModal = (id, mostrar = true) => {
     const modal = document.getElementById(id);
     modal.classList.toggle("hidden", !mostrar);
     modal.classList.toggle("flex", mostrar);
 };
 
+window.cambiarSeccion = (idSeccionActiva) => {
+    // 1. Lista de todos los IDs de tus pantallas principales
+    const secciones = [
+        "seccionDashboard", 
+        "seccionProductos", 
+        "seccionClientes", 
+        "seccionVentas", 
+        "pantallaGenerarVenta"
+    ];
+    // 2. Apagamos TODAS
+    secciones.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) elemento.classList.add("hidden");
+    });
+    // 3. Prendemos solo la que necesitamos
+    const activa = document.getElementById(idSeccionActiva);
+    if (activa) {
+        activa.classList.remove("hidden");
+    }
+    // 4. (Opcional) Si es la de ventas, podrías querer ocultar el header principal
+    const headerVentas = document.getElementById("headerVentas");
+    if (headerVentas) {
+        headerVentas.classList.toggle("hidden", idSeccionActiva === "pantallaGenerarVenta");
+    }
+};
 
+
+
+// ==========================================
+// 3. MÓDULO DE PRODUCTOS
+// ==========================================
 window.prepararEdicionProducto = async (id) => { 
     const productos = await fetchProductos(); // Traemos la lista
     const p = productos.find(prod => prod.id == id);
@@ -62,7 +98,11 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     modal.classList.add("flex");
 };
 
-// --- AL CARGAR EL DOCUMENTO ---
+
+
+// ==========================================
+// 6. CARGA INICIAL (DOMContentLoaded)
+// ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
     
     let carritoVenta = [];
@@ -154,6 +194,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.listarVentas();
     };
 
+
+    // ==========================================
+    // 4. MÓDULO DE CLIENTES
+    // ==========================================
     // 1. Función que dispara el botón "Balance" desde la tabla de clientes
     window.irABalanceCliente = async (id, nombre, apellido) => {
         // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
@@ -347,7 +391,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.eliminarProducto = async (id, sku) => {
     // 1. El cartel de confirmación
     const rta = confirm(`¿Estás seguro de que querés eliminar el producto con código "${sku}"?`);
-    if (rta) {
+        if (rta) {
             try {
                 // 2. Avisamos al Backend
                 const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
@@ -365,6 +409,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.error("Error en la conexión:", error);
             }
         }
+    };
+
+    window.seleccionarClienteDesdeModal = async (id) => {
+        // 1. Buscamos el select de clientes en la pantalla de venta
+        const selectC = document.getElementById("v-cliente-select");
+        // 2. Le asignamos el ID del cliente seleccionado
+        if (selectC) {
+            selectC.value = id;
+        }
+        // 3. Cerramos el buscador
+        cerrarBuscadorClientes();
     };
 
     document.addEventListener("click", (ec) => {
@@ -413,6 +468,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 1000);
     }
 
+    
+    
+    
+    // ==========================================
+    // 5. MÓDULO DE VENTAS (CARRITO Y CÁLCULOS)
+    // ==========================================
 
     // Definimos la función con window. para que mostrarPantallaVenta la encuentre
     window.cargarDatosParaVenta = async () => {
@@ -521,45 +582,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         clientes.forEach(c => {
             selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
         });
-
-        window.abrirBuscadorClientes = async () => {
-            const clientes = await fetchClientes(); // Trae los productos de la DB
-            const modal = document.getElementById("modalBuscadorClientes");
-            const tbody = document.getElementById("tablaBuscadorClientes");
-            tbody.innerHTML = clientes.map(c => `
-                <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                    <td class="p-3 font-mono font-bold text-blue-600">${c.nombre}</td>
-                    <td class="p-3">${c.apellido}</td>
-                    <td class="p-3 text-right ${c.direccion}</td>
-                    <td class="p-3 text-right font-bold text-green-600">${c.dni}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
-                            class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
-                            Seleccionar
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-            modal.classList.remove("hidden");
-            document.getElementById("inputFiltroProductos").focus();
-        };
-        window.cerrarBuscadorClientes = () => {
-            document.getElementById("modalBuscadorClientes").classList.add("hidden");
-        };
-        // Llenar Productos con SKU (Código) y Descripción
-        const inputSku = document.getElementById("v-sku-directo");
-        if (inputSku) {
-            inputSku.value = ""; // Solo lo limpiamos al abrir la pantalla
-            inputSku.focus();    // Le damos el foco para empezar a escribir rápido
-        } else {
-            console.warn("No se encontró 'v-sku-directo'. Asegúrate de que el input de SKU tenga ese ID.");
-        }
-        // 3. TERCERO: Cargamos los datos (Tu lógica de siempre)
-        cargarDatosParaVenta(); 
     };
 
+    window.abrirBuscadorClientes = async () => {
+        const clientes = await fetchClientes(); // Trae los productos de la DB
+        const modal = document.getElementById("modalBuscadorClientes");
+        const tbody = document.getElementById("tablaBuscadorClientes");
+        tbody.innerHTML = clientes.map(c => `
+            <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                <td class="p-3 font-mono font-bold text-blue-600">${c.nombre}</td>
+                <td class="p-3">${c.apellido}</td>
+                <td class="p-3 text-right ${c.direccion}</td>
+                <td class="p-3 text-right font-bold text-green-600">${c.dni}</td>
+                <td class="p-3 text-center">
+                    <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
+                        class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
+                        Seleccionar
+                    </button>
+            </td>
+            </tr>
+        `).join('');
+        modal.classList.remove("hidden");
+        document.getElementById("inputFiltroClientes").focus();
+    };
 
-   
+    window.cerrarBuscadorClientes = () => {
+        document.getElementById("modalBuscadorClientes").classList.add("hidden");
+    };
+
+    // Llenar Productos con SKU (Código) y Descripción
+    const inputSku = document.getElementById("v-sku-directo");
+    if (inputSku) {
+        inputSku.value = ""; // Solo lo limpiamos al abrir la pantalla
+        inputSku.focus();    // Le damos el foco para empezar a escribir rápido
+    } else {
+        console.warn("No se encontró 'v-sku-directo'. Asegúrate de que el input de SKU tenga ese ID.");
+    }
+    // 3. TERCERO: Cargamos los datos (Tu lógica de siempre)
+    cargarDatosParaVenta(); 
+    
     window.abrirBuscadorProductos = async () => {
         const productos = await fetchProductos(); // Trae los productos de la DB
         const modal = document.getElementById("modalBuscadorProductos");
@@ -616,7 +677,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. Filtro rápido dentro del modal
     window.filtrarProductosModal = () => {
         const texto = document.getElementById("inputFiltroProductos").value.toLowerCase();
-        const filas = document.querySelectorAll("tablaBuscadorProductos");
+        const filas = document.querySelectorAll("#tablaBuscadorProductos tr");
 
         filas.forEach(fila => {
             const contenido = fila.textContent.toLowerCase();
