@@ -18,29 +18,38 @@ const toggleModal = (id, mostrar = true) => {
     modal.classList.toggle("flex", mostrar);
 };
 
-window.cambiarSeccion = (idSeccionActiva) => {
-    // 1. Lista de todos los IDs de tus pantallas principales
-    const secciones = [
+// --- NAVEGACIÓN CENTRALIZADA ---
+window.cambiarSeccion = (idSeccionDestino) => {
+    // Definimos todas las pantallas que existen en tu index.html
+    const pantallas = [
         "seccionDashboard", 
         "seccionProductos", 
         "seccionClientes", 
-        "seccionVentas", 
+        "seccionVentas",
+        "seccionConfig",
         "pantallaGenerarVenta"
     ];
-    // 2. Apagamos TODAS
-    secciones.forEach(id => {
+    // PASO A: Apagamos todas las pantallas
+    pantallas.forEach(id => {
         const elemento = document.getElementById(id);
-        if (elemento) elemento.classList.add("hidden");
+        if (elemento) {
+            elemento.classList.add("hidden"); // Ocultamos con CSS
+        }
     });
-    // 3. Prendemos solo la que necesitamos
-    const activa = document.getElementById(idSeccionActiva);
-    if (activa) {
-        activa.classList.remove("hidden");
+    // PASO B: Prendemos solo la que el usuario pidió
+    const pantallaActiva = document.getElementById(idSeccionDestino);
+    if (pantallaActiva) {
+        pantallaActiva.classList.remove("hidden"); // Mostramos
     }
-    // 4. (Opcional) Si es la de ventas, podrías querer ocultar el header principal
+    // PASO C: Lógica especial para el Header de Ventas
+    // Como tu diseño oculta el header general cuando entras a "Nueva Venta"
     const headerVentas = document.getElementById("headerVentas");
     if (headerVentas) {
-        headerVentas.classList.toggle("hidden", idSeccionActiva === "pantallaGenerarVenta");
+        if (idSeccionDestino === "pantallaGenerarVenta") {
+            headerVentas.classList.add("hidden");
+        } else {
+            headerVentas.classList.remove("hidden");
+        }
     }
 };
 
@@ -104,6 +113,50 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
 // 6. CARGA INICIAL (DOMContentLoaded)
 // ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
+
+    cambiarSeccion('seccionDashboard');
+
+    // --- CONFIGURACIÓN DE CLICS DEL MENÚ LATERAL ---
+
+    // 1. Cuando hagan clic en Dashboard
+    document.getElementById("linkDashboard").addEventListener("click", (e) => {
+        e.preventDefault(); // Esto evita que la página salte al principio por el href="#"
+        cambiarSeccion('seccionDashboard');
+    });
+
+    // 2. Cuando hagan clic en Clientes
+    document.getElementById("linkClientes").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionClientes');
+    });
+
+    // 3. Cuando hagan clic en Ventas
+    document.getElementById("linkVentas").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionVentas');
+        listarVentas();
+    });
+
+    // 4. Cuando hagan clic en Productos
+    document.getElementById("linkProductos").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionProductos');
+    });
+
+    // 5. Cuando hagan clic en Configuracion
+    document.getElementById("linkConfig").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionConfig');
+    });
+
+    // 6. El botón de "Nueva Venta" (el que está dentro de la sección ventas)
+    // Supongamos que su ID es 'btn-nueva-venta'
+    const btnNuevaVenta = document.getElementById("btn-nueva-venta");
+    if (btnNuevaVenta) {
+        btnNuevaVenta.addEventListener("click", () => {
+            cambiarSeccion('pantallaGenerarVenta');
+        });
+    }
     
     let carritoVenta = [];
 
@@ -113,7 +166,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const confirmar = confirm("⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?");
             if (!confirmar) return; // Si dice que no, nos quedamos en la pantalla
         }
-        cerrarPantallaVenta(); 
+        carritoVenta = [];
+        actualizarTablaVenta(carritoVenta);
+        cambiarSeccion('seccionVentas');
     };
 
     // Escuchador de teclado global
@@ -154,45 +209,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     dibujarProductos(productos);
     const clientes =await fetchClientes();
     dibujarClientes(clientes);
-
-    // 2. NAVEGACIÓN (Solo para que puedas ver la sección de Inventario)
-    const linkProductos = document.getElementById("linkProductos");
-    const seccionProductos = document.getElementById("seccionProductos");
-    const linkDashboard = document.getElementById("linkDashboard");
-    const seccionDashboard = document.getElementById("seccionDashboard");
-    const linkClientes = document.getElementById("linkClientes");
-    const seccionClientes = document.getElementById("seccionClientes");
-    const linkVentas = document.getElementById("linkVentas");
-    const seccionVentas = document.getElementById("seccionVentas");
-
-    linkDashboard.onclick = () => {
-        seccionDashboard.classList.remove("hidden");
-        seccionVentas.classList.add("hidden");
-        seccionProductos.classList.add("hidden");
-        seccionClientes.classList.add("hidden");
-    };
     
-    linkProductos.onclick = () => {
-        seccionDashboard.classList.add("hidden");
-        seccionVentas.classList.add("hidden");
-        seccionClientes.classList.add("hidden");
-        seccionProductos.classList.remove("hidden");
-    };
 
-    linkClientes.onclick = () => {
-        seccionDashboard.classList.add("hidden");
-        seccionVentas.classList.add("hidden");
-        seccionProductos.classList.add("hidden");
-        seccionClientes.classList.remove("hidden");
-    };
-
-    linkVentas.onclick = () => {
-        seccionDashboard.classList.add("hidden");
-        seccionVentas.classList.remove("hidden");
-        seccionProductos.classList.add("hidden");
-        seccionClientes.classList.add("hidden");
-        window.listarVentas();
-    };
 
 
     // ==========================================
@@ -453,13 +471,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    const btnAbrirVenta = document.getElementById("btn-nueva-venta");
-    if (btnAbrirVenta) {
-        btnAbrirVenta.addEventListener("click", () => {
-            mostrarPantallaVenta();
-        });
-    }
-    
     // 1. Reloj profesional
     if(document.getElementById("pantallaGenerarVenta")){
         setInterval(() => {
@@ -503,86 +514,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    // Abrir la pantalla completa
-    window.mostrarPantallaVenta = async () => {
-        const seccionVentas = document.getElementById("seccionVentas");
-        const todasLasSecciones = [
-            document.getElementById("seccionProductos"),
-            document.getElementById("seccionClientes"),
-            document.getElementById("seccionVentas")
-        ];
-        await window.listarVentas();
-        document.getElementById("pantallaGenerarVenta").classList.remove("hidden");
+    window.checkEnterVenta = async (e) => {
+        // Si la tecla presionada es Enter (código 13)
+        if (e.keyCode === 13) {
+            const skuIngresado = e.target.value.trim().toUpperCase();
+            if (!skuIngresado) return;
 
-        // Ocultamos todas y mostramos la de Ventas
-        todasLasSecciones.forEach(s => s?.classList.add("hidden"));
-        seccionVentas.classList.remove("hidden");
+            // Buscamos en la lista de productos que ya tenemos cargada
+            const productos = await fetchProductos();
+            const p = productos.find(item => item.sku.toUpperCase() === skuIngresado);
 
-        // 2. SEGUNDO: Dentro de la sección Ventas, ocultamos el historial y mostramos la facturación
-        const headerVentas = seccionVentas.querySelector("header"); // El que dice "VENTAS" y "+ Nueva Venta"
-        const tablaHistorial = seccionVentas.querySelector("header").nextElementSibling; // El div de la tabla
-        const pantallaGenerarVenta = document.getElementById("pantallaGenerarVenta");
-        if (headerVentas) headerVentas.classList.add("hidden");
-        if (tablaHistorial) tablaHistorial.classList.add("hidden");
-        if (pantallaGenerarVenta) {
-            pantallaGenerarVenta.classList.remove("hidden");
-            // Movemos el scroll al inicio por si acaso
-            window.scrollTo(0, 0);
-        }
+            if (p) {
+                // Si existe, lo agregamos
+                const nuevoItem = {
+                    id: p.id,
+                    sku: p.sku,
+                    desc: p.descripcion,
+                    precio: parseFloat(p.precio_neto),
+                    cantidad: 1,
+                    subtotal: parseFloat(p.precio_neto)
+                };
 
-        window.cerrarPantallaVenta = () => {
-            document.getElementById("pantallaGenerarVenta").classList.add("hidden");
-            document.getElementById("seccionVentas").classList.remove("hidden");
-            if (headerVentas) headerVentas.classList.remove("hidden");
-        };
-
-        window.checkEnterVenta = async (e) => {
-            // Si la tecla presionada es Enter (código 13)
-            if (e.keyCode === 13) {
-                const skuIngresado = e.target.value.trim().toUpperCase();
-                if (!skuIngresado) return;
-
-                // Buscamos en la lista de productos que ya tenemos cargada
-                const productos = await fetchProductos();
-                const p = productos.find(item => item.sku.toUpperCase() === skuIngresado);
-
-                if (p) {
-                    // Si existe, lo agregamos
-                    const nuevoItem = {
-                        id: p.id,
-                        sku: p.sku,
-                        desc: p.descripcion,
-                        precio: parseFloat(p.precio_neto),
-                        cantidad: 1,
-                        subtotal: parseFloat(p.precio_neto)
-                    };
-
-                    carritoVenta.push(nuevoItem);
-                    actualizarTablaVenta(carritoVenta);
-                    
-                    // Limpiamos el input para la siguiente carga
-                    e.target.value = "";
-                    console.log("Producto cargado con éxito vía SKU");
-                } else {
-                    // Si no existe, avisamos y abrimos el buscador automático para ayudar
-                    alert("⚠️ El SKU no existe. Abriendo buscador avanzado...");
-                    abrirBuscadorProductos();
-                    // Opcional: pasar lo que escribió el usuario al filtro del modal
-                    document.getElementById("inputFiltroProductos").value = skuIngresado;
-                    filtrarProductosModal();
-                }
+                carritoVenta.push(nuevoItem);
+                actualizarTablaVenta(carritoVenta);
+                
+                // Limpiamos el input para la siguiente carga
+                e.target.value = "";
+                console.log("Producto cargado con éxito vía SKU");
+            } else {
+                // Si no existe, avisamos y abrimos el buscador automático para ayudar
+                alert("⚠️ El SKU no existe. Abriendo buscador avanzado...");
+                abrirBuscadorProductos();
+                // Opcional: pasar lo que escribió el usuario al filtro del modal
+                document.getElementById("inputFiltroProductos").value = skuIngresado;
+                filtrarProductosModal();
             }
-        };
-        
-        const [clientes, productos] = await Promise.all([fetchClientes(), fetchProductos()]);
     
-        // Llenar Clientes con color azul
-        const selectC = document.getElementById("v-cliente-select");
-        selectC.innerHTML = '<option value="0" class="text-blue-600">Consumidor Final</option>';
-        clientes.forEach(c => {
-            selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
-        });
+            // Llenar Clientes con color azul
+            const selectC = document.getElementById("v-cliente-select");
+            selectC.innerHTML = '<option value="0" class="text-blue-600">Consumidor Final</option>';
+            clientes.forEach(c => {
+                selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
+            });
+        }
     };
+        
+        
+    
 
     window.abrirBuscadorClientes = async () => {
         const clientes = await fetchClientes(); // Trae los productos de la DB
@@ -828,7 +806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Limpiamos todo y volvemos al historial
                 carritoVenta = [];
                 cerrarModalPago();
-                cerrarPantallaVenta();
+                cambiarSeccion('seccionVentas');
                 
                 // Si tenés una función para refrescar la tabla de historial, llamala acá
                 if (typeof obtenerVentas === "function") obtenerVentas();

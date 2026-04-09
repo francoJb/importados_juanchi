@@ -1,5 +1,7 @@
 proximos pasos:
-    Revisar gems: buscar Cómo resolverlo: El "Limpiador de Pantallas" retomar desde ahi
-    luego seguir con la revision
-    agregar archivos faltantes (controllers.js, etc)
-    ordenar app.js ver que puede ir desde app a render o a controllers o de html a app, etc
+    Revisar gems: Revision de Proyecto 
+    leer atte y proceder a revision y correccion
+    
+    si es posible reparar navecacion del boton CREAR VENTAS no funciona!!
+    usar boton ESC para cerrar modales
+

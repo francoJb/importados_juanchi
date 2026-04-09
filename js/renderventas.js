@@ -1,5 +1,3 @@
-// Este archivo NO sabe nada de base de datos, solo sabe de HTML (DOM)
-
 export function actualizarTablaVenta(carritoVenta) {
     const body = document.getElementById("v-items-body");
     const labelTotal = document.getElementById("v-total-pantalla");
