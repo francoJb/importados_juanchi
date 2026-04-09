@@ -95,15 +95,9 @@ window.listarVentas = async () => {
                     <td class="p-2 text-center">${estadoEntrega}</td>
                     <td class="p-2 text-center">${cliente}</td>
                     <td class="p-2 flex gap-2 justify-center">
-                        <button onclick="verDetalleVenta(${v.id})" title="Ver Detalle" class="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200">
-                           👁️
-                        </button>
-                        <button onclick="imprimirVenta(${v.id})" title="Imprimir" class="bg-gray-100 text-gray-600 p-1 rounded hover:bg-gray-200">
-                           🖨️
-                        </button>
-                        <button onclick="eliminarVenta(${v.id})" title="Eliminar" class="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200">
-                           🗑️
-                        </button>
+                        <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Ver Detalle">👁️</button>
+                        <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Imprimir">🖨️</button>
+                        <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Eliminar">🗑️</button>
                     </td>
                 </tr>
             `;

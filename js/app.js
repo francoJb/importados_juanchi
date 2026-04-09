@@ -558,9 +558,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
     };
-        
-        
-    
 
     window.abrirBuscadorClientes = async () => {
         const clientes = await fetchClientes(); // Trae los productos de la DB
@@ -802,7 +799,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (respuesta.ok) {
                 alert("✅ Venta realizada con éxito.");
-                
                 // Limpiamos todo y volvemos al historial
                 carritoVenta = [];
                 cerrarModalPago();

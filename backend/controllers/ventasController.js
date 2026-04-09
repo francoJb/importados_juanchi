@@ -22,14 +22,26 @@ exports.crearVenta = async (req, res) => {
         const ventaId = ventaRes.insertId;
 
         // 2. Procesar cada Producto (Detalle + Stock)
+        // Localizá este bucle dentro de exports.crearVenta
         for (const item of items) {
-            // Insertar detalle
+            // A. CONSULTA DE SEGURIDAD: Traemos el stock actual y el nombre del producto
+            const [productoRows] = await connection.query(
+                "SELECT stock, descripcion FROM productos WHERE id = ?",
+                [item.id]
+            );
+            const producto = productoRows[0];
+            // B. VALIDACIÓN: Si no hay fila (raro) o si el stock es menor a lo pedido
+            if (!producto || producto.stock < item.cantidad) {
+                // Al lanzar este Error, el 'catch' de abajo ejecutará connection.rollback()
+                // Esto cancela TODA la venta, incluso si los productos anteriores sí tenían stock.
+                throw new Error(`Stock insuficiente para "${producto ? producto.descripcion : 'ID ' + item.id}". disponible: ${producto ? producto.stock : 0}`);
+            }
+            // C. REGISTRO DEL DETALLE (Solo si pasó la validación de arriba)
             await connection.query(
                 "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
                 [ventaId, item.id, item.cantidad, item.precio]
             );
-
-            // DESCONTAR STOCK
+            // D. DESCUENTO DE STOCK
             await connection.query(
                 "UPDATE productos SET stock = stock - ? WHERE id = ?",
                 [item.cantidad, item.id]

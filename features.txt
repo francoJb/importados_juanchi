@@ -2,6 +2,11 @@ proximos pasos:
     Revisar gems: Revision de Proyecto 
     leer atte y proceder a revision y correccion
     
-    si es posible reparar navecacion del boton CREAR VENTAS no funciona!!
-    usar boton ESC para cerrar modales
+    
+    -reparar, limpiar carrito cuando creo una venta, quedan cargados los productos de la venta anterior
+    -actualizar la lista de ventas al termianr una venta realizada
+    -actualizar stock en seccion productos (tengo q presionar F% para que eso pase)
+    -si el producto tiene el ckeck de controlar stock, permitir venta si el stock es 0
+    -cerrar modal DETALLE DE VENTA con tecla ESC
+    -observaciones de venta no se cargan en el modal DETALLE DE VENTA
 
