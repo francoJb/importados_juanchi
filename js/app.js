@@ -154,6 +154,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnNuevaVenta = document.getElementById("btn-nueva-venta");
     if (btnNuevaVenta) {
         btnNuevaVenta.addEventListener("click", () => {
+            carritoVenta = [];
+            document.getElementById("v-observaciones").value = ""
+            document.getElementById("v-cliente-select").value = "0";
+            actualizarTablaVenta(carritoVenta);
             cambiarSeccion('pantallaGenerarVenta');
         });
     }
@@ -565,13 +569,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const tbody = document.getElementById("tablaBuscadorClientes");
         tbody.innerHTML = clientes.map(c => `
             <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                <td class="p-3 font-mono font-bold text-blue-600">${c.nombre}</td>
+                <td class="p-3">${c.nombre}</td>
                 <td class="p-3">${c.apellido}</td>
-                <td class="p-3 text-right ${c.direccion}</td>
-                <td class="p-3 text-right font-bold text-green-600">${c.dni}</td>
+                <td class="p-3">${c.direccion}</td>
+                <td class="p-3 text-right">${c.dni}</td>
+                <td class="p-3 text-right">${c.cuit}</td>
                 <td class="p-3 text-center">
                     <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
-                        class="bg-blue-600 text-white px-3 py-1 rounded text-xs uppercase font-bold hover:bg-blue-700">
+                        class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
                         Seleccionar
                     </button>
             </td>
@@ -800,7 +805,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (respuesta.ok) {
                 alert("✅ Venta realizada con éxito.");
                 // Limpiamos todo y volvemos al historial
-                carritoVenta = [];
+                await listarVentas();
                 cerrarModalPago();
                 cambiarSeccion('seccionVentas');
                 
@@ -840,7 +845,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("md-cliente").innerText = venta.cliente_nombre ? `${venta.cliente_nombre} ${venta.cliente_apellido}` : "Consumidor Final";
             document.getElementById("md-total-final").innerText = `$${parseFloat(venta.total).toFixed(2)}`;
             document.getElementById("md-pendiente").innerText = `$${parseFloat(venta.saldo_pendiente).toFixed(2)}`;
-            document.getElementById("md-observaciones").innerText = venta.observaciones || "Sin observaciones registradas.";
+            document.getElementById("v-observaciones").innerText = venta.observaciones || "Sin observaciones registradas.";
 
             // Estado visual (badge)
             const saldo = parseFloat(venta.saldo_pendiente);
