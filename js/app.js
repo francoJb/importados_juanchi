@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         actualizarTablaVenta(carritoVenta);
         cambiarSeccion('seccionVentas');
     };
-
+    
     // Escuchador de teclado global
     document.addEventListener('keydown', (e) => {
         if (e.key === "Escape" || e.keyCode === 27) {

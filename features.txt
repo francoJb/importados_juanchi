@@ -2,11 +2,25 @@ proximos pasos:
     Revisar gems: Revision de Proyecto 
     leer atte y proceder a revision y correccion
     
+    VENTAS
+        - el boton volver debe preguntar si volver a ventas cuando hay productos cargados
+        -input observaciones no se guarda en el detalle de ventas
+        -cerrar modal DETALLE DE VENTA con tecla ESC
+        -boton elliminar venta ...hacerlo funcionar
+        -COMPROBANTES
+            - factura de venta (opcional con facturacion ARCA) 
+            -presupuesto
+            -recibo
+            -remito (opcional)
+    PRODUCTOS
+        -si el producto tiene el ckeck de controlar stock, permitir venta si el stock es 0 y check es 0
+
+    CLIENTES
+        -detalle de cuenta corriente en disparado desde el boton "ver balance" (OK)
+            -reparar boton "VOLVER A CLIENTES" 
+            -impresion de detalle de la cuenta corriente
+            -REGISTRAR PAGO con modal (no con alert), disparado desde un boton dentro del detalle de cuenta corriente 
+            -
+   
     
-    -reparar, limpiar carrito cuando creo una venta, quedan cargados los productos de la venta anterior
-    -actualizar la lista de ventas al termianr una venta realizada
-    -actualizar stock en seccion productos (tengo q presionar F% para que eso pase)
-    -si el producto tiene el ckeck de controlar stock, permitir venta si el stock es 0
-    -cerrar modal DETALLE DE VENTA con tecla ESC
-    -observaciones de venta no se cargan en el modal DETALLE DE VENTA
 
