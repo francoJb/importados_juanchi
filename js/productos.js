@@ -1,4 +1,3 @@
-// js/productos.js
 import { dibujarProductos } from "./renderproductos.js";
 import { toggleModal } from "./ui.js";
 
@@ -43,13 +42,67 @@ export async function guardarProductoAPI(datos, id = null) {
     }
 }
 
-// 4. LÓGICA DE INTERFAZ (Controlador)
+// 4. LÓGICA DE FORMULARIO (Mantenimiento de Productos)
+export function configurarFormularioProducto() {
+    const formProducto = document.getElementById("formProducto");
+    if (!formProducto) return;
+
+    formProducto.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("formProductoId").value; // Ajustado según tu modal de edición
+        
+        const datos = {
+            sku: document.getElementById("sku").value.trim(),
+            descripcion: document.getElementById("descripcion").value,
+            marca: document.getElementById("marca").value,
+            modelo: document.getElementById("modelo").value,   
+            categoria: document.getElementById("categoria").value,
+            proveedor: document.getElementById("proveedor").value,
+            costo: Number(document.getElementById("costo").value),
+            precio_neto: Number(document.getElementById("precio_neto").value),
+            stock: Number(document.getElementById("stock").value),
+            stock_minimo: Number(document.getElementById("stock_minimo").value),
+            control_stock: document.getElementById("control_stock").checked ? 1 : 0,
+        };
+
+        if (!datos.sku || !datos.descripcion) {
+            alert("⚠️ SKU y Descripción son obligatorios");
+            return;
+        }
+        
+        const exito = await guardarProductoAPI(datos, id || null);
+        if (exito) {
+            alert("✅ Producto guardado correctamente");
+            toggleModal("modalProducto", false);
+            formProducto.reset();
+            listarProductos(); // Recarga la tabla automáticamente
+        }
+    };
+}
+
+// 5. BUSCADOR DE PRODUCTOS (Sección Productos)
+export function configurarBuscadorProductos() {
+    const inputBusqueda = document.getElementById("buscarProducto");
+    if (inputBusqueda) {
+        inputBusqueda.oninput = async (e) => {
+            const termino = e.target.value.toLowerCase();
+            const todosLosProductos = await fetchProductos();
+            const filtrados = todosLosProductos.filter(p => 
+                (p.descripcion || "").toLowerCase().includes(termino) || 
+                (p.sku || "").toLowerCase().includes(termino) ||
+                (p.marca || "").toLowerCase().includes(termino)
+            );
+            dibujarProductos(filtrados);
+        };
+    }
+}
+
+// 6. PREPARAR EDICIÓN
 export async function prepararEdicionProducto(id) {
     const productos = await fetchProductos();
-    const p = productos.find(prod => prod.id === id);
+    const p = productos.find(prod => prod.id == id);
     if (!p) return;
 
-    // Llenar campos del formulario
     document.getElementById("formProductoId").value = p.id;
     document.getElementById("sku").value = p.sku;
     document.getElementById("descripcion").value = p.descripcion;
@@ -59,7 +112,6 @@ export async function prepararEdicionProducto(id) {
     document.getElementById("proveedor").value = p.proveedor;
     document.getElementById("costo").value = p.costo;
     document.getElementById("precio_neto").value = p.precio_neto;
-    document.getElementById("iva").value = p.iva;
     document.getElementById("stock").value = p.stock;
     document.getElementById("stock_minimo").value = p.stock_minimo;
     document.getElementById("control_stock").checked = p.control_stock === 1;
@@ -68,11 +120,13 @@ export async function prepararEdicionProducto(id) {
     toggleModal("modalProducto", true);
 }
 
-export async function eliminarProducto(id) {
-    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+// 7. ELIMINAR
+export async function eliminarProducto(id, desc) {
+    if (!confirm(`¿Estás seguro de eliminar "${desc}"?`)) return;
     try {
         const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
         if (res.ok) {
+            alert("Producto eliminado");
             listarProductos();
         }
     } catch (error) {
@@ -80,7 +134,7 @@ export async function eliminarProducto(id) {
     }
 }
 
-// 5. EXPOSICIÓN GLOBAL
+// EXPOSICIÓN GLOBAL PARA HTML
 window.prepararEdicionProducto = prepararEdicionProducto;
 window.eliminarProducto = eliminarProducto;
 window.listarProductos = listarProductos;

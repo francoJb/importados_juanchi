@@ -2,39 +2,15 @@
 // 1. IMPORTACIONES Y CONFIGURACIÓN INICIAL
 // ==========================================
 
-import { fetchClientes, guardarClienteAPI } from "./clientes.js";
 import { dibujarClientes } from "./renderclientes.js";
-import { actualizarTablaVenta } from "./renderventas.js";
-import { fetchProductos, listarProductos } from "./productos.js";
+import { fetchClientes, listarClientes, configurarFormularioCliente, configurarBuscadorClientes } from "./clientes.js";
+
 import { dibujarProductos } from "./renderproductos.js";
+import { fetchProductos, listarProductos, configurarFormularioProducto, configurarBuscadorProductos } from "./productos.js";
+
+import { actualizarTablaVenta } from "./renderventas.js";
 
 
-// ==========================================
-// 3. MÓDULO DE PRODUCTOS
-// ==========================================
-
-
-window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
-    const cliente = await fetchClientes();
-    const c = cliente.find(cli => cli.id == id);
-    if (!c) return;
-    // Llenamos el formulario con los datos guardados
-    document.getElementById("clienteId").value = c.id;
-    document.getElementById("nombre").value = c.nombre;
-    document.getElementById("apellido").value = c.apellido;
-    document.getElementById("dni").value = c.dni;
-    document.getElementById("direccion").value = c.direccion;
-    document.getElementById("email").value = c.email;
-    document.getElementById("telefono").value = c.telefono;
-    document.getElementById("cuit").value = c.cuit;
-    document.getElementById("arca").value = c.arca;
-    document.getElementById("fecha_alta").value = c.fecha_alta;
-
-    // Abrimos el modal
-    const modal = document.getElementById("modalCliente");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-};
 
 
 
@@ -42,6 +18,12 @@ window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
 // 6. CARGA INICIAL (DOMContentLoaded)
 // ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
+    listarClientes();
+    configurarFormularioCliente();
+    configurarBuscadorClientes();
+    listarProductos();
+    configurarFormularioProducto();
+    configurarBuscadorProductos();
 
     cambiarSeccion('seccionDashboard');
 
@@ -165,11 +147,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         await cargarDatosBalance(id);
     };
 
-    // 2. Función para volver (Botón arriba a la derecha)
-    window.volverAClientes = () => {
-        document.getElementById("pantalla-balance-cliente").classList.add("hidden");
-        document.getElementById("seccionClientes").classList.remove("hidden");
-    };
 
     // 3. Carga de datos desde la API
     async function cargarDatosBalance(clienteId) {
@@ -207,7 +184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. ABRIR/CERRAR MODAL PRODUTO
     document.getElementById("btnAbrirModalProducto").onclick = () => {
         document.getElementById("formProducto").reset();
-        document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
+        document.getElementById("formProductoId").value = ""; // Limpiar ID por si es nuevo
         toggleModal("modalProducto", true);
     };
     document.getElementById("btnCerrarModalProducto").onclick = () => toggleModal("modalProducto", false);
@@ -215,130 +192,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. ABRIR/CERRAR MODAL CLIENTE
     document.getElementById("btnAbrirModalCliente").onclick = () => {
         document.getElementById("formCliente").reset();
-        document.getElementById("id").value = ""; // Limpiar ID por si es nuevo
+        document.getElementById("formClienteId").value = ""; // Limpiar ID por si es nuevo
         toggleModal("modalCliente", true);
     };
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
 
-    // 4. GUARDAR PRODUCTO (EVENTO SUBMIT)
-    const formProducto = document.getElementById("formProducto");
-    formProducto.onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById("id").value;
-        // Capturamos los datos usando los IDs exactos de tu HTML
-        const datos = {
-            sku: document.getElementById("sku").value.trim(),
-            descripcion: document.getElementById("descripcion").value,
-            marca: document.getElementById("marca").value,
-            modelo: document.getElementById("modelo").value,   
-            categoria: document.getElementById("categoria").value,
-            proveedor: document.getElementById("proveedor").value,
-            costo: Number(document.getElementById("costo").value),
-            precio_neto: Number(document.getElementById("precio_neto").value),
-            stock: Number(document.getElementById("stock").value),
-            stock_minimo: Number(document.getElementById("stock_minimo").value),
-            control_stock: document.getElementById("control_stock").checked ? 1 : 0,
-        };
-        if (!datos.sku){
-            alert("⚠️ El SKU es obligatorio.");
-            document.getElementById("sku").focus();
-            return;
-        }
-        if (!datos.descripcion){
-            alert("⚠️ La descripcion es obligatoria.");
-            document.getElementById("descripcion").focus();
-            return;
-        }
-        
-        const exito = await guardarProductoAPI(datos, id || null);
-        if (exito) {
-            alert("✅ Producto guardado correctamente");
-            toggleModal("modalProducto", false);
-            formProducto.reset();
-            
-            // Recargar la tabla
-            const productosActualizados = await fetchProductos();
-            dibujarProductos(productosActualizados);
-        } else {
-            alert("❌ Error al guardar el producto");
-        }
-        
-        document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
-    };
 
-
-    // 4. GUARDAR CLIENTE (EVENTO SUBMIT)
-    const formCliente = document.getElementById("formCliente");
-    formCliente.onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById("clienteId").value;
-        // Capturamos los datos usando los IDs exactos de tu HTML
-        const datos = {
-            nombre: document.getElementById("nombre").value,
-            apellido: document.getElementById("apellido").value,
-            telefono: document.getElementById("telefono").value,
-            direccion: document.getElementById("direccion").value,
-            dni: document.getElementById("dni").value,
-            cuit: document.getElementById("cuit").value,
-            arca: document.getElementById("arca").value,
-            email: document.getElementById("email").value,
-            fecha_alta: document.getElementById("fecha_alta").value
-        };
-        const exito = await guardarClienteAPI(datos, id || null);
-        if (exito) {
-            alert("✅ Cliente guardado correctamente");
-            toggleModal("modalCliente", false);
-            formCliente.reset();
-                
-            // Recargar la tabla
-            const clientesActualizados = await fetchClientes();
-            dibujarClientes(clientesActualizados);
-        } else {
-            alert("❌ Error al guardar el cliente");
-        }
-    };
-
-
-    // --- LÓGICA DEL BUSCADOR PRODUCTO---
-    const inputBusqueda = document.getElementById("buscarProducto");
-    if (inputBusqueda) {
-        inputBusqueda.oninput = async (e) => {
-            const termino = e.target.value.toLowerCase();
-            const todosLosProductos = await fetchProductos();
-            const filtrados = todosLosProductos.filter(p => 
-                (p.descripcion || "").toLowerCase().includes(termino) || 
-                (p.sku || "").toLowerCase().includes(termino) ||
-                (p.marca || "").toLowerCase().includes(termino)
-            );
-            dibujarProductos(filtrados);
-        };
-    }
-
-    // --- LÓGICA DEL BUSCADOR CLIENTES---
-    const inputBusquedaCliente = document.getElementById("buscarCliente");
-    if (inputBusquedaCliente) {
-        inputBusquedaCliente.oninput = async (e) => {
-            const termino = e.target.value.toLowerCase();
-            const todosLosClientes = await fetchClientes();
-            const filtrados = todosLosClientes.filter(p => 
-                (p.nombre || "").toLowerCase().includes(termino) || 
-                (p.apellido || "").toLowerCase().includes(termino) ||
-                (p.dni || "").toLowerCase().includes(termino)
-            );
-            dibujarClientes(filtrados);
-        };
-    }
-
-
-    document.addEventListener("click", (e) => {
-        const btn = e.target.closest(".btn-eliminar");
-        if (!btn) return;
-        const id = btn.dataset.id;
-        const desc = btn.dataset.desc;
-        eliminarProducto(id, desc);
-    });
-    
 
     window.seleccionarClienteDesdeModal = async (id) => {
         // 1. Buscamos el select de clientes en la pantalla de venta
@@ -359,28 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         eliminarCliente(id, desc);
     });
 
-    window.eliminarCliente = async (id, nombre) => {
-        // 1. El cartel de confirmación
-        const rta = confirm(`¿Estás seguro de que querés eliminar a "${nombre}"?, esa accion solo desactivara el cliente`);
-        if (rta) {
-            try {
-                // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-                const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
-                    method: 'DELETE' // El método que definiste en tus rutas
-                });
-                if (response.ok) {
-                    alert("Cliente eliminado con éxito.");
-                    // 3. Recargamos la lista para que el cliente "desaparezca"
-                    const clientesActualizados = await fetchClientes();
-                    dibujarClientes(clientesActualizados);
-                } else {
-                    alert("No se pudo eliminar el cliente.");
-                }
-            } catch (error) {
-                console.error("Error en la conexión:", error);
-            }
-        }
-    };
+    
 
     // 1. Reloj profesional
     if(document.getElementById("pantallaGenerarVenta")){
@@ -460,18 +299,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 document.getElementById("inputFiltroProductos").value = skuIngresado;
                 filtrarProductosModal();
             }
-    
-            // Llenar Clientes con color azul
-            const selectC = document.getElementById("v-cliente-select");
-            selectC.innerHTML = '<option value="0" class="text-blue-600">Consumidor Final</option>';
-            clientes.forEach(c => {
-                selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
-            });
         }
     };
 
     window.abrirBuscadorClientes = async () => {
-        const clientes = await fetchClientes(); // Trae los productos de la DB
+        const clientes = await fetchClientes(); // Trae los clientes de la DB
         const modal = document.getElementById("modalBuscadorClientes");
         const tbody = document.getElementById("tablaBuscadorClientes");
         tbody.innerHTML = clientes.map(c => `
@@ -496,6 +328,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.cerrarBuscadorClientes = () => {
         document.getElementById("modalBuscadorClientes").classList.add("hidden");
     };
+
+    window.filtrarClientesModal = () => {
+        const texto = document.getElementById("inputFiltroClientes").value.toLowerCase();
+        const filas = document.querySelectorAll("#tablaBuscadorClientes tr");
+
+        filas.forEach(fila => {
+            const contenido = fila.textContent.toLowerCase();
+            fila.style.display = contenido.includes(texto) ? "" : "none";
+        });
+    };
+
 
     // Llenar Productos con SKU (Código) y Descripción
     const inputSku = document.getElementById("v-sku-directo");
@@ -579,7 +422,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Agregar item al carrito
     window.agregarItemVenta = () => {
         const select = document.getElementById("v-producto-select");
-        if(!select.value) return;
+        if (!select || !select.value) return;
 
         const opt = select.options[select.selectedIndex];
         const item = {

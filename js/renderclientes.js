@@ -1,4 +1,3 @@
-// js/renderclientes.js  RENDERIZA LA SECCION CLIENTES
 export function dibujarClientes(clientes) {
     const tabla = document.getElementById("tablaClientesBody");
     tabla.innerHTML = "";
