@@ -1,89 +1,18 @@
 // ==========================================
 // 1. IMPORTACIONES Y CONFIGURACIÓN INICIAL
 // ==========================================
-import { fetchProductos, guardarProductoAPI } from "./productos.js";
-import { dibujarProductos } from "./renderproductos.js";
+
 import { fetchClientes, guardarClienteAPI } from "./clientes.js";
 import { dibujarClientes } from "./renderclientes.js";
 import { actualizarTablaVenta } from "./renderventas.js";
-
-
-
-// ==========================================
-// 2. UTILIDADES GENERALES (UI Y NAVEGACIÓN)
-// ==========================================
-const toggleModal = (id, mostrar = true) => {
-    const modal = document.getElementById(id);
-    modal.classList.toggle("hidden", !mostrar);
-    modal.classList.toggle("flex", mostrar);
-};
-
-// --- NAVEGACIÓN CENTRALIZADA ---
-window.cambiarSeccion = (idSeccionDestino) => {
-    // Definimos todas las pantallas que existen en tu index.html
-    const pantallas = [
-        "seccionDashboard", 
-        "seccionProductos", 
-        "seccionClientes", 
-        "seccionVentas",
-        "seccionConfig",
-        "pantallaGenerarVenta"
-    ];
-    // PASO A: Apagamos todas las pantallas
-    pantallas.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.classList.add("hidden"); // Ocultamos con CSS
-        }
-    });
-    // PASO B: Prendemos solo la que el usuario pidió
-    const pantallaActiva = document.getElementById(idSeccionDestino);
-    if (pantallaActiva) {
-        pantallaActiva.classList.remove("hidden"); // Mostramos
-    }
-    // PASO C: Lógica especial para el Header de Ventas
-    // Como tu diseño oculta el header general cuando entras a "Nueva Venta"
-    const headerVentas = document.getElementById("headerVentas");
-    if (headerVentas) {
-        if (idSeccionDestino === "pantallaGenerarVenta") {
-            headerVentas.classList.add("hidden");
-        } else {
-            headerVentas.classList.remove("hidden");
-        }
-    }
-};
-
+import { fetchProductos, listarProductos } from "./productos.js";
+import { dibujarProductos } from "./renderproductos.js";
 
 
 // ==========================================
 // 3. MÓDULO DE PRODUCTOS
 // ==========================================
-window.prepararEdicionProducto = async (id) => { 
-    const productos = await fetchProductos(); // Traemos la lista
-    const p = productos.find(prod => prod.id == id);
-    if (!p) return;
 
-    // Llenamos el formulario (lo que ya tenías)
-    document.getElementById("id").value = p.id;
-    document.getElementById("sku").value = p.sku;
-    document.getElementById("descripcion").value = p.descripcion;
-    document.getElementById("marca").value = p.marca;
-    document.getElementById("modelo").value = p.modelo;
-    document.getElementById("categoria").value = p.categoria; // <-- Se asigna aquí
-    document.getElementById("proveedor").value = p.proveedor;
-    document.getElementById("costo").value = p.costo;
-    document.getElementById("precio_neto").value = p.precio_neto;
-    document.getElementById("iva").value = p.iva;
-    document.getElementById("control_stock").checked = p.control_stock;
-    document.getElementById("stock").value = p.stock;
-    document.getElementById("stock_minimo").value = p.stock_minimo;
-    // ----------------------
-
-    // Abrimos el modal
-    const modal = document.getElementById("modalProducto");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-};
 
 window.prepararEdicionCliente = async (id) => { //carga datos modal cliente
     const cliente = await fetchClientes();
@@ -410,28 +339,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         eliminarProducto(id, desc);
     });
     
-    window.eliminarProducto = async (id, sku) => {
-    // 1. El cartel de confirmación
-    const rta = confirm(`¿Estás seguro de que querés eliminar el producto con código "${sku}"?`);
-        if (rta) {
-            try {
-                // 2. Avisamos al Backend
-                const response = await fetch(`http://localhost:3000/api/productos/${id}`, {
-                    method: 'DELETE' 
-                });
-                if (response.ok) {
-                    alert("Producto eliminado con éxito.");
-                    // 3. Recargamos la lista
-                    const productosActualizados = await fetchProductos();
-                    dibujarProductos(productosActualizados);
-                } else {
-                    alert("No se pudo eliminar el producto.");
-                }
-            } catch (error) {
-                console.error("Error en la conexión:", error);
-            }
-        }
-    };
 
     window.seleccionarClienteDesdeModal = async (id) => {
         // 1. Buscamos el select de clientes en la pantalla de venta
