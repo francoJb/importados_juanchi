@@ -6,6 +6,8 @@
         <title>JR Import - Sistema de Ventas</title>
         <!-- Importamos Tailwind CSS desde su CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Importamos jsPDF para generar PDFs -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         
         <script>
             // Configuración para que Tailwind reconozca el modo oscuro por clase
@@ -64,11 +66,86 @@
 
                 <!-- SECCIÓN DASHBOARD (Oculta por defecto) -->
                 <div id="seccionDashboard" class="hidden">
-                    <header class="mb-8 flex justify-between items-center">
+                    <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Panel de control central con las métricas clave, ventas recientes y productos más vendidos.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button id="dashboardRefresh" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg transition-all">Actualizar</button>
                         </div>
                     </header>
+
+                    <div class="grid gap-4 xl:grid-cols-4 mb-8">
+                        <article class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <p class="text-sm uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 font-bold mb-4">Ventas Totales del Mes</p>
+                            <p id="dashboardVentasMes" class="text-3xl font-black text-slate-900 dark:text-white">$0.00</p>
+                        </article>
+                        <article class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <p class="text-sm uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 font-bold mb-4">Saldo Pendiente Total</p>
+                            <p id="dashboardSaldoPendiente" class="text-3xl font-black text-red-600">$0.00</p>
+                        </article>
+                        <article class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <p class="text-sm uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 font-bold mb-4">Clientes Nuevos (30d)</p>
+                            <p id="dashboardClientesNuevos" class="text-3xl font-black text-green-600">0</p>
+                        </article>
+                        <article class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <p class="text-sm uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 font-bold mb-4">Productos con Stock Bajo</p>
+                            <p id="dashboardProductosStockBajo" class="text-3xl font-black text-orange-600">0</p>
+                        </article>
+                    </div>
+
+                    <div class="grid gap-6 xl:grid-cols-[1.3fr_0.7fr] mb-8">
+                        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-800 dark:text-white">Tendencia de Ventas</h2>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Últimas 7 ventas registradas</p>
+                                </div>
+                            </div>
+                            <div class="h-[320px]">
+                                <canvas id="dashboardVentasChart"></canvas>
+                            </div>
+                        </section>
+
+                        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <div class="mb-4">
+                                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Productos con Stock Bajo</h2>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Revisá los productos que requieren reposición.</p>
+                            </div>
+                            <div id="dashboardLowStockList" class="space-y-3"></div>
+                        </section>
+                    </div>
+
+                    <div class="grid gap-6 xl:grid-cols-2">
+                        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 overflow-x-auto">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Últimas 5 Ventas</h2>
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-xs uppercase text-gray-400 dark:text-gray-500 border-b dark:border-slate-700">
+                                        <th class="p-3">N° Venta</th>
+                                        <th class="p-3">Cliente</th>
+                                        <th class="p-3 text-right">Total</th>
+                                        <th class="p-3">Estado</th>
+                                        <th class="p-3">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardUltimasVentasBody" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </section>
+                        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 overflow-x-auto">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Productos Más Vendidos</h2>
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-xs uppercase text-gray-400 dark:text-gray-500 border-b dark:border-slate-700">
+                                        <th class="p-3">Producto</th>
+                                        <th class="p-3 text-right">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardTopProductosBody" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </section>
+                    </div>
                 </div>
 
                 <!-- SECCION CLIENTES (Oculta por defecto) -->
@@ -167,8 +244,8 @@
                                                 <span id="clienteSaldo" class="text-2xl font-black text-red-600">$ 0.00</span>
                                             </div>
                                             <!-- Botón de Cobro Rápido -->
-                                            <button type="button" id="btnRegistrarCobro" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-md transition-all">
-                                                💵 COBRAR
+                                            <button type="button" id="btnRegistrarCobro" class="hover:scale-150 transition-transform" title="Registrar pago rápido">
+                                                💵
                                             </button>
                                         </div>
                                     </div>
@@ -186,15 +263,19 @@
                 </div>
 
                 <div id="pantalla-balance-cliente" class="seccion-pantalla hidden p-6 animate-fade-in">
-                    <div class="flex justify-between items-center mb-8">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
                         <div>
                             <h1 class="text-3xl font-black text-gray-800 dark:text-white" id="ba-nombre-cliente">Balance de Cliente</h1>
                             <p class="text-gray-500 text-sm">Historial completo de movimientos y saldos</p>
                         </div>
-                        
-                        <button onclick="cambiarSeccion('seccionClientes')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2">
-                            ⬅️ VOLVER A CLIENTES
-                        </button>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="abrirPagoDesdeBalance()" class="hover:scale-150 transition-transform" title="Agregar pago">
+                                💵
+                            </button>
+                            <button onclick="cambiarSeccion('seccionClientes')" class="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold shadow-lg transition-all flex items-center justify-center gap-2" title="Cerrar">
+                                X
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -217,6 +298,7 @@
                                     <th class="p-4 text-right">Debe (+)</th>
                                     <th class="p-4 text-right">Haber (-)</th>
                                     <th class="p-4 text-right text-blue-600">Saldo Acumulado</th>
+                                    <th class="p-4 text-center">Recibo</th>
                                 </tr>
                             </thead>
                             <tbody id="ba-tabla-body" class="divide-y dark:divide-slate-700">
@@ -459,8 +541,65 @@
                     <header class="mb-8 flex justify-between items-center">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Configuración</h1>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Administra los datos de la empresa que se usan en facturas y recibos.</p>
                         </div>
                     </header>
+
+                    <div class="grid gap-6">
+                        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                            <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Datos de la Empresa</h2>
+                            <form id="formConfigEmpresa" class="grid gap-6">
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Razón Social</label>
+                                        <input id="configRazonSocial" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="Ej: JR Import S.A.">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Nombre Fantasía</label>
+                                        <input id="configNombreFantasia" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="Ej: JR Import">
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">CUIT</label>
+                                        <input id="configCuit" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="30-12345678-9">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Domicilio</label>
+                                        <input id="configDomicilio" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="Calle Ficticia 123, CABA">
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Email</label>
+                                        <input id="configEmail" type="email" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="info@jrimport.com">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Teléfono</label>
+                                        <input id="configTelefono" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="(011) 1234-5678">
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Sitio Web</label>
+                                        <input id="configWebsite" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="www.jrimport.com">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold mb-1">Condición frente al IVA</label>
+                                        <input id="configCondicionIva" type="text" class="w-full border p-3 rounded-xl bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white" placeholder="Responsable Inscripto">
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-3 pt-4">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">Guardar Empresa</button>
+                                    <button type="button" onclick="cambiarSeccion('seccionDashboard')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-xl font-bold transition-all">Volver al Dashboard</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
@@ -512,8 +651,11 @@
                     </div>
                     
                     <div class="flex items-center gap-6">
-                        <button id="btn-md-cobrar" class="hidden bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105 flex items-center gap-2">
-                            <span>💵</span> REGISTRAR PAGO
+                        <button id="btn-md-imprimir" onclick="imprimirFactura()" class="transition-all transform hover:scale-150 flex items-center gap-2" title="Imprimir">
+                            <span>🖨️</span>
+                        </button>
+                        <button id="btn-md-cobrar" class="hidden transition-all transform hover:scale-150 flex items-center gap-2" title="Agregar Pago">
+                            <span>💵</span>
                         </button>
 
                         <div class="text-right">

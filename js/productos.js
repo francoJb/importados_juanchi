@@ -120,17 +120,49 @@ export async function prepararEdicionProducto(id) {
     toggleModal("modalProducto", true);
 }
 
-// 7. ELIMINAR
-export async function eliminarProducto(id, desc) {
-    if (!confirm(`¿Estás seguro de eliminar "${desc}"?`)) return;
+// 7. ELIMINAR PRODUCTO (Soft Delete)
+export async function eliminarProducto(id, descripcion) {
+    const confirmacion = confirm(`¿Estás seguro de que quieres eliminar el producto "${descripcion}"? Esta acción solo lo desactivará.`);
+    if (!confirmacion) return;
+
     try {
-        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        if (res.ok) {
-            alert("Producto eliminado");
-            listarProductos();
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("Producto eliminado correctamente.");
+            listarProductos(); // Recarga la tabla automáticamente
+        } else {
+            const errorData = await response.json();
+            alert("Error al eliminar el producto: " + (errorData.error || "Error desconocido"));
         }
     } catch (error) {
-        alert("Error al eliminar");
+        console.error("Error en la conexión:", error);
+        alert("Error de conexión al eliminar el producto.");
+    }
+}
+
+// Hacer la función global para el onclick
+window.eliminarProducto = eliminarProducto;
+
+export async function initProductos() {
+    await listarProductos();
+    configurarFormularioProducto();
+    configurarBuscadorProductos();
+
+    const btnAbrirModalProducto = document.getElementById("btnAbrirModalProducto");
+    if (btnAbrirModalProducto) {
+        btnAbrirModalProducto.onclick = () => {
+            document.getElementById("formProducto").reset();
+            document.getElementById("formProductoId").value = "";
+            toggleModal("modalProducto", true);
+        };
+    }
+
+    const btnCerrarModalProducto = document.getElementById("btnCerrarModalProducto");
+    if (btnCerrarModalProducto) {
+        btnCerrarModalProducto.onclick = () => toggleModal("modalProducto", false);
     }
 }
 

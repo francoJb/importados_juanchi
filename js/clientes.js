@@ -1,4 +1,5 @@
 import { dibujarClientes } from "./renderclientes.js";
+import { toggleModal } from "./ui.js";
 
 const API_URL = "http://localhost:3000/api/clientes";
 
@@ -144,8 +145,42 @@ export async function eliminarCliente(id, nombre){
     }
 };
 
+async function cargarDatosBalance(clienteId) {
+    try {
+        const res = await fetch(`http://localhost:3000/api/clientes/${clienteId}/cuenta-corriente`);
+        const data = await res.json();
+
+        document.getElementById("ba-saldo-total").innerText = `$${parseFloat(data.saldoTotal).toFixed(2)}`;
+        const totalPagado = data.movimientos.reduce((sum, m) => sum + parseFloat(m.haber), 0);
+        document.getElementById("ba-total-pagos").innerText = `$${totalPagado.toFixed(2)}`;
+
+        const body = document.getElementById("ba-tabla-body");
+        body.innerHTML = data.movimientos.map(m => `
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
+                <td class="p-4 text-gray-500">${new Date(m.fecha).toLocaleString('es-AR')}</td>
+                <td class="p-4">
+                    <span class="font-bold dark:text-white">${m.descripcion}</span>
+                    ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Venta #${m.venta_id}</span>` : ''}
+                </td>
+                <td class="p-4 text-right font-mono text-red-500">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
+                <td class="p-4 text-right font-mono text-green-500">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>
+                <td class="p-4 text-right font-black font-mono dark:text-white bg-blue-50/30 dark:bg-blue-900/10">$${parseFloat(m.saldo_acumulado).toFixed(2)}</td>
+                <td class="p-4 text-center">
+                    ${m.haber > 0 && m.venta_id ? `<button onclick="imprimirReciboPagoMov(${m.venta_id}, ${parseFloat(m.haber)}, ${parseFloat(m.saldo_acumulado)})" class="hover:scale-150 transition-transform" title="Imprimir Recibo">🖨️</button>` : '-'}
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error("Error al cargar balance:", error);
+    }
+}
+
 // 1. Función que dispara el botón "Balance" desde la tabla de clientes
 export async function irABalanceCliente(id, nombre, apellido) {
+    // Guardamos el cliente actual para usar desde la pantalla de balance
+    window.currentBalanceClienteId = id;
+
     // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
     document.getElementById("seccionClientes").classList.add("hidden");
     
@@ -207,14 +242,6 @@ export async function seleccionarClienteDesdeModal(id) {
     // 3. Cerramos el buscador
     cerrarBuscadorClientes();
 };
-
-document.addEventListener("click", (ec) => {
-    const btn = ec.target.closest(".btn-eliminarCli");
-    if (!btn) return;
-    const id = btn.dataset.id;
-    const desc = btn.dataset.desc;
-    eliminarCliente(id, desc);
-});
 
 export async function initClientes() {
     // 1. Cargar y mostrar clientes

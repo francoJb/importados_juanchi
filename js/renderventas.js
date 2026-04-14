@@ -67,42 +67,35 @@ export function actualizarTablaVenta(carritoVenta) {
     });
 }
 
-window.listarVentas = async () => {
+export function renderTablaVentas(ventas) {
     const cuerpoTabla = document.getElementById("cuerpo-tabla-ventas"); // Asegurate que este sea el ID de tu <tbody>
     if (!cuerpoTabla) return;
 
-    try {
-        const res = await fetch('http://localhost:3000/api/ventas');
-        const ventas = await res.json();
+    cuerpoTabla.innerHTML = ""; // Limpiamos la tabla
 
-        cuerpoTabla.innerHTML = ""; // Limpiamos la tabla
+    ventas.forEach(v => {
+        const fechaFormateada = new Date(v.fecha).toLocaleString();
+        const cliente = v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido}` : "Consumidor Final";
+        
+        // Lógica para el estado de entrega (puedes ajustarla según tu necesidad)
+        const estadoEntrega = v.estado_pago === 'Pagado' 
+            ? '<span class="text-green-600 font-bold">Entregado</span>' 
+            : '<span class="text-orange-500 font-bold">Pendiente</span>';
 
-        ventas.forEach(v => {
-            const fechaFormateada = new Date(v.fecha).toLocaleString();
-            const cliente = v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido}` : "Consumidor Final";
-            
-            // Lógica para el estado de entrega (puedes ajustarla según tu necesidad)
-            const estadoEntrega = v.estado_pago === 'Pagado' 
-                ? '<span class="text-green-600 font-bold">Entregado</span>' 
-                : '<span class="text-orange-500 font-bold">Pendiente</span>';
-
-            cuerpoTabla.innerHTML += `
-                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td class="p-2 text-center">#${v.id}</td>
-                    <td class="p-2">${fechaFormateada}</td>
-                    <td class="p-2 text-right">$${v.total}</td>
-                    <td class="p-2 text-right text-red-600">$${v.saldo_pendiente}</td>
-                    <td class="p-2 text-center">${estadoEntrega}</td>
-                    <td class="p-2 text-center">${cliente}</td>
-                    <td class="p-2 flex gap-2 justify-center">
-                        <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Ver Detalle">👁️</button>
-                        <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Imprimir">🖨️</button>
-                        <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Eliminar">🗑️</button>
-                    </td>
-                </tr>
-            `;
-        });
-    } catch (error) {
-        console.error("Error al listar ventas:", error);
-    }
-};
+        cuerpoTabla.innerHTML += `
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td class="p-2 text-center">#${v.id}</td>
+                <td class="p-2">${fechaFormateada}</td>
+                <td class="p-2 text-right">$${v.total}</td>
+                <td class="p-2 text-right text-red-600">$${v.saldo_pendiente}</td>
+                <td class="p-2 text-center">${estadoEntrega}</td>
+                <td class="p-2 text-center">${cliente}</td>
+                <td class="p-2 flex gap-2 justify-center">
+                    <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Ver Detalle">👁️</button>
+                    <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Imprimir">🖨️</button>
+                    <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
+                </td>
+            </tr>
+        `;
+    });
+}

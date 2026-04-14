@@ -1,4 +1,6 @@
 // js/renderproductos.js  RENDERIZA LA SECCION PRODUCTOS
+import { eliminarProducto } from "./productos.js";
+
 export function dibujarProductos(productos) {
     const tabla = document.getElementById("tablaProductosBody");
     if (!tabla) return;
@@ -15,8 +17,8 @@ export function dibujarProductos(productos) {
                 <td class="p-3 text-right font-bold text-naranja-600">$${p.precio_neto}</td>
                 <td class="p-3 text-center ${(Number(p.stock) <= Number(p.stock_minimo)) ? 'text-red-600 font-black' : ''}">${p.stock}</td>
                 <td class="p-3 text-center">
-                    <button onclick="prepararEdicionProducto(${p.id})" class="text-blue-500 hover:scale-125 transition-transform" title="Editar">✏️</button>
-                    <button class="btn-eliminar text-blue-500 hover:scale-125 transition-transform" data-id="${p.id}" data-desc="${p.sku}" title="Eliminar"> 🗑️</button>
+                    <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>
+                    <button onclick="eliminarProducto(${p.id}, '${p.descripcion || p.sku}')" class="btn-eliminar hover:scale-150 transition-transform" title="Eliminar"> 🗑️</button>
                 </td>
             </tr>
         `;
