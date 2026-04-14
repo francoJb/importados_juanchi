@@ -122,29 +122,142 @@ export async function prepararEdicionCliente(id) {
 };
 
 export async function eliminarCliente(id, nombre){
-        // 1. El cartel de confirmación
-        const rta = confirm(`¿Estás seguro de que querés eliminar a "${nombre}"?, esa accion solo desactivara el cliente`);
-        if (rta) {
-            try {
-                // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-                const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
-                    method: 'DELETE' // El método que definiste en tus rutas
-                });
-                if (response.ok) {
-                    alert("Cliente eliminado con éxito.");
-                    // 3. Recargamos la lista para que el cliente "desaparezca"
-                    const clientesActualizados = await fetchClientes();
-                    dibujarClientes(clientesActualizados);
-                } else {
-                    alert("No se pudo eliminar el cliente.");
-                }
-            } catch (error) {
-                console.error("Error en la conexión:", error);
+    // 1. El cartel de confirmación
+    const rta = confirm(`¿Estás seguro de que querés eliminar a "${nombre}"?, esa accion solo desactivara el cliente`);
+    if (rta) {
+        try {
+            // 2. Avisamos al Backend (Controller) que cambie el estado a 0
+            const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
+                method: 'DELETE' // El método que definiste en tus rutas
+            });
+            if (response.ok) {
+                alert("Cliente eliminado con éxito.");
+                // 3. Recargamos la lista para que el cliente "desaparezca"
+                const clientesActualizados = await fetchClientes();
+                dibujarClientes(clientesActualizados);
+            } else {
+                alert("No se pudo eliminar el cliente.");
             }
+        } catch (error) {
+            console.error("Error en la conexión:", error);
         }
-    };
+    }
+};
 
+// 1. Función que dispara el botón "Balance" desde la tabla de clientes
+export async function irABalanceCliente(id, nombre, apellido) {
+    // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
+    document.getElementById("seccionClientes").classList.add("hidden");
+    
+    // Mostramos Balance
+    const pantallaBalance = document.getElementById("pantalla-balance-cliente");
+    pantallaBalance.classList.remove("hidden");
+
+    // Actualizamos el nombre en la cabecera
+    document.getElementById("ba-nombre-cliente").innerText = `Balance: ${nombre} ${apellido}`;
+
+    // Cargamos los datos reales
+    await cargarDatosBalance(id);
+};
+
+export async function abrirBuscadorClientes() {
+    const clientes = await fetchClientes(); // Trae los clientes de la DB
+    const modal = document.getElementById("modalBuscadorClientes");
+    const tbody = document.getElementById("tablaBuscadorClientes");
+    tbody.innerHTML = clientes.map(c => `
+        <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+            <td class="p-3">${c.nombre}</td>
+            <td class="p-3">${c.apellido}</td>
+            <td class="p-3">${c.direccion}</td>
+            <td class="p-3 text-right">${c.dni}</td>
+            <td class="p-3 text-right">${c.cuit}</td>
+            <td class="p-3 text-center">
+                <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
+                    class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
+                    Seleccionar
+                </button>
+        </td>
+        </tr>
+    `).join('');
+    modal.classList.remove("hidden");
+    document.getElementById("inputFiltroClientes").focus();
+};
+
+export async function cerrarBuscadorClientes() {
+    document.getElementById("modalBuscadorClientes").classList.add("hidden");
+};
+
+export async function filtrarClientesModal() {
+    const texto = document.getElementById("inputFiltroClientes").value.toLowerCase();
+    const filas = document.querySelectorAll("#tablaBuscadorClientes tr");
+
+    filas.forEach(fila => {
+        const contenido = fila.textContent.toLowerCase();
+        fila.style.display = contenido.includes(texto) ? "" : "none";
+    });
+};
+
+export async function seleccionarClienteDesdeModal(id) {
+    // 1. Buscamos el select de clientes en la pantalla de venta
+    const selectC = document.getElementById("v-cliente-select");
+    // 2. Le asignamos el ID del cliente seleccionado
+    if (selectC) {
+        selectC.value = id;
+    }
+    // 3. Cerramos el buscador
+    cerrarBuscadorClientes();
+};
+
+document.addEventListener("click", (ec) => {
+    const btn = ec.target.closest(".btn-eliminarCli");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const desc = btn.dataset.desc;
+    eliminarCliente(id, desc);
+});
+
+export async function initClientes() {
+    // 1. Cargar y mostrar clientes
+    await listarClientes();
+    
+    // 2. Configurar el formulario
+    configurarFormularioCliente();
+    
+    // 3. Configurar buscador
+    configurarBuscadorClientes();
+    
+    // 4. Botones abrir/cerrar modal de cliente
+    const btnAbrirModalCliente = document.getElementById("btnAbrirModalCliente");
+    if (btnAbrirModalCliente) {
+        btnAbrirModalCliente.onclick = () => {
+            document.getElementById("formCliente").reset();
+            document.getElementById("formClienteId").value = "";
+            toggleModal("modalCliente", true);
+        };
+    }
+    
+    const btnCerrarModalCliente = document.getElementById("btnCerrarModalCliente");
+    if (btnCerrarModalCliente) {
+        btnCerrarModalCliente.onclick = () => toggleModal("modalCliente", false);
+    }
+    
+    // 5. Listener para eliminar clientes desde la tabla
+    document.addEventListener("click", (ec) => {
+        const btn = ec.target.closest(".btn-eliminarCli");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const desc = btn.dataset.desc;
+        eliminarCliente(id, desc);
+    });
+    
+    console.log("✅ Módulo de Clientes inicializado");
+}
 
 window.prepararEdicionCliente = prepararEdicionCliente;
 window.eliminarCliente = eliminarCliente;
 window.listarClientes = listarClientes;
+window.irABalanceCliente = irABalanceCliente;
+window.abrirBuscadorClientes = abrirBuscadorClientes;
+window.cerrarBuscadorClientes = cerrarBuscadorClientes;
+window.filtrarClientesModal = filtrarClientesModal;
+window.seleccionarClienteDesdeModal = seleccionarClienteDesdeModal;

@@ -3,7 +3,7 @@
 // ==========================================
 
 import { dibujarClientes } from "./renderclientes.js";
-import { fetchClientes, listarClientes, configurarFormularioCliente, configurarBuscadorClientes } from "./clientes.js";
+import { initClientes, fetchClientes, listarClientes, configurarFormularioCliente, configurarBuscadorClientes } from "./clientes.js";
 
 import { dibujarProductos } from "./renderproductos.js";
 import { fetchProductos, listarProductos, configurarFormularioProducto, configurarBuscadorProductos } from "./productos.js";
@@ -18,9 +18,10 @@ import { actualizarTablaVenta } from "./renderventas.js";
 // 6. CARGA INICIAL (DOMContentLoaded)
 // ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
-    listarClientes();
-    configurarFormularioCliente();
-    configurarBuscadorClientes();
+    // Inicializar módulos
+    
+    await initClientes();
+
     listarProductos();
     configurarFormularioProducto();
     configurarBuscadorProductos();
@@ -131,21 +132,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ==========================================
     // 4. MÓDULO DE CLIENTES
     // ==========================================
-    // 1. Función que dispara el botón "Balance" desde la tabla de clientes
-    window.irABalanceCliente = async (id, nombre, apellido) => {
-        // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
-        document.getElementById("seccionClientes").classList.add("hidden");
-        
-        // Mostramos Balance
-        const pantallaBalance = document.getElementById("pantalla-balance-cliente");
-        pantallaBalance.classList.remove("hidden");
-
-        // Actualizamos el nombre en la cabecera
-        document.getElementById("ba-nombre-cliente").innerText = `Balance: ${nombre} ${apellido}`;
-
-        // Cargamos los datos reales
-        await cargarDatosBalance(id);
-    };
+    
+    
 
 
     // 3. Carga de datos desde la API
@@ -198,26 +186,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnCerrarModalCliente").onclick = () => toggleModal("modalCliente", false);
 
 
-
-
-    window.seleccionarClienteDesdeModal = async (id) => {
-        // 1. Buscamos el select de clientes en la pantalla de venta
-        const selectC = document.getElementById("v-cliente-select");
-        // 2. Le asignamos el ID del cliente seleccionado
-        if (selectC) {
-            selectC.value = id;
-        }
-        // 3. Cerramos el buscador
-        cerrarBuscadorClientes();
-    };
-
-    document.addEventListener("click", (ec) => {
-        const btn = ec.target.closest(".btn-eliminarCli");
-        if (!btn) return;
-        const id = btn.dataset.id;
-        const desc = btn.dataset.desc;
-        eliminarCliente(id, desc);
-    });
 
     
 
@@ -302,42 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    window.abrirBuscadorClientes = async () => {
-        const clientes = await fetchClientes(); // Trae los clientes de la DB
-        const modal = document.getElementById("modalBuscadorClientes");
-        const tbody = document.getElementById("tablaBuscadorClientes");
-        tbody.innerHTML = clientes.map(c => `
-            <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                <td class="p-3">${c.nombre}</td>
-                <td class="p-3">${c.apellido}</td>
-                <td class="p-3">${c.direccion}</td>
-                <td class="p-3 text-right">${c.dni}</td>
-                <td class="p-3 text-right">${c.cuit}</td>
-                <td class="p-3 text-center">
-                    <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
-                        class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
-                        Seleccionar
-                    </button>
-            </td>
-            </tr>
-        `).join('');
-        modal.classList.remove("hidden");
-        document.getElementById("inputFiltroClientes").focus();
-    };
-
-    window.cerrarBuscadorClientes = () => {
-        document.getElementById("modalBuscadorClientes").classList.add("hidden");
-    };
-
-    window.filtrarClientesModal = () => {
-        const texto = document.getElementById("inputFiltroClientes").value.toLowerCase();
-        const filas = document.querySelectorAll("#tablaBuscadorClientes tr");
-
-        filas.forEach(fila => {
-            const contenido = fila.textContent.toLowerCase();
-            fila.style.display = contenido.includes(texto) ? "" : "none";
-        });
-    };
+    
 
 
     // Llenar Productos con SKU (Código) y Descripción
