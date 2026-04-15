@@ -299,7 +299,7 @@ window.procesarVentaFinal = async () => {
             await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
             cerrarModalPago();
             cambiarSeccion('seccionVentas');
-            if (typeof obtenerVentas === "function") obtenerVentas();
+            listarVentas();
         } else {
             throw new Error(resultado.error || "Error desconocido al guardar.");
         }
@@ -314,9 +314,8 @@ window.procesarVentaFinal = async () => {
 window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
 
 async function cargarDatosVenta(id) {
-    const resVenta = await fetch(`${URL_API}`);
-    const ventas = await resVenta.json();
-    const venta = ventas.find(v => v.id === id);
+    const resVenta = await fetch(`${URL_API}/${id}`);
+    const venta = await resVenta.json();
     const resDetalle = await fetch(`${URL_API}/${id}/detalle`);
     const detalles = await resDetalle.json();
     window.ventaActual = venta;
@@ -334,7 +333,7 @@ window.verDetalleVenta = async (id) => {
     document.getElementById("md-cliente").innerText = venta.cliente_nombre ? `${venta.cliente_nombre} ${venta.cliente_apellido}` : "Consumidor Final";
     document.getElementById("md-total-final").innerText = `$${parseFloat(venta.total).toFixed(2)}`;
     document.getElementById("md-pendiente").innerText = `$${parseFloat(venta.saldo_pendiente).toFixed(2)}`;
-    document.getElementById("v-observaciones").innerText = venta.observaciones || "Sin observaciones registradas.";
+    document.getElementById("md-observaciones").innerText = venta.observaciones || "Sin observaciones.";
 
     const saldo = parseFloat(venta.saldo_pendiente);
     const contenedorEstado = document.getElementById("md-estado");
@@ -351,14 +350,14 @@ window.verDetalleVenta = async (id) => {
         btnCobrar.classList.remove("hidden");
         const idDelCliente = venta.cliente_id;
         btnCobrar.onclick = () => {
-            cerrarModalDetalle();
+            cambiarSeccion('seccionVentas');
             abrirPantallaCobranza(venta.id, idDelCliente, saldo);
         };
     } else {
         btnCobrar.classList.add("hidden");
     }
 
-    document.getElementById("modal-detalle-venta").classList.remove("hidden");
+    cambiarSeccion('pantalla-detalle-venta');
 
     if (saldo <= 0) {
         contenedorEstado.innerHTML = `
@@ -424,7 +423,7 @@ window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente) => {
 };
 
 window.cerrarModalDetalle = () => {
-    document.getElementById("modal-detalle-venta").classList.add("hidden");
+    cambiarSeccion('seccionVentas');
 };
 
 window.abrirPagoDesdeBalance = async () => {

@@ -5,6 +5,7 @@ const ventasController = require('../controllers/ventasController');
 // Definir la ruta para crear venta
 router.post('/', ventasController.crearVenta);
 router.get('/', ventasController.obtenerVentas);
+router.get('/:id', ventasController.obtenerVenta);
 router.get('/:id/detalle', ventasController.obtenerDetalleVenta);
 router.post('/:ventaId/pago', ventasController.registrarPago);
 

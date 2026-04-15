@@ -214,9 +214,173 @@ async function renderDashboard() {
 
 
 // ==========================================
+// INICIALIZACIÓN DE LA APLICACIÓN
+// ==========================================
+
+async function initApp() {
+    // Inicializar módulos
+    await initClientes();
+    await initProductos();
+    await initVentas();
+
+    cambiarSeccion('seccionDashboard');
+
+    // --- CONFIGURACIÓN DE CLICS DEL MENÚ LATERAL ---
+
+    // 1. Cuando hagan clic en Dashboard
+    document.getElementById("linkDashboard").addEventListener("click", (e) => {
+        e.preventDefault(); // Esto evita que la página salte al principio por el href="#"
+        cambiarSeccion('seccionDashboard');
+        renderDashboard();
+    });
+
+    // 2. Cuando hagan clic en Clientes
+    document.getElementById("linkClientes").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionClientes');
+    });
+
+    // 3. Cuando hagan clic en Ventas
+    document.getElementById("linkVentas").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionVentas');
+        listarVentas();
+    });
+
+    // 4. Cuando hagan clic en Productos
+    document.getElementById("linkProductos").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionProductos');
+    });
+
+    // 5. Cuando hagan clic en Configuracion
+    document.getElementById("linkConfig").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionConfig');
+        popularFormularioConfiguracion();
+    });
+
+    const dashboardRefresh = document.getElementById("dashboardRefresh");
+    if (dashboardRefresh) {
+        dashboardRefresh.addEventListener("click", renderDashboard);
+    }
+
+    const formConfigEmpresa = document.getElementById("formConfigEmpresa");
+    if (formConfigEmpresa) {
+        formConfigEmpresa.addEventListener("submit", guardarConfiguracionEmpresa);
+    }
+
+    popularFormularioConfiguracion();
+    renderDashboard();
+
+    // 1. Reloj profesional
+    if(document.getElementById("pantallaGenerarVenta")){
+        setInterval(() => {
+            const reloj = document.getElementById("reloj-venta");
+            if(reloj) reloj.innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    }
+
+    // 5. MODO OSCURO (Básico para que no te moleste la vista)
+    const btnDarkMode = document.getElementById("btnDarkMode");
+    if (btnDarkMode) {
+        btnDarkMode.onclick = () => document.documentElement.classList.toggle("dark");
+    }
+
+    // 6. CERRAR SESIÓN
+    const btnLogout = document.getElementById("btnLogout");
+    if (btnLogout) {
+        btnLogout.onclick = openLogoutConfirm;
+    }
+}
+
+function openLogoutConfirm() {
+    const modal = document.getElementById('modalLogoutConfirm');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeLogoutConfirm() {
+    const modal = document.getElementById('modalLogoutConfirm');
+    if (modal) modal.classList.add('hidden');
+}
+
+function confirmLogout() {
+    localStorage.removeItem('loggedIn');
+    closeLogoutConfirm();
+    location.reload();
+}
+
+// ==========================================
+// LÓGICA DE LOGIN
+// ==========================================
+
+function showLogin() {
+    document.getElementById('pantallaLogin').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+}
+
+function showApp() {
+    document.getElementById('pantallaLogin').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+}
+
+async function iniciarApp() {
+    showApp();
+    await initApp();
+}
+
+// ==========================================
 // 6. CARGA INICIAL (DOMContentLoaded)
 // ==========================================
 document.addEventListener("DOMContentLoaded", async () => {
+    const togglePassword = document.getElementById('togglePassword');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', () => {
+            const input = document.getElementById('password');
+            if (input) {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            }
+        });
+    }
+
+    const formLogin = document.getElementById('formLogin');
+    if (formLogin) {
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const empresa = document.getElementById('empresa').value;
+            const usuario = document.getElementById('usuario').value;
+            const password = document.getElementById('password').value;
+            if (empresa === 'jrimport' && usuario === 'Admin' && password === 'admin') {
+                localStorage.setItem('loggedIn', 'true');
+                await iniciarApp();
+            } else {
+                alert('Credenciales incorrectas. Intente nuevamente.');
+            }
+        });
+    }
+
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', openLogoutConfirm);
+    }
+
+    const btnConfirmLogout = document.getElementById('btnConfirmLogout');
+    if (btnConfirmLogout) {
+        btnConfirmLogout.addEventListener('click', confirmLogout);
+    }
+
+    const btnCancelLogout = document.getElementById('btnCancelLogout');
+    if (btnCancelLogout) {
+        btnCancelLogout.addEventListener('click', closeLogoutConfirm);
+    }
+
+    if (localStorage.getItem('loggedIn') !== 'true') {
+        showLogin();
+        return;
+    }
+
+    showApp();
+
     // Inicializar módulos
     
     await initClientes();

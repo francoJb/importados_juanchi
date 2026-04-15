@@ -17,7 +17,10 @@ export const cambiarSeccion = (idSeccionDestino) => {
         "seccionVentas",
         "seccionConfig",
         "pantallaGenerarVenta",
-        "pantalla-balance-cliente"
+        "pantalla-balance-cliente",
+        "pantallaCliente",
+        "pantallaProducto",
+        "pantalla-detalle-venta"
     ];
     pantallas.forEach(id => {
         const elemento = document.getElementById(id);

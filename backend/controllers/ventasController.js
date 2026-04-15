@@ -110,6 +110,33 @@ exports.obtenerVentas = async (req, res) => {
     }
 };
 
+exports.obtenerVenta = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.query(`
+            SELECT 
+                v.id, 
+                v.fecha, 
+                v.total, 
+                v.saldo_pendiente, 
+                v.estado_pago,
+                v.cliente_id,
+                v.observaciones,
+                c.nombre AS cliente_nombre, 
+                c.apellido AS cliente_apellido
+            FROM ventas v
+            LEFT JOIN clientes c ON v.cliente_id = c.id
+            WHERE v.id = ?
+        `, [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Venta no encontrada' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.obtenerDetalleVenta = async (req, res) => {
     const { id } = req.params; // El ID de la venta que viene en la URL
     try {

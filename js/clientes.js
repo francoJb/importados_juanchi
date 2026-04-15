@@ -1,5 +1,5 @@
 import { dibujarClientes } from "./renderclientes.js";
-import { toggleModal } from "./ui.js";
+import { cambiarSeccion } from "./ui.js";
 
 const API_URL = "http://localhost:3000/api/clientes";
 
@@ -75,9 +75,9 @@ export function configurarFormularioCliente() {
         const exito = await guardarClienteAPI(datos, id || null);
         if (exito) {
             alert("✅ Cliente guardado correctamente");
-            toggleModal("modalCliente", false);
             formCliente.reset();
             listarClientes(); // Recarga la tabla automáticamente
+            cambiarSeccion('seccionClientes');
         }
     };
 }
@@ -114,12 +114,12 @@ export async function prepararEdicionCliente(id) {
     document.getElementById("telefono").value = c.telefono;
     document.getElementById("cuit").value = c.cuit;
     document.getElementById("arca").value = c.arca;
-    document.getElementById("fecha_alta").value = c.fecha_alta;
+    // Convertir fecha de YYYY-MM-DD a DD/MM/AAAA
+    const fecha = c.fecha_alta ? c.fecha_alta.split('-').reverse().join('/') : '';
+    document.getElementById("fecha_alta").value = fecha;
 
     // Abrimos el modal
-    const modal = document.getElementById("modalCliente");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
+    cambiarSeccion('pantallaCliente');
 };
 
 export async function eliminarCliente(id, nombre){
@@ -259,16 +259,15 @@ export async function initClientes() {
         btnAbrirModalCliente.onclick = () => {
             document.getElementById("formCliente").reset();
             document.getElementById("formClienteId").value = "";
-            toggleModal("modalCliente", true);
+            cambiarSeccion("pantallaCliente");
         };
     }
-    
+
     const btnCerrarModalCliente = document.getElementById("btnCerrarModalCliente");
     if (btnCerrarModalCliente) {
-        btnCerrarModalCliente.onclick = () => toggleModal("modalCliente", false);
+        btnCerrarModalCliente.onclick = () => cambiarSeccion("seccionClientes");
     }
-    
-    // 5. Listener para eliminar clientes desde la tabla
+
     document.addEventListener("click", (ec) => {
         const btn = ec.target.closest(".btn-eliminarCli");
         if (!btn) return;

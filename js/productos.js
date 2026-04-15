@@ -1,5 +1,5 @@
 import { dibujarProductos } from "./renderproductos.js";
-import { toggleModal } from "./ui.js";
+import { cambiarSeccion } from "./ui.js";
 
 const API_URL = "http://localhost:3000/api/productos";
 
@@ -73,9 +73,9 @@ export function configurarFormularioProducto() {
         const exito = await guardarProductoAPI(datos, id || null);
         if (exito) {
             alert("✅ Producto guardado correctamente");
-            toggleModal("modalProducto", false);
             formProducto.reset();
             listarProductos(); // Recarga la tabla automáticamente
+            cambiarSeccion('seccionProductos');
         }
     };
 }
@@ -117,7 +117,7 @@ export async function prepararEdicionProducto(id) {
     document.getElementById("control_stock").checked = p.control_stock === 1;
 
     document.getElementById("tituloModalProducto").innerText = "Editar Producto";
-    toggleModal("modalProducto", true);
+    cambiarSeccion('pantallaProducto');
 }
 
 // 7. ELIMINAR PRODUCTO (Soft Delete)
@@ -156,13 +156,13 @@ export async function initProductos() {
         btnAbrirModalProducto.onclick = () => {
             document.getElementById("formProducto").reset();
             document.getElementById("formProductoId").value = "";
-            toggleModal("modalProducto", true);
+            cambiarSeccion("pantallaProducto");
         };
     }
 
     const btnCerrarModalProducto = document.getElementById("btnCerrarModalProducto");
     if (btnCerrarModalProducto) {
-        btnCerrarModalProducto.onclick = () => toggleModal("modalProducto", false);
+        btnCerrarModalProducto.onclick = () => cambiarSeccion("seccionProductos");
     }
 }
 

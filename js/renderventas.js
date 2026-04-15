@@ -87,7 +87,7 @@ export function renderTablaVentas(ventas) {
                 <td class="p-2 text-center">#${v.id}</td>
                 <td class="p-2">${fechaFormateada}</td>
                 <td class="p-2 text-right">$${v.total}</td>
-                <td class="p-2 text-right text-red-600">$${v.saldo_pendiente}</td>
+                <td class="p-2 text-right">$${v.saldo_pendiente}</td>
                 <td class="p-2 text-center">${estadoEntrega}</td>
                 <td class="p-2 text-center">${cliente}</td>
                 <td class="p-2 flex gap-2 justify-center">

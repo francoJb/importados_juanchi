@@ -1,5 +1,25 @@
 const db = require('../database/database');
 
+// Función para convertir fecha de DD/MM/AAAA a YYYY-MM-DD
+function convertirFecha(fechaStr) {
+    if (!fechaStr || fechaStr.trim() === '') {
+        return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+    const partes = fechaStr.split('/');
+    if (partes.length === 3) {
+        const dia = partes[0].padStart(2, '0');
+        const mes = partes[1].padStart(2, '0');
+        const anio = partes[2];
+        return `${anio}-${mes}-${dia}`;
+    }
+    // Si ya es YYYY-MM-DD o ISO, intentar parsear
+    const date = new Date(fechaStr);
+    if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+}
+
 exports.obtenerClientes = async (req, res) => {
     try {
         // En MySQL usamos await y desestructuramos [rows]
@@ -20,8 +40,8 @@ exports.crearCliente = async (req, res) => {
     const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta, estado)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
     
-    // MySQL acepta la fecha en formato YYYY-MM-DD directamente
-    const fecha = p.fecha_alta || new Date().toISOString().split('T')[0];
+    // Convertir fecha a YYYY-MM-DD
+    const fecha = convertirFecha(p.fecha_alta);
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, fecha];
 
     try {
@@ -49,7 +69,7 @@ exports.editarCliente = async (req, res) => {
     }
 
     const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, p.fecha_alta, id];
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, convertirFecha(p.fecha_alta), id];
 
     try {
         const [result] = await db.query(sql, params);
