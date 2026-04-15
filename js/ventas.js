@@ -397,30 +397,107 @@ window.verDetalleVenta = async (id) => {
     `).join('');
 };
 
-window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente) => {
-    const monto = prompt(`Registrar pago...\nSaldo: $${saldoPendiente}`);
-    if (!monto || isNaN(monto) || monto <= 0) return;
+// 1. Variables para guardar temporalmente los datos de la venta activa
+let ventaIdActual = null;
+let saldoActual = 0;
 
+// 2. Adaptación de la función para ABRIR el modal
+window.abrirPantallaCobranza = (ventaId, clienteId, saldoPendiente) => {
+    // Guardamos los IDs para usarlos luego al presionar "Aceptar"
+    ventaIdActual = ventaId;
+    saldoActual = saldoPendiente;
+
+    // Referencias a los elementos del modal que me pasaste
+    const modal = document.getElementById('modalRegistroPago');
+    const txtSaldo = document.getElementById('modalPago-saldo');
+    const inputMonto = document.getElementById('modalPago-monto');
+    const inputObs = document.getElementById('modalPago-observaciones');
+
+    // Llenamos el modal con la información
+    txtSaldo.textContent = `$${parseFloat(saldoPendiente).toLocaleString()}`;
+    inputMonto.value = saldoPendiente; // Sugerimos el pago total por defecto
+    inputObs.value = ""; // Limpiamos observaciones previas
+
+    // Mostramos el modal quitando la clase 'hidden' de Tailwind
+    modal.classList.remove('hidden');
+};
+
+// 3. Lógica para el botón CANCELAR
+document.getElementById('btnCancelRegistroPago').addEventListener('click', () => {
+    document.getElementById('modalRegistroPago').classList.add('hidden');
+    // Limpiamos las variables de control por seguridad
+    ventaIdActual = null;
+});
+
+// 4. Lógica para el botón ACEPTAR (Procesar el pago)
+document.getElementById('btnAcceptRegistroPago').addEventListener('click', async () => {
+    // Referencias a los inputs del modal
+    const montoInput = document.getElementById('modalPago-monto');
+    const metodoInput = document.getElementById('modalPago-metodo');
+    const obsInput = document.getElementById('modalPago-observaciones');
+    
+    const monto = parseFloat(montoInput.value);
+    const metodo = metodoInput.value;
+    const observaciones = obsInput.value;
+
+    // --- VALIDACIONES BÁSICAS ---
+    if (!monto || monto <= 0) {
+        alert("Por favor, ingrese un monto válido.");
+        return;
+    }
+
+    if (monto > saldoActual) {
+        alert("El monto no puede ser mayor al saldo pendiente ($" + saldoActual + ")");
+        return;
+    }
+
+    // --- ENVÍO DE DATOS AL BACKEND ---
     try {
-        const response = await fetch(`${URL_API}/${ventaId}/pago`, {
+        // Bloqueamos el botón para evitar doble clic accidental
+        const btnAceptar = document.getElementById('btnAcceptRegistroPago');
+        btnAceptar.disabled = true;
+        btnAceptar.textContent = "Procesando...";
+
+        const response = await fetch(`${URL_API}/${ventaIdActual}/pago`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ monto })
+            body: JSON.stringify({ 
+                monto: monto,
+                metodo: metodo,
+                observaciones: observaciones
+            })
         });
 
         const data = await response.json();
+
         if (data.success) {
-            alert("¡Pago de $" + monto + " registrado!");
-            const venta = await fetchVentaPorId(ventaId);
-            await generarReciboPagoPDF(venta, monto, data.nuevoSaldo);
+            alert("¡Pago registrado con éxito!");
+            
+            // 1. Cerramos el modal
+            document.getElementById('modalRegistroPago').classList.add('hidden');
+
+            // 2. Obtenemos los datos actualizados de la venta para el PDF
+            const ventaActualizada = await fetchVentaPorId(ventaIdActual);
+
+            // 3. Generamos el recibo (usando tus funciones existentes)
+            await generarReciboPagoPDF(ventaActualizada, monto, data.nuevoSaldo);
+
+            // 4. Refrescamos la lista de ventas en el dashboard
             await listarVentas();
+
         } else {
-            alert("Error: " + data.error);
+            alert("Error al registrar el pago: " + (data.error || "Desconocido"));
         }
     } catch (error) {
-        alert("Error de conexión");
+        console.error("Error en la petición:", error);
+        alert("Hubo un error de conexión con el servidor.");
+    } finally {
+        // Reestablecemos el botón pase lo que pase
+        const btnAceptar = document.getElementById('btnAcceptRegistroPago');
+        btnAceptar.disabled = false;
+        btnAceptar.textContent = "Aceptar";
     }
-};
+});
 
 window.cerrarModalDetalle = () => {
     cambiarSeccion('seccionVentas');
@@ -531,13 +608,13 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo) {
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("Detalle del pago:", margin, y);
+    doc.text("Detalle:", margin, y);
     y += 8;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(`Pago registrado para la factura N° ${venta ? `0001 - ${String(venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
+    doc.text (`Recibi la suma de: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
     y += 7;
-    doc.text(`Monto abonado: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
+    doc.text(`en concepto de pago por venta N° ${venta ? `0001 - ${String(venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
     y += 7;
     doc.text(`Saldo de cuenta corriente después del pago: $${parseFloat(nuevoSaldo).toFixed(2)}.`, margin, y);
     y += 15;
