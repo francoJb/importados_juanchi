@@ -1,11 +1,21 @@
+require('dotenv').config();
+
+const required = ['DB_HOST', 'DB_USER', 'DB_NAME'];
+for (const key of required) {
+  if (!process.env[key]) {
+    console.error(`Falta variable de entorno: ${key}`);
+    process.exit(1);
+  }
+}
 const mysql = require('mysql2/promise');
 
 // Configuramos la conexión
 const db = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '200324115', // ¡No te olvides de poner tu clave!
-    database: 'sophia',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '200324115',
+    database: process.env.DB_NAME || 'sophia',
+    port:Number(process.env.DB_PORT) || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

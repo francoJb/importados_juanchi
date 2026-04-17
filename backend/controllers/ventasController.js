@@ -93,7 +93,8 @@ exports.obtenerVentas = async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT 
-                v.id, 
+                v.id,
+                v.cliente_id, 
                 v.fecha, 
                 v.total, 
                 v.saldo_pendiente, 
@@ -176,10 +177,19 @@ exports.registrarPago = async (req, res) => {
 
         const venta = ventaRows[0];
         const idCliente = venta.cliente_id; // <--- Lo recuperamos de la DB
+        if (!idCliente) {
+            await connection.rollback();
+            return res.status(400).json({ error: "La venta no tiene cliente asociado. No se puede registrar pago en cuenta corriente." });
+        }
         const nuevoSaldo = parseFloat(venta.saldo_pendiente) - parseFloat(monto);
         const nuevoEstado = nuevoSaldo <= 0 ? 'Pagado' : 'Parcial';
 
         if (nuevoSaldo < 0) throw new Error("El monto supera el saldo pendiente");
+
+        if (parseFloat(venta.saldo_pendiente) <= 0) {
+            await connection.rollback();
+            return res.status(400).json({ error: "La venta no tiene saldo pendiente." });
+        }
 
         // 2. Actualizar la tabla Ventas
         await connection.query(

@@ -13,7 +13,7 @@ app.use('/api/clientes', clientesRoutes);
 
 
 // Iniciar servidor
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });

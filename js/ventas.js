@@ -228,7 +228,7 @@ window.abrirModalPago = () => {
         selectMetodo.value = "Efectivo";
     } else {
         optCtaCte.disabled = false;
-        optCtaCte.innerText = "Cuenta Corriente (Fiado)";
+        optCtaCte.innerText = "Cuenta Corriente";
     }
     toggleCamposCtaCte();
 
@@ -294,7 +294,7 @@ window.procesarVentaFinal = async () => {
 
         if (respuesta.ok) {
             alert("✅ Venta realizada con éxito.");
-            const ventaSimulada = { id: resultado.id, fecha: new Date(), cliente_id: idCliente, total: totalVenta, observaciones: observaciones };
+            const ventaSimulada = { id: resultado.ventaId, fecha: new Date(), cliente_id: idCliente, total: totalVenta, observaciones: observaciones };
             const detallesSimulados = carritoVenta.map(item => ({ sku: item.sku, descripcion: item.desc, precio_unitario: item.precio, cantidad: item.cantidad }));
             await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
             cerrarModalPago();
