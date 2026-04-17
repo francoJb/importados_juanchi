@@ -1,8 +1,24 @@
 const db = require('../database/database'); // Tu conexión a MySQL
 
 exports.crearVenta = async (req, res) => {
+    
     const { cliente_id, total, metodo_pago, entrega_inicial, items, observaciones } = req.body;
     
+    if (metodo_pago === 'Cuenta Corriente' && (!cliente_id || Number(cliente_id) === 0)) {
+        return res.status(400).json({
+            error: "No se puede registrar Cuenta Corriente para Consumidor Final. Seleccioná un cliente registrado."
+        });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "La venta debe tener al menos un ítem." });
+    }
+
+    if (!total || Number(total) <= 0) {
+        return res.status(400).json({ error: "El total de la venta debe ser mayor a 0." });
+    }
+    
+
     // Obtenemos una conexión del pool para la transacción
     const connection = await db.getConnection();
 
@@ -162,6 +178,13 @@ exports.obtenerDetalleVenta = async (req, res) => {
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
     const { monto } = req.body; // Ya no necesitamos obligatoriamente el clienteId desde afuera
+    
+    const montoNum = parseFloat(monto);
+    if (isNaN(montoNum) || montoNum <= 0) {
+        return res.status(400).json({ error: "Monto inválido. Debe ser mayor a 0." });
+    }
+
+
     const connection = await db.getConnection();
 
     try {
@@ -173,23 +196,31 @@ exports.registrarPago = async (req, res) => {
             [ventaId]
         );
 
-        if (ventaRows.length === 0) throw new Error("Venta no encontrada");
-
+        if (ventaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: "Venta no encontrada" });
+        }
+        
         const venta = ventaRows[0];
-        const idCliente = venta.cliente_id; // <--- Lo recuperamos de la DB
+        const idCliente = venta.cliente_id; // <--- Lo recuperamos de la DB    
         if (!idCliente) {
             await connection.rollback();
-            return res.status(400).json({ error: "La venta no tiene cliente asociado. No se puede registrar pago en cuenta corriente." });
+            return res.status(400).json({ error: "La venta no tiene cliente asociado." });
         }
-        const nuevoSaldo = parseFloat(venta.saldo_pendiente) - parseFloat(monto);
-        const nuevoEstado = nuevoSaldo <= 0 ? 'Pagado' : 'Parcial';
 
-        if (nuevoSaldo < 0) throw new Error("El monto supera el saldo pendiente");
-
-        if (parseFloat(venta.saldo_pendiente) <= 0) {
+        const saldoPendienteNum = parseFloat(venta.saldo_pendiente);
+        if (isNaN(saldoPendienteNum) || saldoPendienteNum <= 0) {
             await connection.rollback();
             return res.status(400).json({ error: "La venta no tiene saldo pendiente." });
         }
+
+        if (montoNum > saldoPendienteNum) {
+            await connection.rollback();
+            return res.status(400).json({ error: "El monto supera el saldo pendiente" });
+        }
+        
+        const nuevoSaldo = parseFloat(venta.saldo_pendiente) - parseFloat(monto);
+        const nuevoEstado = nuevoSaldo <= 0 ? 'Pagado' : 'Parcial';
 
         // 2. Actualizar la tabla Ventas
         await connection.query(

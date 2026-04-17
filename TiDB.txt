@@ -1,0 +1,1 @@
+mysql --comments -u '4S3NFp14LDUMzCB.root' -h gateway01.us-east-1.prod.aws.tidbcloud.com -P 4000 -D 'sys' --ssl-mode=VERIFY_IDENTITY --ssl-ca=<CA_PATH> -p'<PASSWORD>'
