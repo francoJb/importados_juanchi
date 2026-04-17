@@ -8,6 +8,7 @@ router.get('/', ventasController.obtenerVentas);
 router.get('/:id', ventasController.obtenerVenta);
 router.get('/:id/detalle', ventasController.obtenerDetalleVenta);
 router.post('/:ventaId/pago', ventasController.registrarPago);
+router.delete('/:id', ventasController.eliminarVenta);
 
 // (Opcional) Ruta para obtener el historial
 // router.get('/', ventasController.obtenerVentas);

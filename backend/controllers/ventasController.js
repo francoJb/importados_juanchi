@@ -175,6 +175,73 @@ exports.obtenerDetalleVenta = async (req, res) => {
     }
 };
 
+exports.eliminarVenta = async (req, res) => {
+    const { id } = req.params;
+    const ventaId = Number(id);
+
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+        return res.status(400).json({ error: "ID de venta inválido" });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1) Verificar que la venta exista
+        const [ventaRows] = await connection.query(
+            "SELECT id FROM ventas WHERE id = ?",
+            [ventaId]
+        );
+
+        if (ventaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: "Venta no encontrada" });
+        }
+
+        // 2) Traer detalles para revertir stock
+        const [detalles] = await connection.query(
+            "SELECT producto_id, cantidad FROM detalle_ventas WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        // 3) Revertir stock (siempre suma lo vendido)
+        for (const d of detalles) {
+            await connection.query(
+                "UPDATE productos SET stock = stock + ? WHERE id = ?",
+                [d.cantidad, d.producto_id]
+            );
+        }
+
+        // 4) Borrar cuenta corriente asociada a la venta
+        await connection.query(
+            "DELETE FROM cuenta_corriente WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        // 5) Borrar detalle de venta
+        await connection.query(
+            "DELETE FROM detalle_ventas WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        // 6) Borrar venta
+        await connection.query(
+            "DELETE FROM ventas WHERE id = ?",
+            [ventaId]
+        );
+
+        await connection.commit();
+        return res.json({ success: true, message: "Venta eliminada correctamente" });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("ERROR AL ELIMINAR VENTA:", error.message);
+        return res.status(500).json({ error: "Error interno al eliminar la venta" });
+    } finally {
+        connection.release();
+    }
+};
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
     const { monto } = req.body; // Ya no necesitamos obligatoriamente el clienteId desde afuera
