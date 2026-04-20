@@ -134,7 +134,7 @@ window.abrirBuscadorProductos = async () => {
             <td class="p-3 text-right">${p.precio_neto}</td>
             <td class="p-3 text-center">
                 <button onclick="seleccionarProductoDesdeModal('${p.sku}')" 
-                    class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
+                    class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
                     Seleccionar
                 </button>
             </td>

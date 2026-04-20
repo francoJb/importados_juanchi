@@ -16,9 +16,9 @@
                 theme: {
                     extend: {
                         colors: {
-                            naranja: {
-                                500: '#f97316',
-                                600: '#ea580c',
+                            cyan: {
+                                500: '#00CED1',
+                                600: '#00A8A8',
                             }
                         }
                     }
@@ -31,12 +31,14 @@
        <div id="pantallaLogin" class="flex items-center justify-center h-screen bg-gradient-to-tr from-slate-900 via-purple-900 to-blue-900">
             <div class="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-md border border-white/20">
                 <div class="text-center mb-8">
-                    <div class="w-20 h-20 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-cyan-500/30 rotate-3">
-                        <span class="text-white mb-7 text-8xl font-sans font-bold rotate-3">a</span>
+                    <div class="flex items-center justify-center font-black rotate-3 select-none">
+                        <div class="flex items-center justify-center bg-gradient-to-r from-cyan-500 to-teal-500 w-20 h-20 rounded-xl shadow-lg shadow-cyan-500/20">
+                            <span class="text-white text-8xl mb-7">a</span>
+                        </div>
+                        <div class="text-[#111827] text-7xl mb-4 ml-0.5 tracking-tight dark:text-white">
+                            ura
+                        </div>
                     </div>
-                    <h1 class="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">
-                        Aura
-                    </h1>
                     <p class="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-600 dark:text-cyan-400 mt-1">
                         Gestión inteligente para tu negocio
                     </p>
@@ -64,7 +66,7 @@
                     </div>
 
                     <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-1 active:scale-[0.98] mt-2">
-                        Ingresar al Sistema
+                        Iniciar Sesión
                     </button>
                 </form>
             </div>
@@ -77,10 +79,14 @@
             <!-- Sidebar (Menú Lateral) -->
             <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
                 <!-- Logo de JR Import -->
-                <div class="p-6 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700">
-                    <div class="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center text-white font-sans font-bold rotate-3">a</div>
-                    <span class="text-xl font-black tracking-tight text-black-600">Aura</span>
-                </div>
+                <div class="flex items-center justify-center font-black rotate-3 select-none">
+                        <div class="flex items-center justify-center bg-gradient-to-r from-cyan-500 to-teal-500 w-20 h-20 rounded-xl shadow-lg shadow-cyan-500/20">
+                            <span class="dark:text-black text-white text-8xl mb-7">a</span>
+                        </div>
+                        <div class="text-[#111827] text-7xl mb-4 ml-0.5 tracking-tight dark:text-white">
+                            ura
+                        </div>
+                    </div>
                 <!-- Opciones del Menú -->
                 <nav class="flex-1 p-4 space-y-2">
                     <a id="linkDashboard" href="#" class="flex items-center p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all">
@@ -107,7 +113,7 @@
                 </div>
                 <!-- Botón de Cerrar Sesión -->
                 <div class="p-4 border-t border-gray-100 dark:border-slate-700">
-                    <button type="button" id="btnLogout" class="w-full py-2 px-4 bg-naranja-500 hover:bg-naranja-600 text-white rounded-lg text-sm font-medium">
+                    <button type="button" id="btnLogout" class="w-full py-2 px-4 bg-[#4A4A4A] hover:bg-[#00A8A8] text-white rounded-lg text-sm font-medium">
                         🚪 Cerrar Sesión
                     </button>
                 </div>
@@ -123,7 +129,7 @@
                             <p class="text-sm text-gray-500 dark:text-gray-400">Panel de control central con las métricas clave, ventas recientes y productos más vendidos.</p>
                         </div>
                         <div class="flex flex-wrap gap-3">
-                            <button id="dashboardRefresh" class="bg-naranja-500 hover:bg-naranja-600 text-white px-5 py-2 rounded-xl font-bold shadow-lg transition-all">Actualizar</button>
+                            <button id="dashboardRefresh" class="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2 rounded-xl font-bold shadow-lg transition-all">Actualizar</button>
                         </div>
                     </header>
 
@@ -205,7 +211,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Clientes</h1>
                         </div>
-                        <button id="btnAbrirModalCliente" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        <button id="btnAbrirModalCliente" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                             + Nuevo Cliente
                         </button>
                     </header>
@@ -291,7 +297,7 @@
                                     <label for="clienteHabilitarCC" class="text-xs font-bold cursor-pointer">Habilitar crédito</label>
                                 </div>
                                 <div class="pt-4 flex flex-wrap gap-3">
-                                    <button type="submit" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 shadow-lg transition-all">GUARDAR</button>
+                                    <button type="submit" class="flex-1 bg-cyan-500 text-white font-bold py-3 rounded-xl hover:bg-cyan-600 shadow-lg transition-all">GUARDAR</button>
                                     <button type="button" onclick="cambiarSeccion('seccionClientes')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition-all">VOLVER</button>
                                 </div>
                             </div>
@@ -309,7 +315,7 @@
                             <button onclick="abrirPagoDesdeBalance()" class="hover:scale-150 transition-transform" title="Registrar pago">
                                 💵
                             </button>
-                            <button onclick="cambiarSeccion('seccionClientes')" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg" title="Cerrar">
+                            <button onclick="cambiarSeccion('seccionClientes')" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg" title="Cerrar">
                                 Cerrar
                             </button>
                         </div>
@@ -350,7 +356,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Ventas</h1>
                         </div>
-                        <button id="btn-nueva-venta" onclick="cambiarSeccion('pantallaGenerarVenta')" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        <button id="btn-nueva-venta" onclick="cambiarSeccion('pantallaGenerarVenta')" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                             + Nueva Venta
                         </button>
                     </header>
@@ -415,7 +421,7 @@
                                 <button onclick="cambiarSeccion('seccionVentas')" class="bg-gray-300 hover:bg-gray-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                                     Volver
                                 </button>
-                                <button onclick="abrirModalPago()" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                                <button onclick="abrirModalPago()" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                                     Crear
                                 </button>
                             </div>
@@ -459,7 +465,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Productos</h1>
                         </div>
-                        <button id="btnAbrirModalProducto" class="bg-naranja-500 hover:bg-naranja-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
+                        <button id="btnAbrirModalProducto" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg">
                             + Nuevo Producto
                         </button>
                     </header>
@@ -543,7 +549,7 @@
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-bold mb-1">Venta</label>
-                                                <input type="number" id="precio_neto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-bold text-naranja-600 transition-colors">
+                                                <input type="number" id="precio_neto" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-bold text-cyan-600 transition-colors">
                                                 <p id="avisoMargen" class="text-[10px] text-red-500 font-bold mt-1 leading-tight hidden">
                                                     ⚠️ PRECIO MENOR AL COSTO
                                                 </p>
@@ -561,11 +567,11 @@
                                         </div>
                                         <!-- Checkbox de Control de Stock -->
                                         <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-600">
-                                            <input type="checkbox" id="control_stock" class="w-5 h-5 accent-naranja-500" checked>
+                                            <input type="checkbox" id="control_stock" class="w-5 h-5 accent-cyan-500" checked>
                                             <label for="control_stock" class="text-sm font-bold cursor-pointer">Activar Control de Stock</label>
                                         </div>
                                         <div class="pt-4 flex flex-wrap gap-3">
-                                            <button type="submit" class="flex-1 bg-naranja-500 text-white font-bold py-3 rounded-xl hover:bg-naranja-600 shadow-lg transition-all">GUARDAR</button>
+                                            <button type="submit" class="flex-1 bg-cyan-500 text-white font-bold py-3 rounded-xl hover:bg-cyan-600 shadow-lg transition-all">GUARDAR</button>
                                             <button type="button" onclick="cambiarSeccion('seccionProductos')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition-all">VOLVER</button>
                                         </div>
                                     </div>
@@ -631,7 +637,7 @@
                                 </div>
 
                                 <div class="flex flex-wrap gap-3 pt-4">
-                                    <button type="submit" class="bg-naranja-500 hover:bg-naranja-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">Guardar Empresa</button>
+                                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">Guardar Empresa</button>
                                     <button type="button" onclick="cambiarSeccion('seccionDashboard')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-xl font-bold transition-all">Volver al Dashboard</button>
                                 </div>
                             </form>
@@ -772,7 +778,7 @@
         <!-- MODAL DE PAGO -->
         <div id="modalPago" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-                <div class="bg-blue-600 p-4 text-white">
+                <div class="bg-cyan-600 p-4 text-white">
                     <h3 class="text-xl font-bold flex items-center gap-2">
                         💰 Finalizar Venta
                     </h3>
@@ -807,7 +813,7 @@
                         <button onclick="cerrarModalPago()" class="py-3 bg-gray-100 dark:bg-slate-700 rounded-xl font-bold uppercase text-sm">
                             Cancelar
                         </button>
-                        <button onclick="procesarVentaFinal()" id="btn-confirmar-final" class="py-3 bg-blue-600 text-white rounded-xl font-bold uppercase text-sm hover:bg-blue-700 shadow-lg shadow-blue-500/30">
+                        <button onclick="procesarVentaFinal()" id="btn-confirmar-final" class="py-3 bg-cyan-600 text-white rounded-xl font-bold uppercase text-sm hover:bg-cyan-700 shadow-lg shadow-cyan-500/30">
                             Confirmar Venta
                         </button>
                     </div>
@@ -825,7 +831,7 @@
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex gap-3">
-                        <button type="button" id="btnConfirmLogout" class="flex-1 bg-naranja-500 hover:bg-naranja-600 text-white py-3 rounded-xl font-bold transition-all">Aceptar</button>
+                        <button type="button" id="btnConfirmLogout" class="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-xl font-bold transition-all">Aceptar</button>
                         <button type="button" id="btnCancelLogout" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl font-bold transition-all">Cancelar</button>
                     </div>
                 </div>
