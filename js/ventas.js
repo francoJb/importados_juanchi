@@ -638,7 +638,20 @@ window.imprimirVenta = (id) => {
 
 window.eliminarVenta = async (id) => {
     if (confirm("¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.")) {
-        // Aquí irá el fetch DELETE a tu API
+        try {
+            const response = await fetch(`${URL_API}/${id}`, { method: "DELETE" });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "No se pudo eliminar la venta");
+            }
+
+            alert(data.message || "Venta eliminada correctamente");
+            await listarVentas();
+        } catch (error) {
+            console.error("Error al eliminar venta:", error);
+            alert(`No se pudo eliminar la venta: ${error.message}`);
+        }
     }
 };
 

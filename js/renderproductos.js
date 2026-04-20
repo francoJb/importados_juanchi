@@ -14,7 +14,7 @@ export function dibujarProductos(productos) {
                 <td class="p-3">${p.modelo || ''}</td>
                 <td class="p-3">${p.categoria || ''}</td>
                 <td class="p-3 text-right text-gray-400">$${p.costo}</td>
-                <td class="p-3 text-right font-bold text-naranja-600">$${p.precio_neto}</td>
+                <td class="p-3 text-right">$${p.precio_neto}</td>
                 <td class="p-3 text-center ${(Number(p.stock) <= Number(p.stock_minimo)) ? 'text-red-600 font-black' : ''}">${p.stock}</td>
                 <td class="p-3 text-center">
                     <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>

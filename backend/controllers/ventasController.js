@@ -188,7 +188,6 @@ exports.eliminarVenta = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1) Verificar que la venta exista
         const [ventaRows] = await connection.query(
             "SELECT id FROM ventas WHERE id = ?",
             [ventaId]
@@ -199,33 +198,28 @@ exports.eliminarVenta = async (req, res) => {
             return res.status(404).json({ error: "Venta no encontrada" });
         }
 
-        // 2) Traer detalles para revertir stock
         const [detalles] = await connection.query(
             "SELECT producto_id, cantidad FROM detalle_ventas WHERE venta_id = ?",
             [ventaId]
         );
 
-        // 3) Revertir stock (siempre suma lo vendido)
-        for (const d of detalles) {
+        for (const detalle of detalles) {
             await connection.query(
                 "UPDATE productos SET stock = stock + ? WHERE id = ?",
-                [d.cantidad, d.producto_id]
+                [detalle.cantidad, detalle.producto_id]
             );
         }
 
-        // 4) Borrar cuenta corriente asociada a la venta
         await connection.query(
             "DELETE FROM cuenta_corriente WHERE venta_id = ?",
             [ventaId]
         );
 
-        // 5) Borrar detalle de venta
         await connection.query(
             "DELETE FROM detalle_ventas WHERE venta_id = ?",
             [ventaId]
         );
 
-        // 6) Borrar venta
         await connection.query(
             "DELETE FROM ventas WHERE id = ?",
             [ventaId]
@@ -233,7 +227,6 @@ exports.eliminarVenta = async (req, res) => {
 
         await connection.commit();
         return res.json({ success: true, message: "Venta eliminada correctamente" });
-
     } catch (error) {
         await connection.rollback();
         console.error("ERROR AL ELIMINAR VENTA:", error.message);
@@ -244,32 +237,37 @@ exports.eliminarVenta = async (req, res) => {
 };
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
-    const { monto } = req.body; // Ya no necesitamos obligatoriamente el clienteId desde afuera
-    
+    const { monto } = req.body;
+
+    const ventaIdNum = Number(ventaId);
+    if (!Number.isInteger(ventaIdNum) || ventaIdNum <= 0) {
+        return res.status(400).json({ error: "ID de venta inválido." });
+    }
+
     const montoNum = parseFloat(monto);
     if (isNaN(montoNum) || montoNum <= 0) {
         return res.status(400).json({ error: "Monto inválido. Debe ser mayor a 0." });
     }
-
 
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
 
-        // 1. Buscamos la venta y el ID del cliente al mismo tiempo (Seguridad total)
+        // 1) Buscar venta
         const [ventaRows] = await connection.query(
-            "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE id = ?", 
-            [ventaId]
+            "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE id = ?",
+            [ventaIdNum]
         );
 
         if (ventaRows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ error: "Venta no encontrada" });
         }
-        
+
         const venta = ventaRows[0];
-        const idCliente = venta.cliente_id; // <--- Lo recuperamos de la DB    
+        const idCliente = venta.cliente_id;
+
         if (!idCliente) {
             await connection.rollback();
             return res.status(400).json({ error: "La venta no tiene cliente asociado." });
@@ -285,37 +283,37 @@ exports.registrarPago = async (req, res) => {
             await connection.rollback();
             return res.status(400).json({ error: "El monto supera el saldo pendiente" });
         }
-        
-        const nuevoSaldo = parseFloat(venta.saldo_pendiente) - parseFloat(monto);
-        const nuevoEstado = nuevoSaldo <= 0 ? 'Pagado' : 'Parcial';
 
-        // 2. Actualizar la tabla Ventas
+        const nuevoSaldo = saldoPendienteNum - montoNum;
+        const nuevoEstado = nuevoSaldo <= 0 ? "Pagado" : "Parcial";
+
+        // 2) Actualizar ventas
         await connection.query(
             "UPDATE ventas SET saldo_pendiente = ?, estado_pago = ? WHERE id = ?",
-            [nuevoSaldo, nuevoEstado, ventaId]
+            [nuevoSaldo, nuevoEstado, ventaIdNum]
         );
 
-        // 3. Registrar en Cuenta Corriente
-        // Calculamos el saldo acumulado del cliente para que la historia cierre
+        // 3) Registrar en cuenta corriente
         const [ccRows] = await connection.query(
             "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE cliente_id = ?",
             [idCliente]
         );
-        const nuevoSaldoAcumulado = parseFloat(ccRows[0].saldoActual) - parseFloat(monto);
+        const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
+        const nuevoSaldoAcumulado = saldoActualNum - montoNum;
 
         await connection.query(
             `INSERT INTO cuenta_corriente (cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
              VALUES (?, ?, ?, 0, ?, ?)`,
-            [idCliente, ventaId, `Pago Venta #${ventaId}`, monto, nuevoSaldoAcumulado]
+            [idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado]
         );
 
         await connection.commit();
-        res.json({ success: true, nuevoSaldo });
+        return res.json({ success: true, nuevoSaldo });
 
     } catch (error) {
         await connection.rollback();
-        console.error("ERROR EN PAGO:", error.message); // Esto te saldrá en la terminal de VS Code
-        res.status(500).json({ error: error.message });
+        console.error("ERROR EN PAGO:", error.message);
+        return res.status(500).json({ error: "Error interno del servidor" });
     } finally {
         connection.release();
     }

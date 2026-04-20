@@ -20,7 +20,7 @@ export function actualizarTablaVenta(carritoVenta) {
             <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>
             <td class="p-4 text-center">
                 <input type="number" value="${item.cantidad}" min="1" 
-                    class="input-cantidad w-16 p-1 text-center border rounded bg-transparent font-bold text-blue-600" 
+                    class="input-cantidad w-16 p-1 text-center border rounded bg-transparent" 
                     data-index="${index}">
             </td>
             <td class="p-4 text-right font-black text-gray-900 dark:text-white font-mono">$${item.subtotal.toFixed(2)}</td>
