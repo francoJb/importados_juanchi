@@ -253,3 +253,64 @@ exports.registrarPago = async (req, res) => {
         connection.release();
     }
 };
+
+exports.eliminarVenta = async (req, res) => {
+    const { id } = req.params;
+    const ventaId = Number(id);
+
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+        return res.status(400).json({ error: "ID de venta inválido" });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [ventaRows] = await connection.query(
+            "SELECT id FROM ventas WHERE id = ?",
+            [ventaId]
+        );
+
+        if (ventaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: "Venta no encontrada" });
+        }
+
+        const [detalles] = await connection.query(
+            "SELECT producto_id, cantidad FROM detalle_ventas WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        for (const detalle of detalles) {
+            await connection.query(
+                "UPDATE productos SET stock = stock + ? WHERE id = ?",
+                [detalle.cantidad, detalle.producto_id]
+            );
+        }
+
+        await connection.query(
+            "DELETE FROM cuenta_corriente WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        await connection.query(
+            "DELETE FROM detalle_ventas WHERE venta_id = ?",
+            [ventaId]
+        );
+
+        await connection.query(
+            "DELETE FROM ventas WHERE id = ?",
+            [ventaId]
+        );
+
+        await connection.commit();
+        return res.json({ success: true, message: "Venta eliminada correctamente" });
+    } catch (error) {
+        await connection.rollback();
+        console.error("ERROR AL ELIMINAR VENTA:", error.message);
+        return res.status(500).json({ error: "Error interno al eliminar la venta" });
+    } finally {
+        connection.release();
+    }
+};
