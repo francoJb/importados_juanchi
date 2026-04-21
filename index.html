@@ -80,10 +80,10 @@
             <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
                 <!-- Logo de JR Import -->
                 <div class="flex items-center justify-center font-black rotate-3 select-none">
-                        <div class="flex items-center justify-center bg-gradient-to-r from-cyan-500 to-teal-500 w-20 h-20 rounded-xl shadow-lg shadow-cyan-500/20">
-                            <span class="dark:text-black text-white text-8xl mb-7">a</span>
+                        <div class="flex items-center justify-center bg-gradient-to-r from-cyan-500 to-teal-500 w-12 h-12 rounded-lg shadow-lg shadow-cyan-500/20">
+                            <span class="dark:text-black text-white text-6xl mb-5">a</span>
                         </div>
-                        <div class="text-[#111827] text-7xl mb-4 ml-0.5 tracking-tight dark:text-white">
+                        <div class="text-[#111827] text-5xl mb-3 ml-0.5 tracking-tight dark:text-white">
                             ura
                         </div>
                     </div>
@@ -287,10 +287,6 @@
                                         <option value="IVA Responsable Inscripto">IVA Responsable Inscripto</option>
                                         <option value="Exento">Exento</option>
                                     </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold mb-1">Fecha de alta</label>
-                                    <input type="text" id="fecha_alta" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="DD/MM/AAAA">
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <input type="checkbox" id="clienteHabilitarCC" class="w-4 h-4 accent-orange-500" checked>
@@ -841,7 +837,7 @@
         <!-- Modal Registro de Pago -->
         <div id="modalRegistroPago" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div class="p-6 border-b dark:border-slate-700 bg-green-50 dark:bg-green-950/20">
+                <div class="p-6 border-b dark:border-slate-700 bg-cyan-50 dark:bg-cyan-950/20">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">Registrar Pago</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Ingrese los detalles del pago y clic en Aceptar</p>
                 </div>
@@ -870,7 +866,7 @@
                     </div>
                     <div class="flex gap-3 pt-2">
                         <button type="button" id="btnCancelRegistroPago" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl font-bold transition-all">Cancelar</button>
-                        <button type="button" id="btnAcceptRegistroPago" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-all">Aceptar</button>
+                        <button type="button" id="btnAcceptRegistroPago" class="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-xl font-bold transition-all">Aceptar</button>
                     </div>
                 </div>
             </div>

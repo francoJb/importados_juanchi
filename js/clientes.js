@@ -63,8 +63,7 @@ export function configurarFormularioCliente() {
             email: document.getElementById("email").value.trim(),
             telefono: document.getElementById("telefono").value.trim(),
             cuit: document.getElementById("cuit").value.trim(),
-            arca: document.getElementById("arca").value.trim(),
-            fecha_alta: document.getElementById("fecha_alta").value.trim()
+            arca: document.getElementById("arca").value.trim()
         };
 
         if (!datos.nombre || !datos.apellido) {
@@ -114,10 +113,6 @@ export async function prepararEdicionCliente(id) {
     document.getElementById("telefono").value = c.telefono;
     document.getElementById("cuit").value = c.cuit;
     document.getElementById("arca").value = c.arca;
-    // Convertir fecha de YYYY-MM-DD a DD/MM/AAAA
-    const fecha = c.fecha_alta ? c.fecha_alta.split('-').reverse().join('/') : '';
-    document.getElementById("fecha_alta").value = fecha;
-
     // Abrimos el modal
     cambiarSeccion('pantallaCliente');
 };

@@ -1,24 +1,5 @@
 const db = require('../database/database');
 
-// Función para convertir fecha de DD/MM/AAAA a YYYY-MM-DD
-function convertirFecha(fechaStr) {
-    if (!fechaStr || fechaStr.trim() === '') {
-        return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    }
-    const partes = fechaStr.split('/');
-    if (partes.length === 3) {
-        const dia = partes[0].padStart(2, '0');
-        const mes = partes[1].padStart(2, '0');
-        const anio = partes[2];
-        return `${anio}-${mes}-${dia}`;
-    }
-    // Si ya es YYYY-MM-DD o ISO, intentar parsear
-    const date = new Date(fechaStr);
-    if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0];
-    }
-    return new Date().toISOString().split('T')[0];
-}
 
 exports.obtenerClientes = async (req, res) => {
     try {
@@ -37,12 +18,11 @@ exports.crearCliente = async (req, res) => {
         return res.status(400).json({ error: "Nombre, apellido y DNI son obligatorios" });
     }
 
-    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, fecha_alta, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
-    
-    // Convertir fecha a YYYY-MM-DD
-    const fecha = convertirFecha(p.fecha_alta);
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, fecha];
+    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+    const cuitLimpio = (p.cuit || "").trim();
+    const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;             
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email];
 
     try {
         const [result] = await db.query(sql, params);
@@ -50,6 +30,16 @@ exports.crearCliente = async (req, res) => {
         res.status(201).json({ id: result.insertId, ...p });
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
+            const msg = (err.sqlMessage || err.message || "").toLowerCase();
+
+            if (msg.includes("dni")) {
+                return res.status(400).json({ error: "El DNI ya está registrado" });
+            }
+
+            if (msg.includes("cuit") || msg.includes("cuil")) {
+                return res.status(400).json({ error: "El CUIT/CUIL ya está registrado" });
+            }
+
             return res.status(400).json({ error: "DNI o CUIT ya registrado" });
         }
         // MySQL usa ENUM, si el valor no coincide daría error aquí
@@ -68,8 +58,10 @@ exports.editarCliente = async (req, res) => {
         return res.status(400).json({ error: "Datos inválidos" });
     }
 
-    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, fecha_alta=? WHERE id=?`;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, p.cuit, p.arca, p.email, convertirFecha(p.fecha_alta), id];
+    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=? WHERE id=?`;
+    const cuitLimpio = (p.cuit || "").trim();
+    const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, id];
 
     try {
         const [result] = await db.query(sql, params);
