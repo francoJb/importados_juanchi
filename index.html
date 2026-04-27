@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Aura - Sistema de Gestión</title>
+        <title>eldA - Sistema de Gestión</title>
         <!-- Importamos Tailwind CSS desde su CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Importamos jsPDF para generar PDFs -->
@@ -31,16 +31,16 @@
        <div id="pantallaLogin" class="flex items-center justify-center h-screen bg-gradient-to-tr from-slate-900 via-purple-900 to-blue-900">
             <div class="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-md border border-white/20">
                 <div class="text-center mb-8">
-                    <div class="flex items-center justify-center font-black rotate-3 select-none">
-                        <div class="flex items-center justify-center bg-gradient-to-r from-cyan-500 to-teal-500 w-20 h-20 rounded-xl shadow-lg shadow-cyan-500/20">
-                            <span class="text-white text-8xl mb-7">a</span>
+                    <div class="flex items-center justify-center font-black select-none">
+                        <div class="text-[#111827] text-7xl mb-4 ml-0.5 tracking-tight:-0.025em dark:text-white">
+                            Eld
                         </div>
-                        <div class="text-[#111827] text-7xl mb-4 ml-0.5 tracking-tight dark:text-white">
-                            ura
+                        <div class="flex items-center justify-center mb-2 bg-cyan-500 w-16 h-16 rounded-xl shadow-lg shadow-cyan-500/20">
+                            <span class="text-white text-7xl mb-2.5">A</span>
                         </div>
                     </div>
                     <p class="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-600 dark:text-cyan-400 mt-1">
-                        Gestión inteligente para tu negocio
+                        Gestión inteligente
                     </p>
                 </div>
                 <form id="formLogin" class="space-y-5">
@@ -836,15 +836,37 @@
 
         <!-- Modal Registro de Pago -->
         <div id="modalRegistroPago" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden">
                 <div class="p-6 border-b dark:border-slate-700 bg-cyan-50 dark:bg-cyan-950/20">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">Registrar Pago</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Ingrese los detalles del pago y clic en Aceptar</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Seleccioná una o varias ventas pendientes, ingresá el pago y confirmá.</p>
                 </div>
                 <div class="p-6 space-y-5">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Saldo Pendiente</label>
-                        <p id="modalPago-saldo" class="text-2xl font-bold text-red-600">$0.00</p>
+                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Ventas Pendientes del Cliente</label>
+                        <div class="border rounded-xl overflow-hidden">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-100 dark:bg-slate-700">
+                                    <tr>
+                                        <th class="p-2 text-left w-16">Sel.</th>
+                                        <th class="p-2 text-left">Venta</th>
+                                        <th class="p-2 text-left">Fecha</th>
+                                        <th class="p-2 text-right">Saldo Pendiente</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalPago-ventasPendientes" class="divide-y dark:divide-slate-700"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-50 dark:bg-slate-900 rounded-xl p-3">
+                            <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Total a Pagar (seleccionado)</label>
+                            <p id="modalPago-totalSeleccionado" class="text-2xl font-bold text-blue-600">$0.00</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-slate-900 rounded-xl p-3">
+                            <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Saldo Pendiente</label>
+                            <p id="modalPago-saldo" class="text-2xl font-bold text-red-600">$0.00</p>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-2">Forma de Pago</label>

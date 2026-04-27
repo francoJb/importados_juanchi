@@ -1,4 +1,4 @@
-import { fetchClientes } from "./clientes.js";
+import { fetchClientes, cargarDatosBalance } from "./clientes.js";
 import { fetchProductos } from "./productos.js";
 import { actualizarTablaVenta, renderTablaVentas } from "./renderventas.js";
 import { cambiarSeccion } from "./ui.js";
@@ -401,22 +401,97 @@ window.verDetalleVenta = async (id) => {
 let ventaIdActual = null;
 let saldoActual = 0;
 
+let clienteIdActualCobranza = null;
+let ventasPendientesModal = [];
+let ventasSeleccionadasModal = new Set();
+
+function formatearMoneda(valor) {
+    return `$${parseFloat(valor || 0).toFixed(2)}`;
+}
+
+function obtenerTotalSeleccionadoModal() {
+    return ventasPendientesModal
+        .filter(v => ventasSeleccionadasModal.has(v.id))
+        .reduce((acc, v) => acc + parseFloat(v.saldo_pendiente || 0), 0);
+}
+
+function actualizarResumenPagoModal() {
+    const totalSeleccionado = obtenerTotalSeleccionadoModal();
+    const montoInput = document.getElementById('modalPago-monto');
+    const saldoEl = document.getElementById('modalPago-saldo');
+    const totalEl = document.getElementById('modalPago-totalSeleccionado');
+    const monto = parseFloat(montoInput.value) || 0;
+    const saldo = totalSeleccionado - monto;
+
+    totalEl.textContent = formatearMoneda(totalSeleccionado);
+    saldoEl.textContent = formatearMoneda(saldo);
+    saldoEl.classList.toggle("text-red-600", saldo > 0);
+    saldoEl.classList.toggle("text-green-600", saldo <= 0);
+}
+
+function renderVentasPendientesModal() {
+    const tbody = document.getElementById('modalPago-ventasPendientes');
+    tbody.innerHTML = ventasPendientesModal.map(v => `
+        <tr>
+            <td class="p-2">
+                <input 
+                    type="checkbox"
+                    class="modalPago-check-venta h-4 w-4"
+                    data-venta-id="${v.id}"
+                    ${ventasSeleccionadasModal.has(v.id) ? "checked" : ""}
+                >
+            </td>
+            <td class="p-2 font-semibold">#${v.id}</td>
+            <td class="p-2">${new Date(v.fecha).toLocaleDateString('es-AR')}</td>
+            <td class="p-2 text-right font-mono text-red-600">${formatearMoneda(v.saldo_pendiente)}</td>
+        </tr>
+    `).join('');
+
+    document.querySelectorAll('.modalPago-check-venta').forEach(check => {
+        check.addEventListener('change', (e) => {
+            const id = Number(e.target.dataset.ventaId);
+            if (e.target.checked) {
+                ventasSeleccionadasModal.add(id);
+            } else {
+                ventasSeleccionadasModal.delete(id);
+            }
+
+            const totalSeleccionado = obtenerTotalSeleccionadoModal();
+            const inputMonto = document.getElementById('modalPago-monto');
+            if ((parseFloat(inputMonto.value) || 0) > totalSeleccionado) {
+                inputMonto.value = totalSeleccionado.toFixed(2);
+            }
+            actualizarResumenPagoModal();
+        });
+    });
+}
+
 // 2. Adaptación de la función para ABRIR el modal
-window.abrirPantallaCobranza = (ventaId, clienteId, saldoPendiente) => {
+window.abrirPantallaCobranza = (ventaId, clienteId, saldoPendiente, ventasPendientes = null) => {
     // Guardamos los IDs para usarlos luego al presionar "Aceptar"
     ventaIdActual = ventaId;
     saldoActual = saldoPendiente;
+    clienteIdActualCobranza = clienteId;
 
     // Referencias a los elementos del modal que me pasaste
     const modal = document.getElementById('modalRegistroPago');
-    const txtSaldo = document.getElementById('modalPago-saldo');
     const inputMonto = document.getElementById('modalPago-monto');
     const inputObs = document.getElementById('modalPago-observaciones');
+    const metodoInput = document.getElementById('modalPago-metodo');
 
-    // Llenamos el modal con la información
-    txtSaldo.textContent = `$${parseFloat(saldoPendiente).toLocaleString()}`;
-    inputMonto.value = saldoPendiente; // Sugerimos el pago total por defecto
-    inputObs.value = ""; // Limpiamos observaciones previas
+    // Cargamos ventas disponibles (modo simple o múltiple)
+    ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
+        ? ventasPendientes
+        : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
+    ventasSeleccionadasModal = new Set([ventaId]);
+
+    renderVentasPendientesModal();
+    inputMonto.value = parseFloat(saldoPendiente).toFixed(2);
+    inputObs.value = "";
+    metodoInput.value = "Efectivo";
+    actualizarResumenPagoModal();
+
+    inputMonto.oninput = () => actualizarResumenPagoModal();
 
     // Mostramos el modal quitando la clase 'hidden' de Tailwind
     modal.classList.remove('hidden');
@@ -427,6 +502,10 @@ document.getElementById('btnCancelRegistroPago').addEventListener('click', () =>
     document.getElementById('modalRegistroPago').classList.add('hidden');
     // Limpiamos las variables de control por seguridad
     ventaIdActual = null;
+    clienteIdActualCobranza = null;
+    saldoActual = 0;
+    ventasPendientesModal = [];
+    ventasSeleccionadasModal.clear();
 });
 
 // 4. Lógica para el botón ACEPTAR (Procesar el pago)
@@ -439,15 +518,20 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
     const monto = parseFloat(montoInput.value);
     const metodo = metodoInput.value;
     const observaciones = obsInput.value;
+    const totalSeleccionado = obtenerTotalSeleccionadoModal();
 
     // --- VALIDACIONES BÁSICAS ---
+    if (ventasSeleccionadasModal.size === 0) {
+        alert("Seleccioná al menos una venta pendiente.");
+        return;
+    }
     if (!monto || monto <= 0) {
         alert("Por favor, ingrese un monto válido.");
         return;
     }
 
-    if (monto > saldoActual) {
-        alert("El monto no puede ser mayor al saldo pendiente ($" + saldoActual + ")");
+    if (monto > totalSeleccionado) {
+        alert("El monto no puede ser mayor al total seleccionado (" + formatearMoneda(totalSeleccionado) + ").");
         return;
     }
 
@@ -458,36 +542,63 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
         btnAceptar.disabled = true;
         btnAceptar.textContent = "Procesando...";
 
-        const response = await fetch(`${URL_API}/${ventaIdActual}/pago`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                monto: monto,
-                metodo: metodo,
-                observaciones: observaciones
-            })
-        });
+        const ventasSeleccionadas = ventasPendientesModal
+            .filter(v => ventasSeleccionadasModal.has(v.id))
+            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-        const data = await response.json();
+        let montoRestante = monto;
+        const pagosRealizados = [];
 
-        if (data.success) {
-            alert("¡Pago registrado con éxito!");
-            
-            // 1. Cerramos el modal
-            document.getElementById('modalRegistroPago').classList.add('hidden');
+        for (const venta of ventasSeleccionadas) {
+            if (montoRestante <= 0) break;
+            const saldoVenta = parseFloat(venta.saldo_pendiente);
+            const montoParaVenta = Math.min(montoRestante, saldoVenta);
 
-            // 2. Obtenemos los datos actualizados de la venta para el PDF
-            const ventaActualizada = await fetchVentaPorId(ventaIdActual);
+            const response = await fetch(`${URL_API}/${venta.id}/pago`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    monto: montoParaVenta,
+                    metodo: metodo,
+                    observaciones: observaciones
+                })
+            });
 
-            // 3. Generamos el recibo (usando tus funciones existentes)
-            await generarReciboPagoPDF(ventaActualizada, monto, data.nuevoSaldo);
+            const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${venta.id}`);
+                }
 
-            // 4. Refrescamos la lista de ventas en el dashboard
-            await listarVentas();
-
-        } else {
-            alert("Error al registrar el pago: " + (data.error || "Desconocido"));
+            pagosRealizados.push({
+                ventaId: venta.id,
+                montoPagado: montoParaVenta,
+                nuevoSaldo: data.nuevoSaldo
+            });
+            montoRestante -= montoParaVenta;
         }
+
+        if (pagosRealizados.length === 0) {
+            alert("No se registraron pagos.");
+            return;
+        }
+
+        alert(`¡Pago registrado con éxito! Ventas afectadas: ${pagosRealizados.length}`);
+
+        document.getElementById('modalRegistroPago').classList.add('hidden');
+        
+
+        for (const pago of pagosRealizados) {
+            const ventaActualizada = await fetchVentaPorId(pago.ventaId);
+            await generarReciboPagoPDF(ventaActualizada, pago.montoPagado, pago.nuevoSaldo);
+        }
+        // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
+        if (window.currentBalanceClienteId) {
+            cambiarSeccion("pantalla-balance-cliente");
+            await cargarDatosBalance(window.currentBalanceClienteId);
+        }
+
+        await listarVentas();
+
     } catch (error) {
         console.error("Error en la petición:", error);
         alert("Hubo un error de conexión con el servidor.");
@@ -519,17 +630,13 @@ window.abrirPagoDesdeBalance = async () => {
             return alert("No hay facturas pendientes para este cliente.");
         }
 
-        const opciones = ventasPendientes.map(v => `#${v.id} - $${parseFloat(v.saldo_pendiente).toFixed(2)} - ${new Date(v.fecha).toLocaleDateString('es-AR')}`).join("\n");
-        const texto = `Seleccione la venta a cobrar:\n${opciones}`;
-        const ventaId = prompt(texto);
-        if (!ventaId) return;
-
-        const ventaSeleccionada = ventasPendientes.find(v => String(v.id) === String(ventaId.trim()));
-        if (!ventaSeleccionada) {
-            return alert("Venta inválida o no pendiente.");
-        }
-
-        abrirPantallaCobranza(ventaSeleccionada.id, clienteId, parseFloat(ventaSeleccionada.saldo_pendiente));
+        const primeraVenta = ventasPendientes[0];
+        abrirPantallaCobranza(
+            primeraVenta.id,
+            clienteId,
+            parseFloat(primeraVenta.saldo_pendiente),
+            ventasPendientes
+        );
     } catch (error) {
         console.error(error);
         alert("Error al cargar las ventas para el balance.");

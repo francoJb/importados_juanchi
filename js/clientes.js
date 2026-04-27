@@ -140,7 +140,7 @@ export async function eliminarCliente(id, nombre){
     }
 };
 
-async function cargarDatosBalance(clienteId) {
+export async function cargarDatosBalance(clienteId) {
     try {
         const res = await fetch(`http://localhost:3000/api/clientes/${clienteId}/cuenta-corriente`);
         const data = await res.json();
