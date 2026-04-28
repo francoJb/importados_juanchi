@@ -1,5 +1,6 @@
+import { API_BASE_URL } from "../config.js";
 export async function cargarClientes(){
-  const respuesta = await fetch("http://localhost:3000/clientes");
+  const respuesta = await fetch(`${API_BASE_URL}/api/clientes`);
   const clientes = await respuesta.json();
   const tabla = document.getElementById("listaClientes");
   if(!tabla) return;

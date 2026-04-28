@@ -7,9 +7,10 @@ import { initProductos, fetchProductos } from "./productos.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
 import { cambiarSeccion } from "./ui.js";
 import { load, save } from "./storage.js";
+import { API_BASE_URL } from "./config.js";
 
 const CONFIG_STORAGE_KEY = "empresaConfig";
-const URL_API_VENTAS = "http://localhost:3000/api/ventas";
+const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
 
 const CONFIG_DEFAULTS = {

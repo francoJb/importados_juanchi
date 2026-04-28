@@ -1,7 +1,8 @@
 import { dibujarClientes } from "./renderclientes.js";
 import { cambiarSeccion } from "./ui.js";
+import { API_BASE_URL } from "./config.js";
 
-const API_URL = "http://localhost:3000/api/clientes";
+const API_URL = `${API_BASE_URL}/api/clientes`;
 
 // 1. OBTENER DATOS (API)
 export async function fetchClientes() {
@@ -123,7 +124,7 @@ export async function eliminarCliente(id, nombre){
     if (rta) {
         try {
             // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-            const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
+           const response = await fetch(`${API_BASE_URL}/api/clientes/${id}`, {
                 method: 'DELETE' // El método que definiste en tus rutas
             });
             if (response.ok) {
@@ -142,7 +143,7 @@ export async function eliminarCliente(id, nombre){
 
 export async function cargarDatosBalance(clienteId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/clientes/${clienteId}/cuenta-corriente`);
+        const res = await fetch(`${API_BASE_URL}/api/clientes/${clienteId}/cuenta-corriente`);
         const data = await res.json();
 
         document.getElementById("ba-saldo-total").innerText = `$${parseFloat(data.saldoTotal).toFixed(2)}`;

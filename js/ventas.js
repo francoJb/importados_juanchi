@@ -3,9 +3,9 @@ import { fetchProductos } from "./productos.js";
 import { actualizarTablaVenta, renderTablaVentas } from "./renderventas.js";
 import { cambiarSeccion } from "./ui.js";
 import { load } from "./storage.js";
+import { API_BASE_URL } from "./config.js";
 
-const URL_API = "http://localhost:3000/api/ventas";
-
+const URL_API = `${API_BASE_URL}/api/ventas`;
 // Datos del vendedor por defecto
 const DATOS_VENDEDOR = {
     razonSocial: "JR Import S.A.",

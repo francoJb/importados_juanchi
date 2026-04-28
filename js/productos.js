@@ -1,8 +1,8 @@
 import { dibujarProductos } from "./renderproductos.js";
 import { cambiarSeccion } from "./ui.js";
+import { API_BASE_URL } from "./config.js";
 
-const API_URL = "http://localhost:3000/api/productos";
-
+const API_URL = `${API_BASE_URL}/api/productos`;
 // 1. OBTENER DATOS (API)
 export async function fetchProductos() {
     try {
