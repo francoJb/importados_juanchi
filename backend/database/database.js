@@ -1,5 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
+const path = require('path');
+const mysql = require('mysql2/promise');
 
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME'];
 for (const key of required) {
@@ -8,7 +10,9 @@ for (const key of required) {
     process.exit(1);
   }
 }
-const mysql = require('mysql2/promise');
+
+const caPath = process.env.DB_SSL_CA_PATH || path.join(__dirname, '../../isrgrootx1.pem');
+const caCert = fs.readFileSync(caPath, 'utf8');
 
 // Configuramos la conexión
 const db = mysql.createPool({
@@ -16,10 +20,15 @@ const db = mysql.createPool({
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '200324115',
     database: process.env.DB_NAME || 'sophia',
-    port:Number(process.env.DB_PORT) || 3306,
+    port:Number(process.env.DB_PORT) || 4000,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
+    ssl: {
+        ca: caCert,
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true
+    },
 });
 
 // Esta función crea las tablas automáticamente si no existen
