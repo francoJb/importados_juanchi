@@ -585,11 +585,16 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
         alert(`¡Pago registrado con éxito! Ventas afectadas: ${pagosRealizados.length}`);
 
         document.getElementById('modalRegistroPago').classList.add('hidden');
+        const comprobantesCancelados = pagosRealizados
+        .filter(p => parseFloat(p.nuevoSaldo) <= 0)
+        .map(p => Number(p.ventaId));
+
+
         
 
         for (const pago of pagosRealizados) {
             const ventaActualizada = await fetchVentaPorId(pago.ventaId);
-            await generarReciboPagoPDF(ventaActualizada, pago.montoPagado, pago.nuevoSaldo);
+            await generarReciboPagoPDF(ventaActualizada, pago.montoPagado, pago.nuevoSaldo, comprobantesCancelados);
         }
         // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
         if (window.currentBalanceClienteId) {
@@ -649,7 +654,8 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo) => {
         if (!venta) {
             return alert("No se encontró la venta para generar el recibo.");
         }
-        await generarReciboPagoPDF(venta, monto, saldo);
+        const comprobantesCancelados = parseFloat(saldo) <= 0 ? [ventaId] : [];
+        await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);
         alert("No se pudo generar el recibo de pago.");
@@ -663,7 +669,7 @@ async function fetchVentaPorId(ventaId) {
     return ventas.find(v => v.id == ventaId);
 }
 
-async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo) {
+async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = []) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -705,14 +711,6 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo) {
     doc.text(clienteLines, margin, y);
     y += clienteLines.length * 5 + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(`Facturado a N°: ${venta ? `0001 - ${String(venta.id).padStart(8, '0')}` : '---'}`, margin, y);
-    y += 7;
-    doc.text(`Importe abonado: $${parseFloat(montoPagado).toFixed(2)}`, margin, y);
-    y += 7;
-    doc.text(`Saldo restante cuenta corriente: $${parseFloat(nuevoSaldo).toFixed(2)}`, margin, y);
-    y += 15;
-
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("Detalle:", margin, y);
@@ -725,6 +723,17 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo) {
     y += 7;
     doc.text(`Saldo de cuenta corriente después del pago: $${parseFloat(nuevoSaldo).toFixed(2)}.`, margin, y);
     y += 15;
+
+    if (comprobantesCancelados.length > 0) {
+        const comprobantesFormateados = comprobantesCancelados.map(id => `0001 - ${String(id).padStart(8, '0')}`);
+        doc.setFont("helvetica", "bold");
+        doc.text("Comprobantes cancelados:", margin, y);
+        y += 5;
+        doc.setFont("helvetica", "normal");
+        const comprobantesTexto = doc.splitTextToSize(comprobantesFormateados.join(", "), pageWidth - 2 * margin);
+        doc.text(comprobantesTexto, margin, y);
+        y += comprobantesTexto.length * 5 + 8;
+    }
 
     const observaciones = venta?.observaciones || "Sin observaciones";
     doc.text("Observaciones:", margin, y);

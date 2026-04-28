@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME'];
 for (const key of required) {

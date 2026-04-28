@@ -79,7 +79,7 @@ export function renderTablaVentas(ventas) {
         
         // Lógica para el estado de entrega (puedes ajustarla según tu necesidad)
         const estadoEntrega = v.estado_pago === 'Pagado' 
-            ? '<span class="text-cyan-600 font-bold">Entregado</span>' 
+            ? '<span class="text-cyan-600 font-bold">Finalizado</span>' 
             : '<span class="text-orange-500 font-bold">Pendiente</span>';
 
         cuerpoTabla.innerHTML += `

@@ -114,7 +114,7 @@ exports.obtenerVentas = async (req, res) => {
                 v.fecha, 
                 v.total, 
                 v.saldo_pendiente, 
-                v.estado_pago, -- Usaremos esto para saber si está "Entregado" o "Pendiente"
+                v.estado_pago, -- Usaremos esto para saber si está "Finalizado" o "Pendiente"
                 c.nombre AS cliente_nombre, 
                 c.apellido AS cliente_apellido
             FROM ventas v
