@@ -21,14 +21,14 @@ const db = mysql.createPool({
     password: process.env.DB_PASSWORD || '200324115',
     database: process.env.DB_NAME || 'sophia',
     port:Number(process.env.DB_PORT) || 4000,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
     ssl: {
         ca: caCert,
         minVersion: 'TLSv1.2',
         rejectUnauthorized: true
     },
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
 // Esta función crea las tablas automáticamente si no existen
