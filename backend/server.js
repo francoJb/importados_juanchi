@@ -19,14 +19,15 @@ app.use(cors({
 }));
 
 
+const productosRoutes = require('./routes/productosRoutes');
+const clientesRoutes = require('./routes/clientesRoutes');
+const ventasRoutes = require('./routes/ventasRoutes');
 app.use(express.json());// Permite leer datos en formato JSON en el cuerpo de la petición
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/clientes', clientesRoutes);
 
-const productosRoutes = require('./routes/productosRoutes');
-const clientesRoutes = require('./routes/clientesRoutes');
-const ventasRoutes = require('./routes/ventasRoutes');
+
 
 const allowedOrigins = [
   'https://elda-gestion.pages.dev'
