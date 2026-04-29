@@ -4,23 +4,22 @@ proximos pasos:
     
     VENTAS
         - el boton volver debe preguntar si volver a ventas cuando hay productos cargados
-        -input observaciones no se guarda en el detalle de ventas
-        -cerrar modal DETALLE DE VENTA con tecla ESC
-        -boton elliminar venta ...hacerlo funcionar
+        -input observaciones en recibos no se guarda
+        -agregar sello pagado cuando se genera una venta abonada en su totalidad
         -COMPROBANTES
-            - factura de venta (opcional con facturacion ARCA) 
+            -factura de venta (opcional con facturacion ARCA) 
             -presupuesto
-            -recibo
+            -recibo (OK)
             -remito (opcional)
     PRODUCTOS
         -si el producto tiene el ckeck de controlar stock, permitir venta si el stock es 0 y check es 0
 
     CLIENTES
         -detalle de cuenta corriente en disparado desde el boton "ver balance" (OK)
-            -reparar boton "VOLVER A CLIENTES" 
             -impresion de detalle de la cuenta corriente
-            -REGISTRAR PAGO con modal (no con alert), disparado desde un boton dentro del detalle de cuenta corriente 
-            -
+    
+    VISUAL
+        -Adaptar para celulares (quizas haciendo el menu colapsable)
    
     
 

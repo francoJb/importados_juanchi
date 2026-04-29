@@ -306,7 +306,7 @@ function closeLogoutConfirm() {
 }
 
 function confirmLogout() {
-    localStorage.removeItem('loggedIn');
+    sessionStorage.removeItem('loggedIn');
     closeLogoutConfirm();
     location.reload();
 }
@@ -352,7 +352,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const usuario = document.getElementById('usuario').value;
             const password = document.getElementById('password').value;
             if (empresa === 'jrimport' && usuario === 'Admin' && password === 'admin') {
-                localStorage.setItem('loggedIn', 'true');
+                sessionStorage.setItem('loggedIn', 'true');
                 await iniciarApp();
             } else {
                 alert('Credenciales incorrectas. Intente nuevamente.');
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         btnCancelLogout.addEventListener('click', closeLogoutConfirm);
     }
 
-    if (localStorage.getItem('loggedIn') !== 'true') {
+    if (sessionStorage.getItem('loggedIn') !== 'true') {
         showLogin();
         return;
     }
