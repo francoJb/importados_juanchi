@@ -1,18 +1,7 @@
 // backend/server.js
-const express = require('express');
 const cors = require('cors'); // Necesario para que el frontend pueda hablar con el backend
+const express = require('express');
 const app = express();
-const productosRoutes = require('./routes/productosRoutes');
-const clientesRoutes = require('./routes/clientesRoutes');
-const ventasRoutes = require('./routes/ventasRoutes');
-app.use(express.json());// Permite leer datos en formato JSON en el cuerpo de la petición
-app.use('/api/ventas', ventasRoutes);
-app.use('/api/productos', productosRoutes);
-app.use('/api/clientes', clientesRoutes);
-
-const allowedOrigins = [
-  'https://elda-gestion.pages.dev'
-];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -28,6 +17,22 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+
+app.use(express.json());// Permite leer datos en formato JSON en el cuerpo de la petición
+app.use('/api/ventas', ventasRoutes);
+app.use('/api/productos', productosRoutes);
+app.use('/api/clientes', clientesRoutes);
+
+const productosRoutes = require('./routes/productosRoutes');
+const clientesRoutes = require('./routes/clientesRoutes');
+const ventasRoutes = require('./routes/ventasRoutes');
+
+const allowedOrigins = [
+  'https://elda-gestion.pages.dev'
+];
+
+
 
 app.options('*', cors());
 
