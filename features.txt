@@ -13,11 +13,11 @@ proximos pasos:
             -remito (opcional)
     PRODUCTOS
         -si el producto tiene el ckeck de controlar stock, permitir venta si el stock es 0 y check es 0
-
+        -como gestionar la desactivacion de productos
     CLIENTES
         -detalle de cuenta corriente en disparado desde el boton "ver balance" (OK)
-            -impresion de detalle de la cuenta corriente
-    
+        -impresion de detalle de la cuenta corriente
+        -como gestionar la desactivacion de clientes
     VISUAL
         -Adaptar para celulares (quizas haciendo el menu colapsable)
    

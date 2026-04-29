@@ -648,6 +648,28 @@ window.abrirPagoDesdeBalance = async () => {
     }
 };
 
+function abrirPreviewPDF(doc, nombreArchivo = "documento.pdf") {
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+
+    const win = window.open(url, "_blank");
+    if (!win) {
+        alert("⚠️ El navegador bloqueó la ventana emergente. Permití popups para este sitio.");
+        return;
+    }
+
+    // Guardado opcional programático (si después querés botón aparte)
+    win.addEventListener("load", () => {
+        // Nota: el visor nativo del navegador ya ofrece guardar/imprimir.
+        // Dejamos el nombre disponible por si luego agregás descarga manual.
+        win.document.title = nombreArchivo;
+    });
+
+    // Limpieza de memoria
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+
 window.imprimirReciboPagoMov = async (ventaId, monto, saldo) => {
     try {
         const venta = await fetchVentaPorId(ventaId);
@@ -655,7 +677,8 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo) => {
             return alert("No se encontró la venta para generar el recibo.");
         }
         const comprobantesCancelados = parseFloat(saldo) <= 0 ? [ventaId] : [];
-        await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados);
+        const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados);
+        abrirPreviewPDF(doc, `ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);
         alert("No se pudo generar el recibo de pago.");
@@ -745,7 +768,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.setFontSize(8);
     doc.text("Este recibo documenta el pago de la factura indicada y el saldo de la cuenta corriente.", pageWidth / 2, y, { align: "center" });
 
-    doc.save(`ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
+    return doc;
 }
 
 window.imprimirVenta = (id) => {
@@ -945,21 +968,22 @@ async function generarFacturaPDFExistente(venta, detalles) {
     doc.setFontSize(8);
     doc.text("Esta factura se emite conforme a la Resolución General N° 1415 de la AFIP.", pageWidth / 2, y, { align: "center" });
 
-    // Descargar el PDF
-    doc.save(`Factura_${venta.id}.pdf`);
+    
+    return doc;
 }
 
-window.imprimirFactura = () => {
+window.imprimirFactura = async () => {
     if (!window.ventaActual || !window.detallesActual) {
         alert("No hay datos de venta para imprimir.");
         return;
     }
-    generarFacturaPDFExistente(window.ventaActual, window.detallesActual);
+    const doc = await generarFacturaPDFExistente(window.ventaActual, window.detallesActual);
+    abrirPreviewPDF(doc, `Factura_${window.ventaActual.id}.pdf`);
 };
 
 window.imprimirVenta = async (id) => {
     await cargarDatosVenta(id);
-    imprimirFactura();
+    await imprimirFactura();
 };
 
 export async function obtenerHistorialVentas() {
