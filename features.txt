@@ -20,6 +20,8 @@ proximos pasos:
         -como gestionar la desactivacion de clientes
     VISUAL
         -Adaptar para celulares (quizas haciendo el menu colapsable)
+        -animacion de espera al cargar pantallas
    
+   ENTORNO DE PRUEBAS (STAGING)
     
 
