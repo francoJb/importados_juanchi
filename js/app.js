@@ -5,7 +5,7 @@
 import { initClientes, fetchClientes } from "./clientes.js";
 import { initProductos, fetchProductos } from "./productos.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
-import { cambiarSeccion } from "./ui.js";
+import { cambiarSeccion, mostrarLoader, ocultarLoader } from "./ui.js";
 import { load, save } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
 
@@ -158,59 +158,68 @@ function crearGraficoVentas(ventas) {
 }
 
 async function renderDashboard() {
-    const [clientes, productos, ventas] = await Promise.all([
-        fetchClientes(),
-        fetchProductos(),
-        obtenerHistorialVentas()
-    ]);
+    mostrarLoader();
 
-    const ahora = new Date();
-    const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    const hace30Dias = new Date(ahora);
-    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    try {
+        const [clientes, productos, ventas] = await Promise.all([
+            fetchClientes(),
+            fetchProductos(),
+            obtenerHistorialVentas()
+        ]);
 
-    const ventasMes = ventas.filter(v => {
-        const fecha = fechaValida(v.fecha);
-        return fecha && fecha >= primerDiaMes && fecha <= ahora;
-    });
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const hace30Dias = new Date(ahora);
+        hace30Dias.setDate(hace30Dias.getDate() - 30);
 
-    const totalMes = ventasMes.reduce((sum, v) => sum + Number(v.total || 0), 0);
-    const saldoPendiente = ventas.reduce((sum, v) => sum + Number(v.saldo_pendiente || 0), 0);
-    const nuevosClientes = clientes.filter(c => {
-        const fecha = fechaValida(c.fecha_alta);
-        return fecha && fecha >= hace30Dias && fecha <= ahora;
-    }).length;
-    const stockBajo = productos.filter(p => Number(p.stock) <= Number(p.stock_minimo)).length;
+        const ventasMes = ventas.filter(v => {
+            const fecha = fechaValida(v.fecha);
+            return fecha && fecha >= primerDiaMes && fecha <= ahora;
+        });
 
-    document.getElementById("dashboardVentasMes").innerText = formatMoney(totalMes);
-    document.getElementById("dashboardSaldoPendiente").innerText = formatMoney(saldoPendiente);
-    document.getElementById("dashboardClientesNuevos").innerText = nuevosClientes;
-    document.getElementById("dashboardProductosStockBajo").innerText = stockBajo;
-    document.getElementById("dashboardLowStockList").innerHTML = generarListaStockBajo(productos);
+        const totalMes = ventasMes.reduce((sum, v) => sum + Number(v.total || 0), 0);
+        const saldoPendiente = ventas.reduce((sum, v) => sum + Number(v.saldo_pendiente || 0), 0);
+        const nuevosClientes = clientes.filter(c => {
+            const fecha = fechaValida(c.fecha_alta);
+            return fecha && fecha >= hace30Dias && fecha <= ahora;
+        }).length;
+        const stockBajo = productos.filter(p => Number(p.stock) <= Number(p.stock_minimo)).length;
 
-    const ultimas5 = ventas.slice(0, 5);
-    document.getElementById("dashboardUltimasVentasBody").innerHTML = ultimas5.map(v => {
-        const fecha = fechaValida(v.fecha);
-        return `
+        document.getElementById("dashboardVentasMes").innerText = formatMoney(totalMes);
+        document.getElementById("dashboardSaldoPendiente").innerText = formatMoney(saldoPendiente);
+        document.getElementById("dashboardClientesNuevos").innerText = nuevosClientes;
+        document.getElementById("dashboardProductosStockBajo").innerText = stockBajo;
+        document.getElementById("dashboardLowStockList").innerHTML = generarListaStockBajo(productos);
+
+        const ultimas5 = ventas.slice(0, 5);
+        document.getElementById("dashboardUltimasVentasBody").innerHTML = ultimas5.map(v => {
+            const fecha = fechaValida(v.fecha);
+            return `
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                    <td class="p-3 font-mono text-gray-700 dark:text-gray-200">#${v.id}</td>
+                    <td class="p-3 text-gray-600 dark:text-gray-300">${v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido || ''}` : 'Consumidor Final'}</td>
+                    <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${formatMoney(v.total)}</td>
+                    <td class="p-3 text-sm font-semibold ${v.estado_pago && v.estado_pago.toLowerCase().includes('pagado') ? 'text-green-600' : 'text-orange-500'}">${v.estado_pago || 'Pendiente'}</td>
+                    <td class="p-3">${fecha ? fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const topProductos = await obtenerTopProductosMasVendidos(ventas);
+        document.getElementById("dashboardTopProductosBody").innerHTML = topProductos.map(p => `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                <td class="p-3 font-mono text-gray-700 dark:text-gray-200">#${v.id}</td>
-                <td class="p-3 text-gray-600 dark:text-gray-300">${v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido || ''}` : 'Consumidor Final'}</td>
-                <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${formatMoney(v.total)}</td>
-                <td class="p-3 text-sm font-semibold ${v.estado_pago && v.estado_pago.toLowerCase().includes('pagado') ? 'text-green-600' : 'text-orange-500'}">${v.estado_pago || 'Pendiente'}</td>
-                <td class="p-3">${fecha ? fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}</td>
+                <td class="p-3 text-gray-700 dark:text-gray-200">${p.descripcion}</td>
+                <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${p.cantidad}</td>
             </tr>
-        `;
-    }).join('');
+        `).join('');
 
-    const topProductos = await obtenerTopProductosMasVendidos(ventas);
-    document.getElementById("dashboardTopProductosBody").innerHTML = topProductos.map(p => `
-        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-            <td class="p-3 text-gray-700 dark:text-gray-200">${p.descripcion}</td>
-            <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${p.cantidad}</td>
-        </tr>
-    `).join('');
-
-    crearGraficoVentas(ventas);
+        crearGraficoVentas(ventas);
+    } catch (error) {
+        console.error("Error al cargar dashboard:", error);
+        alert("No se pudo cargar el dashboard. Revisá la consola para más detalle.");
+    } finally {
+        ocultarLoader();
+    }
 }
 
 

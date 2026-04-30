@@ -7,6 +7,22 @@ export const toggleModal = (id, mostrar = true) => {
     modal.classList.toggle("flex", mostrar);
 };
 
+export const mostrarLoader = () => {
+    const loader = document.getElementById("globalLoader");
+    if (!loader) return;
+
+    loader.classList.remove("hidden");
+    loader.classList.add("flex");
+};
+
+export const ocultarLoader = () => {
+    const loader = document.getElementById("globalLoader");
+    if (!loader) return;
+
+    loader.classList.add("hidden");
+    loader.classList.remove("flex");
+};
+
 
 export const cambiarSeccion = (idSeccionDestino) => {
 

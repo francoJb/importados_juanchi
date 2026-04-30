@@ -27,6 +27,13 @@
         </script>
     </head>
     <body class="bg-gray-100 dark:bg-slate-900 text-gray-800 dark:text-white transition-colors duration-300">
+        <!-- LOADER GLOBAL -->
+        <div id="globalLoader" class="hidden fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm items-center justify-center">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl px-6 py-5 shadow-2xl flex items-center gap-4 border border-gray-200 dark:border-slate-700">
+                <div class="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Cargando...</p>
+            </div>
+        </div>
         <!-- Pantalla de Login -->
        <div id="pantallaLogin" class="flex items-center justify-center h-screen bg-gradient-to-tr from-slate-900 via-purple-900 to-blue-900">
             <div class="bg-white/80 dark:bg-slate-800/95 backdrop-blur-sm p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-md border border-white/20">
