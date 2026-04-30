@@ -4,7 +4,7 @@ PARAMETERS
 
 HOST:gateway01.us-east-1.prod.aws.tidbcloud.com
 PORT:4000
-USERNAME:4S3NFp14LDUMzCB.root
+USERNAME:v
 PASSWORD:1dK7K5ZPpC2Ydiyx
 DATABASE:sys
 CA:<CA_PATH> 
