@@ -311,17 +311,17 @@
                     </div>
                 </section>
 
-                <div id="pantalla-balance-cliente" class="seccion-pantalla hidden p-6 animate-fade-in">
+                <div id="pantalla-balance-cliente" class="seccion-pantalla hidden p-4 md:p-6 animate-fade-in">
                     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
                         <div>
-                            <h1 class="text-3xl font-black text-gray-800 dark:text-white" id="ba-nombre-cliente">Balance de Cliente</h1>
+                            <h1 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white break-words" id="ba-nombre-cliente">Balance de Cliente</h1>
                             <p class="text-gray-500 text-sm">Historial completo de movimientos y saldos</p>
                         </div>
-                        <div class="flex flex-wrap gap-3">
+                        <div class="flex flex-wrap gap-3 w-full md:w-auto">
                             <button onclick="abrirPagoDesdeBalance()" class="hover:scale-150 transition-transform" title="Registrar pago">
                                 💵
                             </button>
-                            <button onclick="cambiarSeccion('seccionClientes')" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg" title="Cerrar">
+                            <button onclick="cambiarSeccion('seccionClientes')" class="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg" title="Cerrar">
                                 Cerrar
                             </button>
                         </div>
@@ -338,8 +338,8 @@
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                        <table class="w-full text-left border-collapse">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-x-auto">
+                        <table class="w-full min-w-[850px] text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-slate-900/50 text-xs font-bold uppercase text-gray-500 border-b dark:border-slate-700">
                                     <th class="p-4">Fecha / Hora</th>
@@ -350,8 +350,7 @@
                                     <th class="p-4 text-center">Recibo</th>
                                 </tr>
                             </thead>
-                            <tbody id="ba-tabla-body" class="divide-y dark:divide-slate-700">
-                                </tbody>
+                            <tbody id="ba-tabla-body" class="divide-y dark:divide-slate-700"></tbody>
                         </table>
                     </div>
                 </div>

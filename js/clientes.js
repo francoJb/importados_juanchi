@@ -153,15 +153,15 @@ export async function cargarDatosBalance(clienteId) {
         const body = document.getElementById("ba-tabla-body");
         body.innerHTML = data.movimientos.map(m => `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
-                <td class="p-4 text-gray-500">${new Date(m.fecha).toLocaleString('es-AR')}</td>
-                <td class="p-4">
+                <td class="p-3 md:p-4 text-gray-500 whitespace-nowrap">${new Date(m.fecha).toLocaleString('es-AR')}</td>
+                <td class="p-3 md:p-4">
                     <span class="font-bold dark:text-white">${m.descripcion}</span>
                     ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Venta #${m.venta_id}</span>` : ''}
                 </td>
-                <td class="p-4 text-right font-mono text-red-500">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
-                <td class="p-4 text-right font-mono text-green-500">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>
-                <td class="p-4 text-right font-black font-mono dark:text-white bg-blue-50/30 dark:bg-blue-900/10">$${parseFloat(m.saldo_acumulado).toFixed(2)}</td>
-                <td class="p-4 text-center">
+                <td class="p-3 md:p-4 text-right font-mono text-red-500 whitespace-nowrap">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
+                <td class="p-3 md:p-4 text-right font-mono text-green-500 whitespace-nowrap">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>
+                <td class="p-3 md:p-4 text-right font-black font-mono dark:text-white bg-blue-50/30 dark:bg-blue-900/10 whitespace-nowrap">$${parseFloat(m.saldo_acumulado).toFixed(2)}</td>
+                <td class="p-3 md:p-4 text-center">
                     ${m.haber > 0 && m.venta_id ? `<button onclick="imprimirReciboPagoMov(${m.venta_id}, ${parseFloat(m.haber)}, ${parseFloat(m.saldo_acumulado)})" class="hover:scale-150 transition-transform" title="Imprimir Recibo">🖨️</button>` : '-'}
                 </td>
             </tr>
