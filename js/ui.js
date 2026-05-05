@@ -49,6 +49,11 @@ export const cambiarSeccion = (idSeccionDestino) => {
     if (pantallaActiva) {
         pantallaActiva.classList.remove("hidden");
     }
+    
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
    
     const headerVentas = document.getElementById("headerVentas");
     if (headerVentas) {

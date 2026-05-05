@@ -415,15 +415,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    showApp();
-
-    // Inicializar módulos
-    
-    await initClientes();
-    await initProductos();
-    await initVentas();
-
-    cambiarSeccion('seccionDashboard');
+    await iniciarApp();
 
     // --- CONFIGURACIÓN DE CLICS DEL MENÚ LATERAL ---
 
