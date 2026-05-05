@@ -235,6 +235,32 @@ async function initApp() {
 
     cambiarSeccion('seccionDashboard');
 
+    const sidebar = document.getElementById("sidebar");
+    const btnMenuMobile = document.getElementById("btnMenuMobile");
+    const mobileMenuOverlay = document.getElementById("mobileMenuOverlay");
+
+    const abrirMenuMobile = () => {
+        if (!sidebar || !mobileMenuOverlay) return;
+        sidebar.classList.remove("-translate-x-full");
+        mobileMenuOverlay.classList.remove("hidden");
+    };
+
+    const cerrarMenuMobile = () => {
+        if (!sidebar || !mobileMenuOverlay) return;
+        sidebar.classList.add("-translate-x-full");
+        mobileMenuOverlay.classList.add("hidden");
+    };
+
+    btnMenuMobile?.addEventListener("click", abrirMenuMobile);
+    mobileMenuOverlay?.addEventListener("click", cerrarMenuMobile);
+
+    // cerrar al elegir opción
+    ["linkDashboard", "linkClientes", "linkVentas", "linkProductos", "linkConfig"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("click", () => {
+            if (window.innerWidth < 768) cerrarMenuMobile();
+        });
+    });
+
     // --- CONFIGURACIÓN DE CLICS DEL MENÚ LATERAL ---
 
     // 1. Cuando hagan clic en Dashboard
