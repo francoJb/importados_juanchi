@@ -145,6 +145,8 @@ export async function cargarDatosBalance(clienteId) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/clientes/${clienteId}/cuenta-corriente`);
         const data = await res.json();
+        window.balanceClienteMovimientos = data.movimientos || [];
+        window.balanceClienteSaldoTotal = data.saldoTotal || 0;
 
         document.getElementById("ba-saldo-total").innerText = `$${parseFloat(data.saldoTotal).toFixed(2)}`;
         const totalPagado = data.movimientos.reduce((sum, m) => sum + parseFloat(m.haber), 0);
@@ -176,6 +178,7 @@ export async function cargarDatosBalance(clienteId) {
 export async function irABalanceCliente(id, nombre, apellido) {
     // Guardamos el cliente actual para usar desde la pantalla de balance
     window.currentBalanceClienteId = id;
+    window.currentBalanceClienteNombre = `${nombre} ${apellido}`;
 
     // Ocultamos Clientes (Asegurate que este ID coincida con tu div de clientes)
     document.getElementById("seccionClientes").classList.add("hidden");
@@ -274,6 +277,146 @@ export async function initClientes() {
     
     console.log("✅ Módulo de Clientes inicializado");
 }
+
+function movimientoEstaEnRango(movimiento, fechaDesde, fechaHasta) {
+    const fechaMovimiento = new Date(movimiento.fecha);
+
+    if (fechaDesde) {
+        const desde = new Date(`${fechaDesde}T00:00:00`);
+        if (fechaMovimiento < desde) return false;
+    }
+
+    if (fechaHasta) {
+        const hasta = new Date(`${fechaHasta}T23:59:59`);
+        if (fechaMovimiento > hasta) return false;
+    }
+
+    return true;
+}
+
+function abrirPreviewBalancePDF(doc, nombreArchivo = "balance-cliente.pdf") {
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+
+    const win = window.open(url, "_blank");
+    if (!win) {
+        alert("⚠️ El navegador bloqueó la ventana emergente. Permití popups para este sitio.");
+        return;
+    }
+
+    win.addEventListener("load", () => {
+        win.document.title = nombreArchivo;
+    });
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+window.imprimirBalanceClientePDF = () => {
+    const movimientos = window.balanceClienteMovimientos || [];
+    const nombreCliente = window.currentBalanceClienteNombre || "Cliente";
+    const fechaDesde = document.getElementById("ba-fecha-desde")?.value;
+    const fechaHasta = document.getElementById("ba-fecha-hasta")?.value;
+
+    if (movimientos.length === 0) {
+        alert("No hay movimientos para imprimir.");
+        return;
+    }
+
+    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
+        alert("La fecha desde no puede ser mayor que la fecha hasta.");
+        return;
+    }
+
+    const movimientosFiltrados = movimientos.filter((movimiento) =>
+        movimientoEstaEnRango(movimiento, fechaDesde, fechaHasta)
+    );
+
+    if (movimientosFiltrados.length === 0) {
+        alert("No hay movimientos en el rango de fechas seleccionado.");
+        return;
+    }
+
+    const totalDebe = movimientosFiltrados.reduce((sum, movimiento) => {
+        return sum + Number(movimiento.debe || 0);
+    }, 0);
+
+    const totalHaber = movimientosFiltrados.reduce((sum, movimiento) => {
+        return sum + Number(movimiento.haber || 0);
+    }, 0);
+
+    const saldoFinal = Number(movimientosFiltrados[movimientosFiltrados.length - 1].saldo_acumulado || 0);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("landscape");
+    
+    if (typeof doc.autoTable !== "function") {
+        alert("No se pudo cargar el generador de tablas PDF. Revisá la conexión a internet o el script de AutoTable.");
+        return;
+    }
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const fechaEmision = new Date().toLocaleString("es-AR");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Balance de Cliente", 14, 15);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${nombreCliente}`, 14, 24);
+    doc.text(`Emitido: ${fechaEmision}`, pageWidth - 14, 24, { align: "right" });
+
+    const textoRango = fechaDesde || fechaHasta
+        ? `Período: ${fechaDesde || "Inicio"} al ${fechaHasta || "Hoy"}`
+        : "Período: Todos los movimientos";
+
+    doc.text(textoRango, 14, 31);
+    
+    doc.autoTable({
+        startY: 38,
+        head: [[
+            "Fecha / Hora",
+            "Concepto",
+            "Debe (+)",
+            "Haber (-)",
+            "Saldo acumulado",
+            "Recibo"
+        ]],
+        body: movimientosFiltrados.map((movimiento) => [
+            new Date(movimiento.fecha).toLocaleString("es-AR"),
+            movimiento.descripcion || "-",
+            Number(movimiento.debe || 0) > 0 ? `$${Number(movimiento.debe).toFixed(2)}` : "-",
+            Number(movimiento.haber || 0) > 0 ? `$${Number(movimiento.haber).toFixed(2)}` : "-",
+            `$${Number(movimiento.saldo_acumulado || 0).toFixed(2)}`,
+            movimiento.haber > 0 && movimiento.venta_id ? `Venta #${movimiento.venta_id}` : "-"
+        ]),
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: {
+            fillColor: [0, 168, 168],
+            textColor: 255
+        },
+        columnStyles: {
+            2: { halign: "right" },
+            3: { halign: "right" },
+            4: { halign: "right" },
+            5: { halign: "center" }
+        },
+        margin: { left: 14, right: 14 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`Total Debe: $${totalDebe.toFixed(2)}`, 14, finalY);
+    doc.text(`Total Haber: $${totalHaber.toFixed(2)}`, 90, finalY);
+    doc.text(`Saldo final del período: $${saldoFinal.toFixed(2)}`, 170, finalY);
+
+    abrirPreviewBalancePDF(doc, `Balance_${nombreCliente.replaceAll(" ", "_")}.pdf`);
+};
 
 window.prepararEdicionCliente = prepararEdicionCliente;
 window.eliminarCliente = eliminarCliente;

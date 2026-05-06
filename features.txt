@@ -19,9 +19,9 @@ proximos pasos:
         -impresion de detalle de la cuenta corriente
         -como gestionar la desactivacion de clientes
     VISUAL
-        -Adaptar para celulares (quizas haciendo el menu colapsable)
-        -animacion de espera al cargar pantallas
+        -Adaptar para celulares (quizas haciendo el menu colapsable) (OK)
+        -animacion de espera al cargar pantallas (OK)
    
-   ENTORNO DE PRUEBAS (STAGING)
+   ENTORNO DE PRUEBAS (STAGING) ------FUNCIONANDO------
     
 

@@ -8,7 +8,8 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Importamos jsPDF para generar PDFs -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        
+        <!-- Plugin para generar tablas en PDF con jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
         <script>
             // Configuración para que Tailwind reconozca el modo oscuro por clase
             tailwind.config = {
@@ -337,6 +338,43 @@
                             <p id="ba-total-pagos" class="text-3xl font-mono font-black text-green-600 mt-2">$0.00</p>
                         </div>
                     </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 md:p-6 mb-6 border dark:border-slate-700">
+                    <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+                        <div class="flex-1">
+                            <label for="ba-fecha-desde" class="block text-xs font-bold uppercase text-gray-400 mb-1">
+                                Fecha desde
+                            </label>
+                            <input
+                                type="date"
+                                id="ba-fecha-desde"
+                                class="w-full border p-3 rounded-xl dark:bg-slate-700 dark:border-slate-600"
+                            >
+                        </div>
+
+                        <div class="flex-1">
+                            <label for="ba-fecha-hasta" class="block text-xs font-bold uppercase text-gray-400 mb-1">
+                                Fecha hasta
+                            </label>
+                            <input
+                                type="date"
+                                id="ba-fecha-hasta"
+                                class="w-full border p-3 rounded-xl dark:bg-slate-700 dark:border-slate-600"
+                            >
+                        </div>
+
+                        <button type="button" onclick="imprimirBalanceClientePDF()" class="w-full lg:w-auto bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all">
+                            🖨️ Generar PDF
+                        </button>
+                        <button type="button" onclick="document.getElementById('ba-fecha-desde').value = ''; document.getElementById('ba-fecha-hasta').value = '';" class="w-full lg:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition-all">
+                            Limpiar
+                        </button>
+                        
+                    </div>
+
+                    <p class="text-xs text-gray-400 mt-3">
+                        Si dejás las fechas vacías, se imprimen todos los movimientos del cliente.
+                    </p>
+                </div>
 
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-x-auto">
                         <table class="w-full min-w-[850px] text-left border-collapse">
