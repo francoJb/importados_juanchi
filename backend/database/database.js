@@ -104,6 +104,7 @@ const configurarTablas = async () => {
                 venta_id INT NULL,
                 fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
                 descripcion VARCHAR(255),
+                observaciones TEXT NULL,
                 debe DECIMAL(12, 2) DEFAULT 0.00,
                 haber DECIMAL(12, 2) DEFAULT 0.00,
                 saldo_acumulado DECIMAL(12, 2),

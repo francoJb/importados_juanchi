@@ -207,7 +207,7 @@ export async function abrirBuscadorClientes() {
             <td class="p-3 text-right">${c.cuit}</td>
             <td class="p-3 text-center">
                 <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
-                    class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-1 px-5 rounded-xl shadow-lg">
+                    class="bg-gradient-to-r from-cyan-500 to-teal-400 font-bold py-1 px-5 rounded-xl shadow-lg">
                     Seleccionar
                 </button>
         </td>

@@ -237,7 +237,7 @@ exports.eliminarVenta = async (req, res) => {
 };
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
-    const { monto } = req.body;
+    const { monto, observaciones } = req.body;
 
     const ventaIdNum = Number(ventaId);
     if (!Number.isInteger(ventaIdNum) || ventaIdNum <= 0) {
