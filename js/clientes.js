@@ -327,9 +327,9 @@ window.imprimirBalanceClientePDF = () => {
         return;
     }
 
-    const movimientosFiltrados = movimientos.filter((movimiento) =>
-        movimientoEstaEnRango(movimiento, fechaDesde, fechaHasta)
-    );
+    const movimientosFiltrados = movimientos
+    .filter((movimiento) => movimientoEstaEnRango(movimiento, fechaDesde, fechaHasta))
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     if (movimientosFiltrados.length === 0) {
         alert("No hay movimientos en el rango de fechas seleccionado.");
