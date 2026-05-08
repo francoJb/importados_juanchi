@@ -676,14 +676,17 @@ function abrirPreviewPDF(doc, nombreArchivo = "documento.pdf") {
 }
 
 
-window.imprimirReciboPagoMov = async (ventaId, monto, saldo) => {
+window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodificadas = "") => {
     try {
         const venta = await fetchVentaPorId(ventaId);
         if (!venta) {
             return alert("No se encontró la venta para generar el recibo.");
         }
         const comprobantesCancelados = parseFloat(saldo) <= 0 ? [ventaId] : [];
-        const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados);
+        const observacionesPago = observacionesCodificadas
+            ? decodeURIComponent(observacionesCodificadas)
+            : "";
+        const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados, observacionesPago);
         abrirPreviewPDF(doc, `ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);

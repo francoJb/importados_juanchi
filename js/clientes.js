@@ -165,7 +165,7 @@ export async function cargarDatosBalance(clienteId) {
                 <td class="p-3 md:p-4 text-right font-mono text-green-500 whitespace-nowrap">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>
                 <td class="p-3 md:p-4 text-right font-black font-mono dark:text-white bg-blue-50/30 dark:bg-blue-900/10 whitespace-nowrap">$${parseFloat(m.saldo_acumulado).toFixed(2)}</td>
                 <td class="p-3 md:p-4 text-center">
-                    ${m.haber > 0 && m.venta_id ? `<button onclick="imprimirReciboPagoMov(${m.venta_id}, ${parseFloat(m.haber)}, ${parseFloat(m.saldo_acumulado)})" class="hover:scale-150 transition-transform" title="Imprimir Recibo">🖨️</button>` : '-'}
+                    ${m.haber > 0 && m.venta_id ? `<button onclick="imprimirReciboPagoMov(${m.venta_id}, ${parseFloat(m.haber)}, ${parseFloat(m.saldo_acumulado)}, '${encodeURIComponent(m.observaciones || "")}')" class="hover:scale-150 transition-transform" title="Imprimir Recibo">🖨️</button>` : '-'}
                 </td>
             </tr>
         `).join('');
