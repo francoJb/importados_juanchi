@@ -8,10 +8,32 @@ import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
 import { cambiarSeccion, mostrarLoader, ocultarLoader } from "./ui.js";
 import { load, save } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
+import { apiFetch } from "./apiClient.js";
 
 const CONFIG_STORAGE_KEY = "empresaConfig";
 const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
+
+async function validarSesionActual() {
+    const token = sessionStorage.getItem('authToken');
+
+    if (!token) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        return response.ok;
+    } catch (error) {
+        console.error('Error validando sesión:', error);
+        return false;
+    }
+}
 
 const CONFIG_DEFAULTS = {
     razonSocial: "JR Import S.A.",
@@ -75,7 +97,7 @@ async function obtenerTopProductosMasVendidos(ventas) {
     const acumulado = {};
 
     const detalles = await Promise.all(ventasRecientes.map(async (venta) => {
-        const res = await fetch(`${URL_API_VENTAS}/${venta.id}/detalle`);
+        const res = await apiFetch(`${URL_API_VENTAS}/${venta.id}/detalle`);
         if (!res.ok) return [];
         return await res.json();
     }));
@@ -388,7 +410,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const usuario = document.getElementById('usuario').value;
             const password = document.getElementById('password').value;
             try {
-                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                const response = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -434,6 +456,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (sessionStorage.getItem('loggedIn') !== 'true') {
+        showLogin();
+        return;
+    }
+
+    const sesionValida = await validarSesionActual();
+
+    if (!sesionValida) {
+        sessionStorage.removeItem('loggedIn');
+        sessionStorage.removeItem('authToken');
         showLogin();
         return;
     }

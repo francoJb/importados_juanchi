@@ -1,13 +1,14 @@
 import { dibujarClientes } from "./renderclientes.js";
 import { cambiarSeccion } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
+import { apiFetch } from "./apiClient.js";
 
 const API_URL = `${API_BASE_URL}/api/clientes`;
 
 // 1. OBTENER DATOS (API)
 export async function fetchClientes() {
     try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch(API_URL);
         if (!res.ok) throw new Error("Error al obtener clientes");
         return await res.json();
     } catch (error) {
@@ -27,7 +28,7 @@ export async function guardarClienteAPI(datos, id = null) {
     const method = id ? "PUT" : "POST";
     const url = id ? `${API_URL}/${id}` : API_URL;
     try {
-        const res = await fetch(url, {
+        const res = await apiFetch(url, {
             method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)
@@ -130,7 +131,7 @@ export async function eliminarCliente(id, nombre){
     if (rta) {
         try {
             // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-           const response = await fetch(`${API_BASE_URL}/api/clientes/${id}`, {
+           const response = await apiFetch(`${API_BASE_URL}/api/clientes/${id}`, {
                 method: 'DELETE' // El método que definiste en tus rutas
             });
             if (response.ok) {
@@ -149,7 +150,7 @@ export async function eliminarCliente(id, nombre){
 
 export async function cargarDatosBalance(clienteId) {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/clientes/${clienteId}/cuenta-corriente`);
+        const res = await apiFetch(`${API_BASE_URL}/api/clientes/${clienteId}/cuenta-corriente`);
         const data = await res.json();
         window.balanceClienteMovimientos = data.movimientos || [];
         window.balanceClienteSaldoTotal = data.saldoTotal || 0;

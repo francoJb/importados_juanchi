@@ -1,12 +1,13 @@
 import { dibujarProductos } from "./renderproductos.js";
 import { cambiarSeccion } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
+import { apiFetch } from "./apiClient.js";
 
 const API_URL = `${API_BASE_URL}/api/productos`;
 // 1. OBTENER DATOS (API)
 export async function fetchProductos() {
     try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch(API_URL);
         if (!res.ok) throw new Error("Error al obtener productos");
         return await res.json();
     } catch (error) {
@@ -26,7 +27,7 @@ export async function guardarProductoAPI(datos, id = null) {
     const method = id ? "PUT" : "POST";
     const url = id ? `${API_URL}/${id}` : API_URL;
     try {
-        const res = await fetch(url, {
+        const res = await apiFetch(url, {
             method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)

@@ -4,6 +4,7 @@ import { actualizarTablaVenta, renderTablaVentas } from "./renderventas.js";
 import { cambiarSeccion } from "./ui.js";
 import { load } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
+import { apiFetch } from "./apiClient.js";
 
 const URL_API = `${API_BASE_URL}/api/ventas`;
 // Datos del vendedor por defecto
@@ -31,7 +32,7 @@ let carritoVenta = [];
 let productosVenta = [];
 
 export async function enviarVentaAlServidor(datos) {
-    const response = await fetch(URL_API, {
+    const response = await apiFetch(URL_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
@@ -284,7 +285,7 @@ window.procesarVentaFinal = async () => {
     };
 
     try {
-        const respuesta = await fetch(URL_API, {
+        const respuesta = await apiFetch(URL_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datosVenta)
@@ -314,9 +315,9 @@ window.procesarVentaFinal = async () => {
 window.cerrarModalPago = () => document.getElementById("modalPago").classList.add("hidden");
 
 async function cargarDatosVenta(id) {
-    const resVenta = await fetch(`${URL_API}/${id}`);
+    const resVenta = await apiFetch(`${URL_API}/${id}`);
     const venta = await resVenta.json();
-    const resDetalle = await fetch(`${URL_API}/${id}/detalle`);
+    const resDetalle = await apiFetch(`${URL_API}/${id}/detalle`);
     const detalles = await resDetalle.json();
     window.ventaActual = venta;
     window.detallesActual = detalles;
@@ -554,7 +555,7 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
             const saldoVenta = parseFloat(venta.saldo_pendiente);
             const montoParaVenta = Math.min(montoRestante, saldoVenta);
 
-            const response = await fetch(`${URL_API}/${venta.id}/pago`, {
+            const response = await apiFetch(`${URL_API}/${venta.id}/pago`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -632,7 +633,7 @@ window.abrirPagoDesdeBalance = async () => {
     }
 
     try {
-        const response = await fetch(URL_API);
+        const response = await apiFetch(URL_API);
         if (!response.ok) throw new Error("No se pudieron cargar las ventas");
         const ventas = await response.json();
         const ventasPendientes = ventas.filter(v => v.cliente_id == clienteId && parseFloat(v.saldo_pendiente) > 0);
@@ -695,7 +696,7 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodifi
 };
 
 async function fetchVentaPorId(ventaId) {
-    const response = await fetch(URL_API);
+    const response = await apiFetch(URL_API);
     if (!response.ok) throw new Error("No se pudieron cargar las ventas");
     const ventas = await response.json();
     return ventas.find(v => v.id == ventaId);
@@ -787,7 +788,7 @@ window.imprimirVenta = (id) => {
 window.eliminarVenta = async (id) => {
     if (confirm("¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.")) {
         try {
-            const response = await fetch(`${URL_API}/${id}`, { method: "DELETE" });
+            const response = await apiFetch(`${URL_API}/${id}`, { method: "DELETE" });
             const data = await response.json();
 
             if (!response.ok) {
@@ -854,7 +855,7 @@ export async function listarVentas() {
     if (!cuerpoTabla) return;
 
     try {
-        const respuesta = await fetch(URL_API);
+        const respuesta = await apiFetch(URL_API);
         if (!respuesta.ok) throw new Error("Error al obtener ventas");
         const ventas = await respuesta.json();
         renderTablaVentas(ventas);
@@ -996,6 +997,6 @@ window.imprimirVenta = async (id) => {
 };
 
 export async function obtenerHistorialVentas() {
-    const response = await fetch(URL_API);
+    const response = await apiFetch(URL_API);
     return await response.json();
 }
