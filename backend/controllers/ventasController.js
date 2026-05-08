@@ -301,10 +301,14 @@ exports.registrarPago = async (req, res) => {
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
 
+        const observacionesPago = observaciones && observaciones.trim()
+            ? observaciones.trim()
+            : null;
+
         await connection.query(
-            `INSERT INTO cuenta_corriente (cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
-             VALUES (?, ?, ?, 0, ?, ?)`,
-            [idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado]
+            `INSERT INTO cuenta_corriente (cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 
+            VALUES (?, ?, ?, 0, ?, ?, ?)`,
+            [idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
         );
 
         await connection.commit();

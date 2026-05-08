@@ -158,6 +158,7 @@ export async function cargarDatosBalance(clienteId) {
                 <td class="p-3 md:p-4 text-gray-500 whitespace-nowrap">${new Date(m.fecha).toLocaleString('es-AR')}</td>
                 <td class="p-3 md:p-4">
                     <span class="font-bold dark:text-white">${m.descripcion}</span>
+                    ${m.observaciones ? `<br><span class="text-[11px] text-slate-500 italic">${m.observaciones}</span>` : ''}
                     ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Venta #${m.venta_id}</span>` : ''}
                 </td>
                 <td class="p-3 md:p-4 text-right font-mono text-red-500 whitespace-nowrap">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
@@ -384,7 +385,9 @@ window.imprimirBalanceClientePDF = () => {
         ]],
         body: movimientosFiltrados.map((movimiento) => [
             new Date(movimiento.fecha).toLocaleString("es-AR"),
-            movimiento.descripcion || "-",
+            movimiento.observaciones
+            ? `${movimiento.descripcion || "-"}\nObs: ${movimiento.observaciones}`
+            : movimiento.descripcion || "-",
             Number(movimiento.debe || 0) > 0 ? `$${Number(movimiento.debe).toFixed(2)}` : "-",
             Number(movimiento.haber || 0) > 0 ? `$${Number(movimiento.haber).toFixed(2)}` : "-",
             `$${Number(movimiento.saldo_acumulado || 0).toFixed(2)}`,

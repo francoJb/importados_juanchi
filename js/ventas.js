@@ -594,7 +594,13 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
 
         for (const pago of pagosRealizados) {
             const ventaActualizada = await fetchVentaPorId(pago.ventaId);
-            await generarReciboPagoPDF(ventaActualizada, pago.montoPagado, pago.nuevoSaldo, comprobantesCancelados);
+            await generarReciboPagoPDF(
+                ventaActualizada,
+                pago.montoPagado,
+                pago.nuevoSaldo,
+                comprobantesCancelados,
+                observaciones
+            );
         }
         // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
         if (window.currentBalanceClienteId) {
@@ -692,7 +698,7 @@ async function fetchVentaPorId(ventaId) {
     return ventas.find(v => v.id == ventaId);
 }
 
-async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = []) {
+async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "") {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -758,7 +764,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
         y += comprobantesTexto.length * 5 + 8;
     }
 
-    const observaciones = venta?.observaciones || "Sin observaciones";
+    const observaciones = observacionesPago?.trim() || venta?.observaciones || "Sin observaciones";
     doc.text("Observaciones:", margin, y);
     y += 5;
     const obsLines = doc.splitTextToSize(observaciones, pageWidth - 2 * margin);

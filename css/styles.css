@@ -4,7 +4,7 @@
     width: 100%;
     max-width: 28rem;
     border: 1px solid rgba(165, 243, 252, 0.3);
-    background: rgba(241, 245, 249, 0.438);
+    background: rgba(11, 43, 90, 0.596);
     padding: 2rem;
     box-shadow: 0 30px 90px rgba(8, 145, 178, 0.28);
 }
@@ -39,7 +39,7 @@
     padding: 1rem;
     font-weight: 900;
     color: white;
-    box-shadow: 0 20px 35px rgba(6, 102, 212, 0.3);
+    box-shadow: 0 10px 60px rgba(30, 127, 197, 0.562);
     transition: all 0.3s ease;
 }
 

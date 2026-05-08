@@ -105,7 +105,8 @@ exports.obtenerCuentaCorriente = async (req, res) => {
                 venta_id, 
                 debe, 
                 haber, 
-                saldo_acumulado 
+                saldo_acumulado,
+                observaciones
             FROM cuenta_corriente 
             WHERE cliente_id = ? 
             ORDER BY fecha DESC`, 
