@@ -76,7 +76,13 @@ export function configurarFormularioCliente() {
         if (exito) {
             alert("✅ Cliente guardado correctamente");
             formCliente.reset();
-            listarClientes(); // Recarga la tabla automáticamente
+
+            await listarClientes(); // Recarga la tabla de clientes
+
+            if (typeof window.cargarDatosParaVenta === "function") {
+                await window.cargarDatosParaVenta(); // Recarga el select de clientes en ventas
+            }
+
             cambiarSeccion('seccionClientes');
         }
     };
@@ -235,11 +241,28 @@ export async function filtrarClientesModal() {
 export async function seleccionarClienteDesdeModal(id) {
     // 1. Buscamos el select de clientes en la pantalla de venta
     const selectC = document.getElementById("v-cliente-select");
-    // 2. Le asignamos el ID del cliente seleccionado
-    if (selectC) {
-        selectC.value = id;
+    if (!selectC) return;
+
+    // 2. Buscamos si el cliente ya existe como opción dentro del select
+    let optionExistente = selectC.querySelector(`option[value="${id}"]`);
+
+    // 3. Si no existe, lo buscamos en la base y lo agregamos al select
+    if (!optionExistente) {
+        const clientes = await fetchClientes();
+        const cliente = clientes.find(c => String(c.id) === String(id));
+
+        if (cliente) {
+            const nuevaOption = document.createElement("option");
+            nuevaOption.value = cliente.id;
+            nuevaOption.textContent = `${cliente.nombre} ${cliente.apellido}`;
+            selectC.appendChild(nuevaOption);
+        }
     }
-    // 3. Cerramos el buscador
+
+    // 4. Ahora sí seleccionamos el cliente
+    selectC.value = id;
+
+    // 5. Cerramos el buscador
     cerrarBuscadorClientes();
 };
 

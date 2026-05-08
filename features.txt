@@ -4,7 +4,7 @@ proximos pasos:
     
     VENTAS
         - el boton volver debe preguntar si volver a ventas cuando hay productos cargados
-        -input observaciones en recibos no se guarda
+        -input observaciones en recibos no se guarda (OK)
         -agregar sello pagado cuando se genera una venta abonada en su totalidad
         -COMPROBANTES
             -factura de venta (opcional con facturacion ARCA) 
@@ -16,7 +16,7 @@ proximos pasos:
         -como gestionar la desactivacion de productos
     CLIENTES
         -detalle de cuenta corriente en disparado desde el boton "ver balance" (OK)
-        -impresion de detalle de la cuenta corriente
+        -impresion de detalle de la cuenta corriente (OK)
         -como gestionar la desactivacion de clientes
     VISUAL
         -Adaptar para celulares (quizas haciendo el menu colapsable) (OK)
