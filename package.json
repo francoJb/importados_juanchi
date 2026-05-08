@@ -9,9 +9,11 @@
     "test:syntax": "node --check backend/server.js && node --check backend/controllers/ventasController.js && node --check backend/controllers/clientesController.js && node --check backend/controllers/productosController.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.20.0"
   },
   "devDependencies": {

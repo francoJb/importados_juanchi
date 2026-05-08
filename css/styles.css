@@ -4,6 +4,7 @@
     width: 100%;
     max-width: 28rem;
     border: 1px solid rgba(165, 243, 252, 0.3);
+    border-radius: 20px;
     background: rgba(11, 43, 90, 0.596);
     padding: 2rem;
     box-shadow: 0 30px 90px rgba(8, 145, 178, 0.28);
@@ -12,6 +13,7 @@
 .login-input {
     width: 100%;
     border: 1px solid rgba(207, 250, 254, 0.7);
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.349);
     padding: 1rem;
     color: #1e293b;
@@ -33,6 +35,7 @@
 
 .btn-login {
     width: 100%;
+    border-radius: 20px;
     margin-top: 0.75rem;
     background: linear-gradient(90deg, #045191, #0c6aa0, #0a68a7);
     padding: 1rem;

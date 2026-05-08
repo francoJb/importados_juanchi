@@ -342,6 +342,7 @@ function closeLogoutConfirm() {
 
 function confirmLogout() {
     sessionStorage.removeItem('loggedIn');
+    sessionStorage.removeItem('authToken');
     closeLogoutConfirm();
     location.reload();
 }
@@ -386,11 +387,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             const empresa = document.getElementById('empresa').value;
             const usuario = document.getElementById('usuario').value;
             const password = document.getElementById('password').value;
-            if (empresa === 'jrimport' && usuario === 'Admin' && password === 'admin') {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        empresa,
+                        usuario,
+                        password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(data.error || 'Credenciales incorrectas. Intente nuevamente.');
+                    return;
+                }
+
+                sessionStorage.setItem('authToken', data.token);
                 sessionStorage.setItem('loggedIn', 'true');
+
                 await iniciarApp();
-            } else {
-                alert('Credenciales incorrectas. Intente nuevamente.');
+            } catch (error) {
+                console.error('Error al iniciar sesión:', error);
+                alert('No se pudo conectar con el servidor. Intente nuevamente.');
             }
         });
     }

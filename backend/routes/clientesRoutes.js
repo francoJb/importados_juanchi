@@ -2,13 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const clientesController = require('../controllers/clientesController');
+const verificarToken = require('../middlewares/authMiddleware');
 
 // Definimos las rutas
-router.get('/', clientesController.obtenerClientes);
-router.post('/', clientesController.crearCliente);
-router.put('/:id', clientesController.editarCliente);
-router.delete('/:id', clientesController.eliminarCliente);
-router.get('/:id/cuenta-corriente', clientesController.obtenerCuentaCorriente);
+router.get('/', verificarToken, clientesController.obtenerClientes);
+router.post('/', verificarToken, clientesController.crearCliente);
+router.put('/:id', verificarToken, clientesController.editarCliente);
+router.delete('/:id', verificarToken, clientesController.eliminarCliente);
+router.get('/:id/cuenta-corriente', verificarToken, clientesController.obtenerCuentaCorriente);
 
 
 module.exports = router;
