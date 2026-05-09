@@ -5,7 +5,13 @@ const app = express();
 
 const allowedOrigins = [
   'https://elda-gestion.pages.dev',          // producción
-  'https://elda-gestion-staging.pages.dev'             // staging (reemplazar)
+  'https://elda-gestion-staging.pages.dev',             // staging
+  
+  // Desarrollo local
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
 ];
 
 const corsOptions = {
