@@ -1,7 +1,17 @@
-require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const dotenv = require('dotenv');
+
+// Cargar el archivo .env correcto según el entorno
+const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env.local';
+const envPath = path.resolve(__dirname, '../../', envFile);
+dotenv.config({ path: envPath });
+
+// Fallback a .env si el archivo específico no existe
+if (!fs.existsSync(envPath)) {
+  dotenv.config();
+}
 
 const required = ['DB_HOST', 'DB_USER', 'DB_NAME'];
 for (const key of required) {

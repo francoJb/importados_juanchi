@@ -1,4 +1,15 @@
 // backend/server.js
+require('dotenv').config({
+  path: require('path').resolve(__dirname, `../.env.${process.env.NODE_ENV || 'local'}`)
+});
+
+// Fallback a .env.local si el archivo no existe
+const fs = require('fs');
+const path = require('path');
+if (!fs.existsSync(path.resolve(__dirname, `../.env.${process.env.NODE_ENV || 'local'}`))) {
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
+}
+
 const cors = require('cors');
 const express = require('express');
 const app = express();
