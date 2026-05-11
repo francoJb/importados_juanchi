@@ -209,18 +209,15 @@ export async function abrirBuscadorClientes() {
     const modal = document.getElementById("modalBuscadorClientes");
     const tbody = document.getElementById("tablaBuscadorClientes");
     tbody.innerHTML = clientes.map(c => `
-        <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+        <tr
+            class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+            onclick="seleccionarClienteDesdeModal('${c.id}')"
+        >
             <td class="p-3">${c.nombre}</td>
             <td class="p-3">${c.apellido}</td>
             <td class="p-3">${c.direccion}</td>
             <td class="p-3 text-right">${c.dni}</td>
             <td class="p-3 text-right">${c.cuit}</td>
-            <td class="p-3 text-center">
-                <button onclick="seleccionarClienteDesdeModal('${c.id}')" 
-                    class="bg-gradient-to-r from-cyan-500 to-teal-400 font-bold py-1 px-5 rounded-xl shadow-lg">
-                    Seleccionar
-                </button>
-        </td>
         </tr>
     `).join('');
     modal.classList.remove("hidden");

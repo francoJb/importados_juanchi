@@ -62,7 +62,12 @@ function setSkuFocus() {
     const inputSku = document.getElementById("v-sku-directo");
     if (inputSku) {
         inputSku.value = "";
-        inputSku.focus();
+        // Asegurar que el elemento sea visible antes de enfocar
+        if (inputSku.offsetParent !== null) {
+            inputSku.focus();
+        } else {
+            console.warn("El input de SKU no es visible aún");
+        }
     } else {
         console.warn("No se encontró 'v-sku-directo'. Asegúrate de que el input de SKU tenga ese ID.");
     }
@@ -132,7 +137,6 @@ window.abrirBuscadorProductos = async () => {
     tbody.innerHTML = productos.map(p => `
         <tr data-sku="${p.sku}" data-selected="false" onclick="toggleSeleccionProductoFila(this)"
             class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer">
-            <td class="p-3 text-center text-slate-500 text-xs uppercase tracking-wide">Click</td>
             <td class="p-3">${p.sku}</td>
             <td class="p-3">${p.descripcion}</td>
             <td class="p-3">${p.marca}</td>
@@ -182,8 +186,8 @@ window.agregarProductosSeleccionados = async () => {
 window.toggleSeleccionProductoFila = (row) => {
     const seleccionada = row.dataset.selected === "true";
     row.dataset.selected = seleccionada ? "false" : "true";
-    row.classList.toggle("bg-blue-100", !seleccionada);
-    row.classList.toggle("dark:bg-blue-900/40", !seleccionada);
+    row.classList.toggle("bg-cyan-100", !seleccionada);
+    row.classList.toggle("dark:bg-cyan-900/80", !seleccionada);
 };
 
 window.filtrarProductosModal = () => {
@@ -358,8 +362,19 @@ window.procesarVentaFinal = async () => {
             const detallesSimulados = carritoVenta.map(item => ({ sku: item.sku, descripcion: item.desc, precio_unitario: item.precio, cantidad: item.cantidad }));
             await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
             cerrarModalPago();
-            cambiarSeccion('seccionVentas');
-            listarVentas();
+            // Resetear para nueva venta
+            carritoVenta = [];
+            document.getElementById("v-observaciones").value = "";
+            document.getElementById("v-cliente-input").value = "Consumidor Final";
+            window.clienteSeleccionadoVenta = null;
+            actualizarTablaVenta(carritoVenta);
+            cambiarSeccion('pantallaGenerarVenta');
+            // Esperar más tiempo para que la pantalla sea visible antes de enfocar
+            setTimeout(() => {
+                setSkuFocus();
+                setTimeout(() => setSkuFocus(), 300);
+                setTimeout(() => setSkuFocus(), 600);
+            }, 1500);
         } else {
             throw new Error(resultado.error || "Error desconocido al guardar.");
         }
@@ -881,6 +896,7 @@ export async function initVentas() {
             window.clienteSeleccionadoVenta = null;
             actualizarTablaVenta(carritoVenta);
             cambiarSeccion('pantallaGenerarVenta');
+            setSkuFocus();
         });
     }
 

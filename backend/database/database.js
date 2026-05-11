@@ -81,7 +81,39 @@ const configurarTablas = async () => {
                 estado TINYINT(1) DEFAULT 1
             )
         `);
-        // 3. TABLA DE VENTAS (Agregada)
+        // 3. TABLA DE EMPRESAS
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS empresas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) UNIQUE NOT NULL,
+                razon_social VARCHAR(255),
+                cuit VARCHAR(50) UNIQUE,
+                domicilio VARCHAR(255),
+                email VARCHAR(100),
+                telefono VARCHAR(50),
+                website VARCHAR(150),
+                condicion_iva VARCHAR(100),
+                estado TINYINT(1) DEFAULT 1,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        // 4. TABLA DE USUARIOS
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
+                nombre VARCHAR(100),
+                apellido VARCHAR(100),
+                usuario VARCHAR(100) NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role ENUM('admin','user') DEFAULT 'user',
+                estado TINYINT(1) DEFAULT 1,
+                fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_usuario (usuario),
+                CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+            )
+        `);
+        // 5. TABLA DE VENTAS (Agregada)
         await db.query(`
             CREATE TABLE IF NOT EXISTS ventas (
                 id INT AUTO_INCREMENT PRIMARY KEY,

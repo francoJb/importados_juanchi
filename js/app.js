@@ -13,6 +13,23 @@ import { apiFetch } from "./apiClient.js";
 const CONFIG_STORAGE_KEY = "empresaConfig";
 const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
+let currentSessionUser = null;
+
+function esAdmin() {
+    return currentSessionUser?.role === 'admin';
+}
+
+function aplicarPermisosUsuario() {
+    const linkConfig = document.getElementById('linkConfig');
+    const seccionConfig = document.getElementById('seccionConfig');
+    if (!esAdmin()) {
+        linkConfig?.classList.add('hidden');
+        seccionConfig?.classList.add('hidden');
+    } else {
+        linkConfig?.classList.remove('hidden');
+        seccionConfig?.classList.remove('hidden');
+    }
+}
 
 async function validarSesionActual() {
     const token = sessionStorage.getItem('authToken');
@@ -28,7 +45,13 @@ async function validarSesionActual() {
             }
         });
 
-        return response.ok;
+        if (!response.ok) {
+            return false;
+        }
+
+        const data = await response.json();
+        currentSessionUser = data;
+        return data;
     } catch (error) {
         console.error('Error validando sesión:', error);
         return false;
@@ -81,6 +104,119 @@ function guardarConfiguracionEmpresa(event) {
 
     save(CONFIG_STORAGE_KEY, nuevaConfig);
     mostrarAlerta("Datos de la empresa guardados correctamente.", "¡Éxito!", "success");
+}
+
+async function fetchEmpresasAdmin() {
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/companies`);
+    return response.ok ? await response.json() : [];
+}
+
+async function fetchUsuariosAdmin() {
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/users`);
+    return response.ok ? await response.json() : [];
+}
+
+function popularEmpresasAdmin(empresas) {
+    const select = document.getElementById('nuevoUsuarioEmpresa');
+    const lista = document.getElementById('empresasLista');
+    if (select) {
+        select.innerHTML = empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+    }
+    if (lista) {
+        lista.innerHTML = empresas.map(e => `
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <td class="p-3">${e.nombre}</td>
+                <td class="p-3">${e.razon_social || '-'}</td>
+                <td class="p-3 text-right">${e.cuit || '-'}</td>
+                <td class="p-3">${e.domicilio || '-'}</td>
+            </tr>
+        `).join('');
+    }
+}
+
+function popularUsuariosAdmin(usuarios) {
+    const lista = document.getElementById('usuariosLista');
+    if (!lista) return;
+    lista.innerHTML = usuarios.map(u => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            <td class="p-3">${u.nombre || '-'}</td>
+            <td class="p-3">${u.apellido || '-'}</td>
+            <td class="p-3">${u.usuario}</td>
+            <td class="p-3">${u.empresa_nombre}</td>
+            <td class="p-3 text-center uppercase">${u.role}</td>
+        </tr>
+    `).join('');
+}
+
+async function cargarAdminData() {
+    if (!esAdmin()) return;
+    const [empresas, usuarios] = await Promise.all([fetchEmpresasAdmin(), fetchUsuariosAdmin()]);
+    popularEmpresasAdmin(empresas);
+    popularUsuariosAdmin(usuarios);
+}
+
+async function crearEmpresa(event) {
+    event.preventDefault();
+    const nombre = document.getElementById('nuevaEmpresaNombre').value.trim();
+    const razon_social = document.getElementById('nuevaEmpresaRazonSocial').value.trim();
+    const cuit = document.getElementById('nuevaEmpresaCuit').value.trim();
+    const domicilio = document.getElementById('nuevaEmpresaDomicilio').value.trim();
+    const email = document.getElementById('nuevaEmpresaEmail').value.trim();
+    const telefono = document.getElementById('nuevaEmpresaTelefono').value.trim();
+    const website = document.getElementById('nuevaEmpresaWebsite').value.trim();
+    const condicion_iva = document.getElementById('nuevaEmpresaCondicionIva').value.trim();
+
+    if (!nombre) {
+        mostrarAlerta('El nombre de la empresa es obligatorio.', 'Error', 'warning');
+        return;
+    }
+
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/companies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, razon_social, cuit, domicilio, email, telefono, website, condicion_iva })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        mostrarAlerta(data.error || 'No se pudo crear la empresa.', 'Error', 'error');
+        return;
+    }
+
+    mostrarAlerta('Empresa creada correctamente.', '¡Éxito!', 'success');
+    document.getElementById('formNuevaEmpresa').reset();
+    cargarAdminData();
+}
+
+async function crearUsuario(event) {
+    event.preventDefault();
+    const empresa_id = Number(document.getElementById('nuevoUsuarioEmpresa').value);
+    const usuario = document.getElementById('nuevoUsuarioUsuario').value.trim();
+    const password = document.getElementById('nuevoUsuarioPassword').value;
+    const role = document.getElementById('nuevoUsuarioRole').value;
+    const nombre = document.getElementById('nuevoUsuarioNombre').value.trim();
+    const apellido = document.getElementById('nuevoUsuarioApellido').value.trim();
+
+    if (!empresa_id || !usuario || !password) {
+        mostrarAlerta('Empresa, usuario y contraseña son obligatorios.', 'Error', 'warning');
+        return;
+    }
+
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empresa_id, usuario, password, role, nombre, apellido })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        mostrarAlerta(data.error || 'No se pudo crear el usuario.', 'Error', 'error');
+        return;
+    }
+
+    mostrarAlerta('Usuario creado correctamente.', '¡Éxito!', 'success');
+    document.getElementById('formNuevoUsuario').reset();
+    cargarAdminData();
 }
 
 function formatMoney(value) {
@@ -328,6 +464,16 @@ async function initApp() {
         formConfigEmpresa.addEventListener("submit", guardarConfiguracionEmpresa);
     }
 
+    const formNuevaEmpresa = document.getElementById("formNuevaEmpresa");
+    if (formNuevaEmpresa) {
+        formNuevaEmpresa.addEventListener("submit", crearEmpresa);
+    }
+
+    const formNuevoUsuario = document.getElementById("formNuevoUsuario");
+    if (formNuevoUsuario) {
+        formNuevoUsuario.addEventListener("submit", crearUsuario);
+    }
+
     popularFormularioConfiguracion();
     renderDashboard();
 
@@ -365,6 +511,7 @@ function closeLogoutConfirm() {
 function confirmLogout() {
     sessionStorage.removeItem('loggedIn');
     sessionStorage.removeItem('authToken');
+    currentSessionUser = null;
     closeLogoutConfirm();
     location.reload();
 }
@@ -386,6 +533,8 @@ function showApp() {
 async function iniciarApp() {
     showApp();
     await initApp();
+    aplicarPermisosUsuario();
+    await cargarAdminData();
 }
 
 // ==========================================
@@ -431,6 +580,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 sessionStorage.setItem('authToken', data.token);
                 sessionStorage.setItem('loggedIn', 'true');
+                currentSessionUser = data;
 
                 await iniciarApp();
             } catch (error) {
@@ -470,54 +620,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     await iniciarApp();
-
-    // --- CONFIGURACIÓN DE CLICS DEL MENÚ LATERAL ---
-
-    // 1. Cuando hagan clic en Dashboard
-    document.getElementById("linkDashboard").addEventListener("click", (e) => {
-        e.preventDefault(); // Esto evita que la página salte al principio por el href="#"
-        cambiarSeccion('seccionDashboard');
-        renderDashboard();
-    });
-
-    // 2. Cuando hagan clic en Clientes
-    document.getElementById("linkClientes").addEventListener("click", (e) => {
-        e.preventDefault();
-        cambiarSeccion('seccionClientes');
-    });
-
-    // 3. Cuando hagan clic en Ventas
-    document.getElementById("linkVentas").addEventListener("click", (e) => {
-        e.preventDefault();
-        cambiarSeccion('seccionVentas');
-        listarVentas();
-    });
-
-    // 4. Cuando hagan clic en Productos
-    document.getElementById("linkProductos").addEventListener("click", (e) => {
-        e.preventDefault();
-        cambiarSeccion('seccionProductos');
-    });
-
-    // 5. Cuando hagan clic en Configuracion
-    document.getElementById("linkConfig").addEventListener("click", (e) => {
-        e.preventDefault();
-        cambiarSeccion('seccionConfig');
-        popularFormularioConfiguracion();
-    });
-
-    const dashboardRefresh = document.getElementById("dashboardRefresh");
-    if (dashboardRefresh) {
-        dashboardRefresh.addEventListener("click", renderDashboard);
-    }
-
-    const formConfigEmpresa = document.getElementById("formConfigEmpresa");
-    if (formConfigEmpresa) {
-        formConfigEmpresa.addEventListener("submit", guardarConfiguracionEmpresa);
-    }
-
-    popularFormularioConfiguracion();
-    renderDashboard();
 
 
 
