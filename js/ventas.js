@@ -83,6 +83,10 @@ window.volverALista = () => {
     const inputCliente = document.getElementById("v-cliente-input");
     if (inputCliente) inputCliente.value = "Consumidor Final";
     window.clienteSeleccionadoVenta = null;
+    // Ocultar opción de cuenta corriente para consumidor final
+    if (typeof window.actualizarOpcionesPago === "function") {
+        window.actualizarOpcionesPago(false);
+    }
     actualizarTablaVenta(carritoVenta);
     cambiarSeccion('seccionVentas');
 };
@@ -126,18 +130,14 @@ window.abrirBuscadorProductos = async () => {
     const tbody = document.getElementById("tablaBuscadorProductos");
 
     tbody.innerHTML = productos.map(p => `
-        <tr class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+        <tr data-sku="${p.sku}" data-selected="false" onclick="toggleSeleccionProductoFila(this)"
+            class="border-b dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer">
+            <td class="p-3 text-center text-slate-500 text-xs uppercase tracking-wide">Click</td>
             <td class="p-3">${p.sku}</td>
             <td class="p-3">${p.descripcion}</td>
             <td class="p-3">${p.marca}</td>
-            <td class="p-3 text-right ${p.stock <= p.stock_minimo ? 'text-red-500 font-bold' : ''}">${p.stock}</td>
+            <td class="p-3 text-right ${p.control_stock && p.stock <= p.stock_minimo ? 'text-red-500 font-bold' : ''}">${p.stock}</td>
             <td class="p-3 text-right">${p.precio_neto}</td>
-            <td class="p-3 text-center">
-                <button onclick="seleccionarProductoDesdeModal('${p.sku}')" 
-                    class="bg-gradient-to-r from-cyan-500 to-teal-400 font-bold py-1 px-5 rounded-xl shadow-lg">
-                    Seleccionar
-                </button>
-            </td>
         </tr>
     `).join('');
 
@@ -145,24 +145,45 @@ window.abrirBuscadorProductos = async () => {
     document.getElementById("inputFiltroProductos").focus();
 };
 
-window.seleccionarProductoDesdeModal = async (sku) => {
-    const productos = await fetchProductos();
-    const p = productos.find(item => item.sku === sku);
-
-    if (p) {
-        const nuevoItem = {
-            id: p.id,
-            sku: p.sku,
-            desc: p.descripcion,
-            precio: parseFloat(p.precio_neto),
-            cantidad: 1,
-            subtotal: parseFloat(p.precio_neto)
-        };
-
-        carritoVenta.push(nuevoItem);
-        actualizarTablaVenta(carritoVenta);
-        cerrarBuscadorProductos();
+window.agregarProductosSeleccionados = async () => {
+    const filasSeleccionadas = Array.from(document.querySelectorAll("#tablaBuscadorProductos tr[data-selected='true']"));
+    if (filasSeleccionadas.length === 0) {
+        mostrarAlerta("Seleccione al menos un producto para agregar.", "Atención", "warning");
+        return;
     }
+
+    const productos = await fetchProductos();
+    filasSeleccionadas.forEach(fila => {
+        const sku = fila.dataset.sku;
+        const p = productos.find(item => item.sku === sku);
+
+        if (p) {
+            const existing = carritoVenta.find(item => item.sku === sku);
+            if (existing) {
+                existing.cantidad += 1;
+                existing.subtotal = existing.precio * existing.cantidad;
+            } else {
+                carritoVenta.push({
+                    id: p.id,
+                    sku: p.sku,
+                    desc: p.descripcion,
+                    precio: parseFloat(p.precio_neto),
+                    cantidad: 1,
+                    subtotal: parseFloat(p.precio_neto)
+                });
+            }
+        }
+    });
+
+    actualizarTablaVenta(carritoVenta);
+    cerrarBuscadorProductos();
+};
+
+window.toggleSeleccionProductoFila = (row) => {
+    const seleccionada = row.dataset.selected === "true";
+    row.dataset.selected = seleccionada ? "false" : "true";
+    row.classList.toggle("bg-blue-100", !seleccionada);
+    row.classList.toggle("dark:bg-blue-900/40", !seleccionada);
 };
 
 window.filtrarProductosModal = () => {
@@ -284,6 +305,26 @@ window.procesarVentaFinal = async () => {
     if (metodoPago === "Cuenta Corriente" && esConsumidorFinal) {
         mostrarAlerta("No se puede fiar a un Consumidor Final.", "Método de pago inválido", "error");
         return;
+    }
+
+    // Validar que el cliente tenga crédito habilitado para cuenta corriente
+    if (metodoPago === "Cuenta Corriente" && !esConsumidorFinal && window.clienteSeleccionadoVenta) {
+        try {
+            const clientes = await fetchClientes();
+            const cliente = clientes.find(c => c.id == window.clienteSeleccionadoVenta);
+            if (!cliente || !cliente.habilitar_cc) {
+                mostrarAlerta(`El cliente ${cliente ? cliente.nombre + ' ' + cliente.apellido : 'seleccionado'} no tiene habilitado el crédito.`, "Crédito no habilitado", "error");
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerText = "CONFIRMAR VENTA";
+                return;
+            }
+        } catch (error) {
+            console.error("Error al validar crédito del cliente:", error);
+            mostrarAlerta("Error al validar el crédito del cliente.", "Error", "error");
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerText = "CONFIRMAR VENTA";
+            return;
+        }
     }
 
     btnConfirmar.disabled = true;

@@ -76,6 +76,7 @@ const configurarTablas = async () => {
                 cuit VARCHAR(20) UNIQUE,
                 arca ENUM('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo', 'Exento'),
                 email VARCHAR(100),
+                habilitar_cc TINYINT(1) DEFAULT 0,
                 fecha_alta DATE DEFAULT (CURRENT_DATE),
                 estado TINYINT(1) DEFAULT 1
             )

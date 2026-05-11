@@ -65,7 +65,8 @@ export function configurarFormularioCliente() {
             email: document.getElementById("email").value.trim(),
             telefono: document.getElementById("telefono").value.trim(),
             cuit: document.getElementById("cuit").value.trim(),
-            arca: document.getElementById("arca").value.trim()
+            arca: document.getElementById("arca").value.trim(),
+            habilitar_cc: document.getElementById("clienteHabilitarCC").checked ? 1 : 0
         };
 
         if (!datos.nombre || !datos.apellido) {
@@ -121,6 +122,7 @@ export async function prepararEdicionCliente(id) {
     document.getElementById("telefono").value = c.telefono;
     document.getElementById("cuit").value = c.cuit;
     document.getElementById("arca").value = c.arca;
+    document.getElementById("clienteHabilitarCC").checked = c.habilitar_cc == 1;
     // Abrimos el modal
     cambiarSeccion('pantallaCliente');
 };
@@ -252,6 +254,9 @@ export async function seleccionarClienteDesdeModal(id) {
             // Guardar el ID del cliente seleccionado para la venta
             window.clienteSeleccionadoVenta = cliente.id;
         }
+
+        // Actualizar opciones de pago según si el cliente tiene crédito habilitado
+        actualizarOpcionesPago(cliente.habilitar_cc);
     }
 
     // Cerrar el modal
@@ -436,6 +441,27 @@ window.imprimirBalanceClientePDF = () => {
     abrirPreviewBalancePDF(doc, `Balance_${nombreCliente.replaceAll(" ", "_")}.pdf`);
 };
 
+// Función para actualizar las opciones de pago según el cliente seleccionado
+function actualizarOpcionesPago(habilitarCredito = false) {
+    const optCtaCte = document.getElementById("opt-cta-cte");
+    const selectMetodoPago = document.getElementById("v-metodo-pago");
+
+    if (optCtaCte && selectMetodoPago) {
+        if (habilitarCredito) {
+            // Mostrar opción de cuenta corriente
+            optCtaCte.style.display = "block";
+            optCtaCte.innerText = "Cuenta Corriente";
+        } else {
+            // Ocultar opción de cuenta corriente
+            optCtaCte.style.display = "none";
+            // Si estaba seleccionado cuenta corriente, cambiar a efectivo
+            if (selectMetodoPago.value === "Cuenta Corriente") {
+                selectMetodoPago.value = "Efectivo";
+            }
+        }
+    }
+}
+
 window.prepararEdicionCliente = prepararEdicionCliente;
 window.eliminarCliente = eliminarCliente;
 window.listarClientes = listarClientes;
@@ -444,3 +470,4 @@ window.abrirBuscadorClientes = abrirBuscadorClientes;
 window.cerrarBuscadorClientes = cerrarBuscadorClientes;
 window.filtrarClientesModal = filtrarClientesModal;
 window.seleccionarClienteDesdeModal = seleccionarClienteDesdeModal;
+window.actualizarOpcionesPago = actualizarOpcionesPago;

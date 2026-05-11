@@ -63,6 +63,14 @@ export const cambiarSeccion = (idSeccionDestino) => {
             headerVentas.classList.remove("hidden");
         }
     }
+
+    // Inicializar opciones de pago cuando se entra a la sección de ventas
+    if (idSeccionDestino === "seccionVentas" || idSeccionDestino === "pantallaGenerarVenta") {
+        if (typeof window.actualizarOpcionesPago === "function") {
+            // Por defecto, ocultar cuenta corriente (consumidor final)
+            window.actualizarOpcionesPago(false);
+        }
+    }
 };
 
 window.cambiarSeccion = cambiarSeccion;

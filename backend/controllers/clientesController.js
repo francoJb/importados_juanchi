@@ -18,11 +18,11 @@ exports.crearCliente = async (req, res) => {
         return res.status(400).json({ error: "Nombre, apellido y DNI son obligatorios" });
     }
 
-    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, habilitar_cc, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;             
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email];
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0];
 
     try {
         const [result] = await db.query(sql, params);
@@ -58,10 +58,10 @@ exports.editarCliente = async (req, res) => {
         return res.status(400).json({ error: "Datos inválidos" });
     }
 
-    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=? WHERE id=?`;
+    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE id=?`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, id];
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0, id];
 
     try {
         const [result] = await db.query(sql, params);

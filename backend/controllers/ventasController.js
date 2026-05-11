@@ -10,6 +10,20 @@ exports.crearVenta = async (req, res) => {
         });
     }
 
+    // Validar que el cliente tenga habilitado el crédito si el pago es a cuenta corriente
+    if (metodo_pago === 'Cuenta Corriente' && cliente_id && Number(cliente_id) !== 0) {
+        const [clienteRows] = await db.query(
+            "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE id = ?",
+            [cliente_id]
+        );
+        const cliente = clienteRows[0];
+        if (!cliente || !cliente.habilitar_cc) {
+            return res.status(400).json({
+                error: `El cliente ${cliente ? cliente.nombre + ' ' + cliente.apellido : 'seleccionado'} no tiene habilitado el crédito. No se puede registrar venta a cuenta corriente.`
+            });
+        }
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "La venta debe tener al menos un ítem." });
     }
@@ -40,28 +54,32 @@ exports.crearVenta = async (req, res) => {
         // 2. Procesar cada Producto (Detalle + Stock)
         // Localizá este bucle dentro de exports.crearVenta
         for (const item of items) {
-            // A. CONSULTA DE SEGURIDAD: Traemos el stock actual y el nombre del producto
+            // A. CONSULTA DE SEGURIDAD: Traemos el stock actual, el nombre del producto y si controla stock
             const [productoRows] = await connection.query(
-                "SELECT stock, descripcion FROM productos WHERE id = ?",
+                "SELECT stock, descripcion, control_stock FROM productos WHERE id = ?",
                 [item.id]
             );
             const producto = productoRows[0];
-            // B. VALIDACIÓN: Si no hay fila (raro) o si el stock es menor a lo pedido
-            if (!producto || producto.stock < item.cantidad) {
-                // Al lanzar este Error, el 'catch' de abajo ejecutará connection.rollback()
-                // Esto cancela TODA la venta, incluso si los productos anteriores sí tenían stock.
-                throw new Error(`Stock insuficiente para "${producto ? producto.descripcion : 'ID ' + item.id}". disponible: ${producto ? producto.stock : 0}`);
+            // B. VALIDACIÓN: Si no hay fila (raro) o si controla stock y el stock es menor a lo pedido
+            if (!producto) {
+                throw new Error(`Producto con ID ${item.id} no encontrado`);
+            }
+            if (producto.control_stock && producto.stock < item.cantidad) {
+                // Solo validar stock si el producto tiene control de stock activado
+                throw new Error(`Stock insuficiente para "${producto.descripcion}". disponible: ${producto.stock}`);
             }
             // C. REGISTRO DEL DETALLE (Solo si pasó la validación de arriba)
             await connection.query(
                 "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
                 [ventaId, item.id, item.cantidad, item.precio]
             );
-            // D. DESCUENTO DE STOCK
-            await connection.query(
-                "UPDATE productos SET stock = stock - ? WHERE id = ?",
-                [item.cantidad, item.id]
-            );
+            // D. DESCUENTO DE STOCK (Solo si el producto controla stock)
+            if (producto.control_stock) {
+                await connection.query(
+                    "UPDATE productos SET stock = stock - ? WHERE id = ?",
+                    [item.cantidad, item.id]
+                );
+            }
         }
 
         // 3. LÓGICA DE CUENTA CORRIENTE (Si aplica)
