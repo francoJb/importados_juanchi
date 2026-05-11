@@ -15,6 +15,10 @@ const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
 let currentSessionUser = null;
 
+// ==========================================
+// FUNCIONES DE UTILIDAD GLOBAL
+// ==========================================
+
 function esAdmin() {
     return currentSessionUser?.role === 'admin';
 }
@@ -69,6 +73,9 @@ const CONFIG_DEFAULTS = {
     condicionIva: "Responsable Inscripto"
 };
 
+// ==========================================
+// CONFIGURACIÓN LOCAL DE LA EMPRESA
+// ==========================================
 function obtenerConfiguracionEmpresa() {
     const config = load(CONFIG_STORAGE_KEY);
     if (!config || Array.isArray(config)) {
@@ -106,6 +113,9 @@ function guardarConfiguracionEmpresa(event) {
     mostrarAlerta("Datos de la empresa guardados correctamente.", "¡Éxito!", "success");
 }
 
+// ==========================================
+// ADMINISTRACIÓN DE EMPRESAS Y USUARIOS
+// ==========================================
 async function fetchEmpresasAdmin() {
     const response = await apiFetch(`${API_BASE_URL}/api/admin/companies`);
     return response.ok ? await response.json() : [];
@@ -228,6 +238,9 @@ function fechaValida(fecha) {
     return !Number.isNaN(parsed.getTime()) ? parsed : null;
 }
 
+// ==========================================
+// FUNCIONES DEL DASHBOARD
+// ==========================================
 async function obtenerTopProductosMasVendidos(ventas) {
     const ventasRecientes = ventas.slice(0, 20);
     const acumulado = {};
@@ -620,27 +633,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     await iniciarApp();
-
-
-
-
-
-    
-
-    // 1. Reloj profesional
-    if(document.getElementById("pantallaGenerarVenta")){
-        setInterval(() => {
-            const reloj = document.getElementById("reloj-venta");
-            if(reloj) reloj.innerText = new Date().toLocaleTimeString();
-        }, 1000);
-    }
-
-    
-    
-    
-    // 5. MODO OSCURO (Básico para que no te moleste la vista)
-    const btnDarkMode = document.getElementById("btnDarkMode");
-    if (btnDarkMode) {
-        btnDarkMode.onclick = () => document.documentElement.classList.toggle("dark");
-    }
 });

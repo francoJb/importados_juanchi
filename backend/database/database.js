@@ -3,6 +3,9 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 
+// ==========================================
+// CARGA DE VARIABLES DE ENTORNO
+// ==========================================
 // Cargar el archivo .env correcto según el entorno
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env.local';
 const envPath = path.resolve(__dirname, '../../', envFile);

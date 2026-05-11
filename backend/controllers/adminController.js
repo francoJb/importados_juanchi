@@ -1,6 +1,9 @@
 const bcrypt = require('bcryptjs');
 const db = require('../database/database');
 
+// ==========================================
+// EMPRESAS
+// ==========================================
 exports.listCompanies = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT id, nombre, razon_social, cuit, domicilio, email, telefono, website, condicion_iva, estado FROM empresas ORDER BY id DESC');
@@ -49,6 +52,9 @@ exports.listUsers = async (req, res) => {
     }
 };
 
+// ==========================================
+// USUARIOS
+// ==========================================
 exports.createUser = async (req, res) => {
     const { empresa_id, usuario, password, role, nombre, apellido } = req.body;
 
