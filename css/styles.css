@@ -1,3 +1,11 @@
+/* ============================================
+   ESTILOS DE LOGIN
+   ============================================ */
+
+.login-background {
+    background-image: url('../assets/img/bg-login.png');
+}
+
 .login-card {
     position: relative;
     z-index: 10;
@@ -33,9 +41,12 @@
         0 0 0 4px rgba(34, 211, 238, 0.2);
 }
 
-.btn-login {
+/* ============================================
+   BOTONES
+   ============================================ */
+
+.btn-base {
     width: 100%;
-    border-radius: 20px;
     margin-top: 0.75rem;
     background: linear-gradient(90deg, #045191, #0c6aa0, #0a68a7);
     padding: 1rem;
@@ -45,22 +56,19 @@
     transition: all 0.3s ease;
 }
 
-.btn-login:hover {
+.btn-base:hover {
     transform: translateY(-4px);
     box-shadow: 0 24px 45px rgba(187, 208, 209, 0.5);
 }
 
-.btn-login:active {
+.btn-base:active {
     transform: scale(0.98);
 }
 
+.btn-login {
+    border-radius: 20px;
+}
+
 .btn-aceptar {
-    width: 100%;
-    margin-top: 0.75rem;
-    background: linear-gradient(90deg, #045191, #0c6aa0, #0a68a7);
-    padding: 1rem;
-    font-weight: 900;
-    color: white;
-    box-shadow: 0 10px 60px rgba(30, 127, 197, 0.562);
-    transition: all 0.3s ease;
+    /* Sin border-radius específico */
 }

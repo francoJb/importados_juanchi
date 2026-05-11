@@ -5,7 +5,7 @@
 import { initClientes, fetchClientes } from "./clientes.js";
 import { initProductos, fetchProductos } from "./productos.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
-import { cambiarSeccion, mostrarLoader, ocultarLoader } from "./ui.js";
+import { cambiarSeccion, mostrarLoader, ocultarLoader, mostrarAlerta } from "./ui.js";
 import { load, save } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
@@ -80,7 +80,7 @@ function guardarConfiguracionEmpresa(event) {
     };
 
     save(CONFIG_STORAGE_KEY, nuevaConfig);
-    alert("✅ Datos de la empresa guardados correctamente.");
+    mostrarAlerta("Datos de la empresa guardados correctamente.", "¡Éxito!", "success");
 }
 
 function formatMoney(value) {
@@ -238,7 +238,7 @@ async function renderDashboard() {
         crearGraficoVentas(ventas);
     } catch (error) {
         console.error("Error al cargar dashboard:", error);
-        alert("No se pudo cargar el dashboard. Revisá la consola para más detalle.");
+        mostrarAlerta("No se pudo cargar el dashboard. Revisá la consola para más detalle.", "Error", "error");
     } finally {
         ocultarLoader();
     }
@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    alert(data.error || 'Credenciales incorrectas. Intente nuevamente.');
+                    mostrarAlerta(data.error || 'Credenciales incorrectas. Intente nuevamente.', "Error de autenticación", "error");
                     return;
                 }
 
@@ -435,7 +435,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await iniciarApp();
             } catch (error) {
                 console.error('Error al iniciar sesión:', error);
-                alert('No se pudo conectar con el servidor. Intente nuevamente.');
+                mostrarAlerta('No se pudo conectar con el servidor. Intente nuevamente.', "Error de conexión", "error");
             }
         });
     }

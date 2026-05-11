@@ -1,7 +1,7 @@
 import { fetchClientes, cargarDatosBalance } from "./clientes.js";
 import { fetchProductos } from "./productos.js";
 import { actualizarTablaVenta, renderTablaVentas } from "./renderventas.js";
-import { cambiarSeccion } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta } from "./ui.js";
 import { load } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
@@ -47,14 +47,8 @@ async function cargarDatosParaVenta() {
             fetchProductos()
         ]);
 
-        const selectC = document.getElementById("v-cliente-select");
-        if (selectC) {
-            selectC.innerHTML = '<option value="0" class="text-blue-600">Consumidor Final</option>';
-            clientes.forEach(c => {
-                selectC.innerHTML += `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`;
-            });
-        }
-
+        // Guardar clientes para el buscador
+        window.clientesVenta = clientes;
         productosVenta = productos;
         window.productosVenta = productos;
 
@@ -80,10 +74,15 @@ function addPagoEntregaListener() {
 
 window.volverALista = () => {
     if (carritoVenta.length > 0) {
-        const confirmar = confirm("⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?");
+        // Usar modal personalizado en lugar de confirm
+        const confirmar = window.confirm ? confirm("⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?") : true;
         if (!confirmar) return;
     }
     carritoVenta = [];
+    // Resetear campo de cliente
+    const inputCliente = document.getElementById("v-cliente-input");
+    if (inputCliente) inputCliente.value = "Consumidor Final";
+    window.clienteSeleccionadoVenta = null;
     actualizarTablaVenta(carritoVenta);
     cambiarSeccion('seccionVentas');
 };
@@ -113,7 +112,7 @@ window.checkEnterVenta = async (e) => {
             e.target.value = "";
             console.log("Producto cargado con éxito vía SKU");
         } else {
-            alert("⚠️ El SKU no existe. Abriendo buscador avanzado...");
+            mostrarAlerta("El SKU no existe. Abriendo buscador avanzado...", "Producto no encontrado", "warning");
             abrirBuscadorProductos();
             document.getElementById("inputFiltroProductos").value = skuIngresado;
             filtrarProductosModal();
@@ -215,15 +214,24 @@ window.cambiarCantidad = (index, nuevaCantidad) => {
 };
 
 window.abrirModalPago = () => {
-    if (carritoVenta.length === 0) return alert("⚠️ No hay productos cargados.");
+    if (carritoVenta.length === 0) {
+        mostrarAlerta("No hay productos cargados.", "Carrito vacío", "warning");
+        return;
+    }
     const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
-    const idCliente = document.getElementById("v-cliente-select").value;
+    
+    // Determinar si es consumidor final o cliente registrado
+    const inputCliente = document.getElementById("v-cliente-input");
+    const clienteTexto = inputCliente ? inputCliente.value.trim() : "Consumidor Final";
+    const esConsumidorFinal = clienteTexto === "Consumidor Final" || !window.clienteSeleccionadoVenta;
+    const idCliente = esConsumidorFinal ? 0 : window.clienteSeleccionadoVenta;
+    
     document.getElementById("pago-total-monto").innerText = `$${total.toFixed(2)}`;
     document.getElementById("pago-entrega").value = 0;
 
     const optCtaCte = document.getElementById("opt-cta-cte");
     const selectMetodo = document.getElementById("pago-metodo");
-    if (idCliente == 0) {
+    if (esConsumidorFinal) {
         optCtaCte.disabled = true;
         optCtaCte.innerText = "Cuenta Corriente (Solo clientes reg.)";
         selectMetodo.value = "Efectivo";
@@ -256,16 +264,26 @@ window.calcularSaldoCtaCte = () => {
 
 window.procesarVentaFinal = async () => {
     const btnConfirmar = document.getElementById("btn-confirmar-final");
-    const idCliente = parseInt(document.getElementById("v-cliente-select").value);
+    
+    // Determinar si es consumidor final o cliente registrado
+    const inputCliente = document.getElementById("v-cliente-input");
+    const clienteTexto = inputCliente ? inputCliente.value.trim() : "Consumidor Final";
+    const esConsumidorFinal = clienteTexto === "Consumidor Final" || !window.clienteSeleccionadoVenta;
+    const idCliente = esConsumidorFinal ? 0 : window.clienteSeleccionadoVenta;
+    
     const metodoPago = document.getElementById("pago-metodo").value;
     const entregaInicial = parseFloat(document.getElementById("pago-entrega").value) || 0;
     const observaciones = document.getElementById("v-observaciones").value;
 
     const totalVenta = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
 
-    if (carritoVenta.length === 0) return alert("El carrito está vacío.");
-    if (metodoPago === "Cuenta Corriente" && idCliente === 0) {
-        return alert("Error: No se puede fiar a un Consumidor Final.");
+    if (carritoVenta.length === 0) {
+        mostrarAlerta("El carrito está vacío.", "Sin productos", "warning");
+        return;
+    }
+    if (metodoPago === "Cuenta Corriente" && esConsumidorFinal) {
+        mostrarAlerta("No se puede fiar a un Consumidor Final.", "Método de pago inválido", "error");
+        return;
     }
 
     btnConfirmar.disabled = true;
@@ -294,7 +312,7 @@ window.procesarVentaFinal = async () => {
         const resultado = await respuesta.json();
 
         if (respuesta.ok) {
-            alert("✅ Venta realizada con éxito.");
+            mostrarAlerta("Venta realizada con éxito.", "¡Éxito!", "success");
             const ventaSimulada = { id: resultado.ventaId, fecha: new Date(), cliente_id: idCliente, total: totalVenta, observaciones: observaciones };
             const detallesSimulados = carritoVenta.map(item => ({ sku: item.sku, descripcion: item.desc, precio_unitario: item.precio, cantidad: item.cantidad }));
             await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
@@ -305,7 +323,7 @@ window.procesarVentaFinal = async () => {
             throw new Error(resultado.error || "Error desconocido al guardar.");
         }
     } catch (error) {
-        alert("❌ Error al procesar venta: " + error.message);
+        mostrarAlerta("Error al procesar venta: " + error.message, "Error", "error");
     } finally {
         btnConfirmar.disabled = false;
         btnConfirmar.innerText = "Confirmar Venta";
@@ -327,7 +345,10 @@ async function cargarDatosVenta(id) {
 window.verDetalleVenta = async (id) => {
     const { venta, detalles } = await cargarDatosVenta(id);
 
-    if (!venta) return alert("Venta no encontrada");
+    if (!venta) {
+        mostrarAlerta("Venta no encontrada", "Error", "error");
+        return;
+    }
 
     document.getElementById("md-titulo").innerText = `Detalle de Venta #${venta.id}`;
     document.getElementById("md-fecha").innerText = new Date(venta.fecha).toLocaleString('es-AR');
@@ -523,16 +544,16 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
 
     // --- VALIDACIONES BÁSICAS ---
     if (ventasSeleccionadasModal.size === 0) {
-        alert("Seleccioná al menos una venta pendiente.");
+        mostrarAlerta("Seleccioná al menos una venta pendiente.", "Sin selección", "warning");
         return;
     }
     if (!monto || monto <= 0) {
-        alert("Por favor, ingrese un monto válido.");
+        mostrarAlerta("Por favor, ingrese un monto válido.", "Monto inválido", "warning");
         return;
     }
 
     if (monto > totalSeleccionado) {
-        alert("El monto no puede ser mayor al total seleccionado (" + formatearMoneda(totalSeleccionado) + ").");
+        mostrarAlerta("El monto no puede ser mayor al total seleccionado (" + formatearMoneda(totalSeleccionado) + ").", "Monto excedido", "error");
         return;
     }
 
@@ -579,11 +600,11 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
         }
 
         if (pagosRealizados.length === 0) {
-            alert("No se registraron pagos.");
+            mostrarAlerta("No se registraron pagos.", "Sin pagos", "warning");
             return;
         }
 
-        alert(`¡Pago registrado con éxito! Ventas afectadas: ${pagosRealizados.length}`);
+        mostrarAlerta(`¡Pago registrado con éxito! Ventas afectadas: ${pagosRealizados.length}`, "¡Éxito!", "success");
 
         document.getElementById('modalRegistroPago').classList.add('hidden');
         const comprobantesCancelados = pagosRealizados
@@ -613,7 +634,7 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
 
     } catch (error) {
         console.error("Error en la petición:", error);
-        alert("Hubo un error de conexión con el servidor.");
+        mostrarAlerta("Hubo un error de conexión con el servidor.", "Error de conexión", "error");
     } finally {
         // Reestablecemos el botón pase lo que pase
         const btnAceptar = document.getElementById('btnAcceptRegistroPago');
@@ -629,7 +650,8 @@ window.cerrarModalDetalle = () => {
 window.abrirPagoDesdeBalance = async () => {
     const clienteId = window.currentBalanceClienteId;
     if (!clienteId) {
-        return alert("No hay cliente seleccionado en el balance.");
+        mostrarAlerta("No hay cliente seleccionado en el balance.", "Cliente no seleccionado", "warning");
+        return;
     }
 
     try {
@@ -639,7 +661,8 @@ window.abrirPagoDesdeBalance = async () => {
         const ventasPendientes = ventas.filter(v => v.cliente_id == clienteId && parseFloat(v.saldo_pendiente) > 0);
 
         if (ventasPendientes.length === 0) {
-            return alert("No hay facturas pendientes para este cliente.");
+            mostrarAlerta("No hay facturas pendientes para este cliente.", "Sin deudas pendientes", "info");
+            return;
         }
 
         const primeraVenta = ventasPendientes[0];
@@ -651,7 +674,7 @@ window.abrirPagoDesdeBalance = async () => {
         );
     } catch (error) {
         console.error(error);
-        alert("Error al cargar las ventas para el balance.");
+        mostrarAlerta("Error al cargar las ventas para el balance.", "Error", "error");
     }
 };
 
@@ -661,7 +684,7 @@ function abrirPreviewPDF(doc, nombreArchivo = "documento.pdf") {
 
     const win = window.open(url, "_blank");
     if (!win) {
-        alert("⚠️ El navegador bloqueó la ventana emergente. Permití popups para este sitio.");
+        mostrarAlerta("El navegador bloqueó la ventana emergente. Permití popups para este sitio.", "Popup bloqueado", "warning");
         return;
     }
 
@@ -681,7 +704,8 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodifi
     try {
         const venta = await fetchVentaPorId(ventaId);
         if (!venta) {
-            return alert("No se encontró la venta para generar el recibo.");
+            mostrarAlerta("No se encontró la venta para generar el recibo.", "Venta no encontrada", "error");
+            return;
         }
         const comprobantesCancelados = parseFloat(saldo) <= 0 ? [ventaId] : [];
         const observacionesPago = observacionesCodificadas
@@ -691,7 +715,7 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodifi
         abrirPreviewPDF(doc, `ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);
-        alert("No se pudo generar el recibo de pago.");
+        mostrarAlerta("No se pudo generar el recibo de pago.", "Error", "error");
     }
 };
 
@@ -782,7 +806,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
 }
 
 window.imprimirVenta = (id) => {
-    alert("Generando PDF para la venta " + id);
+    mostrarAlerta("Generando PDF para la venta " + id, "Generando PDF", "info");
 };
 
 window.eliminarVenta = async (id) => {
@@ -795,11 +819,11 @@ window.eliminarVenta = async (id) => {
                 throw new Error(data.error || "No se pudo eliminar la venta");
             }
 
-            alert(data.message || "Venta eliminada correctamente");
+            mostrarAlerta(data.message || "Venta eliminada correctamente", "¡Éxito!", "success");
             await listarVentas();
         } catch (error) {
             console.error("Error al eliminar venta:", error);
-            alert(`No se pudo eliminar la venta: ${error.message}`);
+            mostrarAlerta(`No se pudo eliminar la venta: ${error.message}`, "Error", "error");
         }
     }
 };
@@ -812,7 +836,8 @@ export async function initVentas() {
         btnNuevaVenta.addEventListener("click", () => {
             carritoVenta = [];
             document.getElementById("v-observaciones").value = "";
-            document.getElementById("v-cliente-select").value = "0";
+            document.getElementById("v-cliente-input").value = "Consumidor Final";
+            window.clienteSeleccionadoVenta = null;
             actualizarTablaVenta(carritoVenta);
             cambiarSeccion('pantallaGenerarVenta');
         });
@@ -984,7 +1009,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
 
 window.imprimirFactura = async () => {
     if (!window.ventaActual || !window.detallesActual) {
-        alert("No hay datos de venta para imprimir.");
+        mostrarAlerta("No hay datos de venta para imprimir.", "Sin datos", "warning");
         return;
     }
     const doc = await generarFacturaPDFExistente(window.ventaActual, window.detallesActual);

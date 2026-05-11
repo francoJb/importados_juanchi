@@ -1,5 +1,5 @@
 import { dibujarClientes } from "./renderclientes.js";
-import { cambiarSeccion } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
@@ -43,7 +43,7 @@ export async function guardarClienteAPI(datos, id = null) {
         }
         return true;
     } catch (error) {
-        alert("❌ " + error.message);
+        mostrarAlerta("❌ " + error.message, "Error", "error");
         return false;
     }
 }
@@ -69,13 +69,13 @@ export function configurarFormularioCliente() {
         };
 
         if (!datos.nombre || !datos.apellido) {
-            alert("⚠️ Nombre y Apellido son obligatorios");
+            mostrarAlerta("Nombre y Apellido son obligatorios", "Campos requeridos", "warning");
             return;
         }
         
         const exito = await guardarClienteAPI(datos, id || null);
         if (exito) {
-            alert("✅ Cliente guardado correctamente");
+            mostrarAlerta("Cliente guardado correctamente", "¡Éxito!", "success");
             formCliente.reset();
 
             await listarClientes(); // Recarga la tabla de clientes
@@ -135,12 +135,12 @@ export async function eliminarCliente(id, nombre){
                 method: 'DELETE' // El método que definiste en tus rutas
             });
             if (response.ok) {
-                alert("Cliente eliminado con éxito.");
+                mostrarAlerta("Cliente eliminado con éxito.", "¡Éxito!", "success");
                 // 3. Recargamos la lista para que el cliente "desaparezca"
                 const clientesActualizados = await fetchClientes();
                 dibujarClientes(clientesActualizados);
             } else {
-                alert("No se pudo eliminar el cliente.");
+                mostrarAlerta("No se pudo eliminar el cliente.", "Error", "error");
             }
         } catch (error) {
             console.error("Error en la conexión:", error);
@@ -240,30 +240,21 @@ export async function filtrarClientesModal() {
 };
 
 export async function seleccionarClienteDesdeModal(id) {
-    // 1. Buscamos el select de clientes en la pantalla de venta
-    const selectC = document.getElementById("v-cliente-select");
-    if (!selectC) return;
+    // Buscar el cliente seleccionado
+    const clientes = await fetchClientes();
+    const cliente = clientes.find(c => String(c.id) === String(id));
 
-    // 2. Buscamos si el cliente ya existe como opción dentro del select
-    let optionExistente = selectC.querySelector(`option[value="${id}"]`);
-
-    // 3. Si no existe, lo buscamos en la base y lo agregamos al select
-    if (!optionExistente) {
-        const clientes = await fetchClientes();
-        const cliente = clientes.find(c => String(c.id) === String(id));
-
-        if (cliente) {
-            const nuevaOption = document.createElement("option");
-            nuevaOption.value = cliente.id;
-            nuevaOption.textContent = `${cliente.nombre} ${cliente.apellido}`;
-            selectC.appendChild(nuevaOption);
+    if (cliente) {
+        // Actualizar el campo de cliente en la pantalla de venta
+        const inputCliente = document.getElementById("v-cliente-input");
+        if (inputCliente) {
+            inputCliente.value = `${cliente.nombre} ${cliente.apellido}`;
+            // Guardar el ID del cliente seleccionado para la venta
+            window.clienteSeleccionadoVenta = cliente.id;
         }
     }
 
-    // 4. Ahora sí seleccionamos el cliente
-    selectC.value = id;
-
-    // 5. Cerramos el buscador
+    // Cerrar el modal
     cerrarBuscadorClientes();
 };
 
@@ -325,7 +316,7 @@ function abrirPreviewBalancePDF(doc, nombreArchivo = "balance-cliente.pdf") {
 
     const win = window.open(url, "_blank");
     if (!win) {
-        alert("⚠️ El navegador bloqueó la ventana emergente. Permití popups para este sitio.");
+        mostrarAlerta("El navegador bloqueó la ventana emergente. Permití popups para este sitio.", "Popup bloqueado", "warning");
         return;
     }
 
@@ -343,12 +334,12 @@ window.imprimirBalanceClientePDF = () => {
     const fechaHasta = document.getElementById("ba-fecha-hasta")?.value;
 
     if (movimientos.length === 0) {
-        alert("No hay movimientos para imprimir.");
+        mostrarAlerta("No hay movimientos para imprimir.", "Sin datos", "info");
         return;
     }
 
     if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
-        alert("La fecha desde no puede ser mayor que la fecha hasta.");
+        mostrarAlerta("La fecha desde no puede ser mayor que la fecha hasta.", "Fechas inválidas", "warning");
         return;
     }
 
@@ -357,7 +348,7 @@ window.imprimirBalanceClientePDF = () => {
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     if (movimientosFiltrados.length === 0) {
-        alert("No hay movimientos en el rango de fechas seleccionado.");
+        mostrarAlerta("No hay movimientos en el rango de fechas seleccionado.", "Sin datos", "info");
         return;
     }
 
@@ -375,7 +366,7 @@ window.imprimirBalanceClientePDF = () => {
     const doc = new jsPDF("landscape");
     
     if (typeof doc.autoTable !== "function") {
-        alert("No se pudo cargar el generador de tablas PDF. Revisá la conexión a internet o el script de AutoTable.");
+        mostrarAlerta("No se pudo cargar el generador de tablas PDF. Revisá la conexión a internet o el script de AutoTable.", "Error de PDF", "error");
         return;
     }
 

@@ -1,5 +1,5 @@
 import { dibujarProductos } from "./renderproductos.js";
-import { cambiarSeccion } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
@@ -38,7 +38,7 @@ export async function guardarProductoAPI(datos, id = null) {
         }
         return true;
     } catch (error) {
-        alert("❌ " + error.message);
+        mostrarAlerta("❌ " + error.message, "Error", "error");
         return false;
     }
 }
@@ -67,13 +67,13 @@ export function configurarFormularioProducto() {
         };
 
         if (!datos.sku || !datos.descripcion) {
-            alert("⚠️ SKU y Descripción son obligatorios");
+            mostrarAlerta("SKU y Descripción son obligatorios", "Campos requeridos", "warning");
             return;
         }
         
         const exito = await guardarProductoAPI(datos, id || null);
         if (exito) {
-            alert("✅ Producto guardado correctamente");
+            mostrarAlerta("Producto guardado correctamente", "¡Éxito!", "success");
             formProducto.reset();
             listarProductos(); // Recarga la tabla automáticamente
             cambiarSeccion('seccionProductos');
@@ -132,15 +132,15 @@ export async function eliminarProducto(id, descripcion) {
         });
 
         if (response.ok) {
-            alert("Producto eliminado correctamente.");
+            mostrarAlerta("Producto eliminado correctamente.", "¡Éxito!", "success");
             listarProductos(); // Recarga la tabla automáticamente
         } else {
             const errorData = await response.json();
-            alert("Error al eliminar el producto: " + (errorData.error || "Error desconocido"));
+            mostrarAlerta("Error al eliminar el producto: " + (errorData.error || "Error desconocido"), "Error", "error");
         }
     } catch (error) {
         console.error("Error en la conexión:", error);
-        alert("Error de conexión al eliminar el producto.");
+        mostrarAlerta("Error de conexión al eliminar el producto.", "Error de conexión", "error");
     }
 }
 
