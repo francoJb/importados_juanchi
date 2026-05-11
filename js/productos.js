@@ -16,6 +16,54 @@ export async function fetchProductos() {
     }
 }
 
+export async function fetchCategorias() {
+    try {
+        const res = await apiFetch(`${API_URL}/categorias`);
+        if (!res.ok) throw new Error("Error al obtener categorías");
+        return await res.json();
+    } catch (error) {
+        console.error("Error en fetchCategorias:", error);
+        return [];
+    }
+}
+
+export async function fetchProveedores() {
+    try {
+        const res = await apiFetch(`${API_BASE_URL}/api/proveedores`);
+        if (!res.ok) throw new Error("Error al obtener proveedores");
+        return await res.json();
+    } catch (error) {
+        console.error("Error en fetchProveedores:", error);
+        return [];
+    }
+}
+
+export async function poblarSelectCategorias() {
+    const categorias = await fetchCategorias();
+    const datalist = document.getElementById("categoriasDatalist");
+    if (!datalist) return;
+
+    datalist.innerHTML = '';
+    categorias.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat.nombre; // Usar nombre en mayúsculas
+        datalist.appendChild(option);
+    });
+}
+
+export async function poblarSelectProveedores() {
+    const proveedores = await fetchProveedores();
+    const datalist = document.getElementById("proveedoresDatalist");
+    if (!datalist) return;
+
+    datalist.innerHTML = '';
+    proveedores.forEach(prov => {
+        const option = document.createElement("option");
+        option.value = prov.nombre;
+        datalist.appendChild(option);
+    });
+}
+
 // 2. LISTAR (Une API + RENDER)
 export async function listarProductos() {
     const productos = await fetchProductos();
@@ -75,6 +123,8 @@ export function configurarFormularioProducto() {
         if (exito) {
             mostrarAlerta("Producto guardado correctamente", "¡Éxito!", "success");
             formProducto.reset();
+            await poblarSelectCategorias();
+            await poblarSelectProveedores();
             listarProductos(); // Recarga la tabla automáticamente
             cambiarSeccion('seccionProductos');
         }
@@ -148,6 +198,8 @@ export async function eliminarProducto(id, descripcion) {
 window.eliminarProducto = eliminarProducto;
 
 export async function initProductos() {
+    await poblarSelectCategorias();
+    await poblarSelectProveedores();
     await listarProductos();
     configurarFormularioProducto();
     configurarBuscadorProductos();

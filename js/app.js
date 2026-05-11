@@ -4,6 +4,7 @@
 
 import { initClientes, fetchClientes } from "./clientes.js";
 import { initProductos, fetchProductos } from "./productos.js";
+import { initProveedores, listarProveedores } from "./proveedores.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
 import { cambiarSeccion, mostrarLoader, ocultarLoader, mostrarAlerta } from "./ui.js";
 import { load, save } from "./storage.js";
@@ -402,6 +403,7 @@ async function initApp() {
     // Inicializar módulos
     await initClientes();
     await initProductos();
+    await initProveedores();
     await initVentas();
 
     cambiarSeccion('seccionDashboard');
@@ -426,7 +428,7 @@ async function initApp() {
     mobileMenuOverlay?.addEventListener("click", cerrarMenuMobile);
 
     // cerrar al elegir opción
-    ["linkDashboard", "linkClientes", "linkVentas", "linkProductos", "linkConfig"].forEach((id) => {
+    ["linkDashboard", "linkClientes", "linkVentas", "linkProductos", "linkProveedores", "linkConfig"].forEach((id) => {
         document.getElementById(id)?.addEventListener("click", () => {
             if (window.innerWidth < 768) cerrarMenuMobile();
         });
@@ -460,7 +462,14 @@ async function initApp() {
         cambiarSeccion('seccionProductos');
     });
 
-    // 5. Cuando hagan clic en Configuracion
+    // 5. Cuando hagan clic en Proveedores
+    document.getElementById("linkProveedores").addEventListener("click", (e) => {
+        e.preventDefault();
+        cambiarSeccion('seccionProveedores');
+        listarProveedores();
+    });
+
+    // 6. Cuando hagan clic en Configuracion
     document.getElementById("linkConfig").addEventListener("click", (e) => {
         e.preventDefault();
         cambiarSeccion('seccionConfig');

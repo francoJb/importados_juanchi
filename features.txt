@@ -25,3 +25,75 @@ proximos pasos:
    ENTORNO DE PRUEBAS (STAGING) ------FUNCIONANDO------
     
 
+
+Comerciante
+ $ 22.249* / mes
+1 usuario
+Permisos configurables para cada usuario
+Productos ilimitados
+Importación masiva de productos
+Compras y ventas ilimitadas
+1 sucursal
+1 caja
+1 depósito
+1 lista de precios
+Registro de ingresos y gastos
+Creación de presupuestos
+Gestión de cuentas corriente
+Permite facturación electrónica
+Permite facturación con controlador fiscal (consultar modelos)
+Compatibilidad con lector de código de barra
+Compatibilidad con impresora térmica (consultar modelos)
+Reportes avanzados
+Soporte técnico por correo y chat
+*los precios no incluyen IVA
+
+Comenzar Gratis
+El más elegido
+Gran Comerciante
+ $ 51.499* / mes
+3 usuarios
+Permisos configurables para cada usuario
+Productos ilimitados
+Importación masiva de productos
+Compras y ventas ilimitadas
+Hasta 3 sucursales
+Hasta 3 cajas
+Hasta 3 depósitos
+Hasta 3 listas de precios
+Registro de ingresos y gastos
+Creación de presupuestos
+Gestión de cuentas corriente
+Permite facturación electrónica
+Permite facturación con controlador fiscal (consultar modelos)
+Compatibilidad con lector de código de barra
+Compatibilidad con impresora térmica (consultar modelos)
+Reportes avanzados
+Soporte técnico por correo, chat y teléfono
+*los precios no incluyen IVA
+
+Comenzar Gratis
+ 
+Empresario
+ $ 85.599* / mes
+5 usuarios
+Permisos configurables para cada usuario
+Productos ilimitados
+Importación masiva de productos
+Compras y ventas ilimitadas
+Sucursales ilimitadas
+Cajas ilimitadas
+Depósitos ilimitados
+Lista de precios ilimitadas
+Registro de ingresos y gastos
+Creación de presupuestos
+Gestión de cuentas corriente
+Permite facturación electrónica
+Permite facturación con controlador fiscal (consultar modelos)
+Compatibilidad con lector de código de barra
+Compatibilidad con impresora térmica (consultar modelos)
+Reportes avanzados
+Soporte técnico prioritario por correo, chat y teléfono
+*los precios no incluyen IVA
+
+Comenzar Gratis

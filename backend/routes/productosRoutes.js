@@ -6,6 +6,7 @@ const verificarToken = require('../middlewares/authMiddleware');
 
 // Definimos las rutas
 router.get('/', verificarToken, productosController.obtenerProductos);
+router.get('/categorias', verificarToken, productosController.obtenerCategorias);
 router.post('/', verificarToken, productosController.crearProducto);
 router.put('/:id', verificarToken, productosController.editarProducto);
 router.delete('/:id', verificarToken, productosController.eliminarProducto);

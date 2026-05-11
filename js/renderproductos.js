@@ -12,6 +12,7 @@ export function dibujarProductos(productos) {
                 <td class="p-3">${p.descripcion || ''}</td>
                 <td class="p-3">${p.marca || ''}</td>
                 <td class="p-3">${p.modelo || ''}</td>
+                <td class="p-3">${p.proveedor || ''}</td>
                 <td class="p-3">${p.categoria || ''}</td>
                 <td class="p-3 text-right text-gray-400">$${p.costo}</td>
                 <td class="p-3 text-right">$${p.precio_neto}</td>

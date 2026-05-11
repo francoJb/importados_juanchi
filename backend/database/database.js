@@ -48,7 +48,43 @@ const db = mysql.createPool({
 const configurarTablas = async () => {
     try {
         console.log("⏳ Verificando tablas en MySQL...");
-        // 1. TABLA DE PRODUCTOS (Tu estructura original)
+        // 1. TABLA DE CATEGORIAS
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS categorias (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) UNIQUE NOT NULL,
+                estado TINYINT(1) DEFAULT 1,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        // Insertar categoría inicial si no existe
+        await db.query(`
+            INSERT IGNORE INTO categorias (nombre, estado) VALUES ('ELECTRODOMÉSTICO', 1)
+        `);
+
+        // 1. TABLA DE PROVEEDORES
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS proveedores (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(150) UNIQUE NOT NULL,
+                cuit VARCHAR(50),
+                categoria_arca VARCHAR(100),
+                cuenta_bancaria VARCHAR(150),
+                telefono VARCHAR(50),
+                direccion VARCHAR(255),
+                email VARCHAR(100),
+                observaciones TEXT,
+                estado TINYINT(1) DEFAULT 1,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Insertar proveedor inicial si no existe
+        await db.query(`
+            INSERT IGNORE INTO proveedores (nombre, estado) VALUES ('PROVEEDOR POR DEFECTO', 1)
+        `);
+
+        // 2. TABLA DE PRODUCTOS (Tu estructura original)
         await db.query(`
             CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -56,16 +92,55 @@ const configurarTablas = async () => {
                 descripcion VARCHAR(255) NOT NULL,
                 marca VARCHAR(100),
                 modelo VARCHAR(100),
-                categoria VARCHAR(100),
+                categoria_id INT,
                 proveedor VARCHAR(100),
+                proveedor_id INT,
                 costo DECIMAL(12,2),
                 precio_neto DECIMAL(12,2),
                 iva DECIMAL(5,2),
                 control_stock TINYINT(1) DEFAULT 1,
                 stock INT DEFAULT 0,
                 stock_minimo INT DEFAULT 0,
-                estado TINYINT(1) DEFAULT 1
+                estado TINYINT(1) DEFAULT 1,
+                CONSTRAINT fk_producto_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+                CONSTRAINT fk_producto_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
             )
+        `);
+
+        // Agregar columna categoria_id si existe la tabla antigua sin ella
+        const [categoriaColumn] = await db.query(
+            `SELECT COUNT(*) AS existe FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'productos' AND column_name = 'categoria_id'`
+        );
+        if (categoriaColumn[0].existe === 0) {
+            await db.query(`ALTER TABLE productos ADD COLUMN categoria_id INT NULL`);
+        }
+
+        // Agregar columna proveedor_id si existe la tabla antigua sin ella
+        const [proveedorColumn] = await db.query(
+            `SELECT COUNT(*) AS existe FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'productos' AND column_name = 'proveedor_id'`
+        );
+        if (proveedorColumn[0].existe === 0) {
+            await db.query(`ALTER TABLE productos ADD COLUMN proveedor_id INT NULL`);
+        }
+
+        // Migrar productos existentes con categoría string a categoria_id
+        await db.query(`
+            UPDATE productos p
+            JOIN categorias c ON UPPER(p.categoria) = c.nombre
+            SET p.categoria_id = c.id
+            WHERE p.categoria_id IS NULL AND p.categoria IS NOT NULL
+        `);
+
+        // Migrar productos existentes con proveedor string a proveedor_id
+        await db.query(`
+            INSERT IGNORE INTO proveedores (nombre, estado)
+            SELECT DISTINCT UPPER(TRIM(proveedor)), 1 FROM productos WHERE proveedor IS NOT NULL AND TRIM(proveedor) != ''
+        `);
+        await db.query(`
+            UPDATE productos p
+            JOIN proveedores pr ON UPPER(TRIM(p.proveedor)) = pr.nombre
+            SET p.proveedor_id = pr.id
+            WHERE p.proveedor_id IS NULL AND p.proveedor IS NOT NULL
         `);
         // 2. TABLA DE CLIENTES (Tu estructura original)
         await db.query(`

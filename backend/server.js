@@ -46,6 +46,7 @@ app.options('*', cors(corsOptions));
 const productosRoutes = require('./routes/productosRoutes');
 const clientesRoutes = require('./routes/clientesRoutes');
 const ventasRoutes = require('./routes/ventasRoutes');
+const proveedoresRoutes = require('./routes/proveedoresRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
@@ -54,6 +55,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
 app.use('/api/clientes', clientesRoutes);
 
 // Iniciar servidor
