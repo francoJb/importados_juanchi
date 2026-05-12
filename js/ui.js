@@ -31,6 +31,7 @@ export const cambiarSeccion = (idSeccionDestino) => {
         "seccionProductos", 
         "seccionClientes", 
         "seccionVentas",
+        "seccionProveedores",
         "seccionConfig",
         "pantallaGenerarVenta",
         "pantalla-balance-cliente",

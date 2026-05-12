@@ -105,11 +105,11 @@
                     <a id="linkDashboard" href="#" class="flex items-center p-3 rounded-xl text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200 transition-all">
                         <span>📊 Dashboard</span>
                     </a>
-                    <a id="linkClientes" href="#" class="flex items-center p-3 rounded-xl text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200 transition-all">
-                        <span>👥 Clientes</span>
-                    </a>
                     <a id="linkVentas" href="#" class="flex items-center p-3 rounded-xl text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200 transition-all">
                         <span>🛒 Ventas</span>
+                    </a>
+                    <a id="linkClientes" href="#" class="flex items-center p-3 rounded-xl text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200 transition-all">
+                        <span>👥 Clientes</span>
                     </a>
                     <a id="linkProductos" href="#" class="flex items-center p-3 rounded-xl text-slate-300 hover:bg-cyan-400/10 hover:text-cyan-200 transition-all">
                         <span>📦 Productos</span>
@@ -659,59 +659,62 @@
                     </div>
                 </section>
 
-                <!-- PANTALLA EDICION PROVEEDOR -->
-                <section id="pantallaProveedor" class="hidden p-6 animate-fade-in">
-                            <div class="card card-bordered">
-                                <header class="p-6 border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
-                                    <h2 id="tituloModalProveedor" class="text-2xl font-bold">Nuevo Proveedor</h2>
-                                </header>
-                                <form id="formProveedor" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
-                                    <input type="hidden" id="formProveedorId">
-                                    <!-- Columna Izquierda -->
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Nombre del Proveedor</label>
-                                            <input type="text" id="nombre" required placeholder="Ingresa el nombre del proveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">CUIT</label>
-                                            <input type="text" id="cuit" placeholder="30-12345678-9" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Categoría ARCA</label>
-                                            <input type="text" id="arca_categoria" placeholder="Categoría para ARCA" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Cuenta Bancaria</label>
-                                            <input type="text" id="banco_cuenta" placeholder="Número de cuenta bancaria" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                    </div>
-                                    <!-- Columna Derecha -->
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Teléfono</label>
-                                            <input type="text" id="telefono" placeholder="(011) 1234-5678" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Dirección</label>
-                                            <input type="text" id="direccion" placeholder="Dirección completa" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Email</label>
-                                            <input type="email" id="email" placeholder="proveedor@email.com" class="w-full border p-2 rounded-lg dark:bg-slate-700">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-bold mb-1">Observaciones</label>
-                                            <textarea id="observaciones" rows="3" placeholder="Observaciones adicionales" class="w-full border p-2 rounded-lg dark:bg-slate-700"></textarea>
-                                        </div>
-                                        <div class="pt-4 flex flex-wrap gap-3">
-                                            <button type="submit" class="flex-1 btn-primary">GUARDAR</button>
-                                            <button type="button" onclick="cambiarSeccion('seccionProveedores')" class="flex-1 btn-secondary">VOLVER</button>
-                                        </div>
-                                    </div>
-                                </form>
+                <!-- MODAL EDICIÓN PROVEEDOR -->
+                <div id="modalProveedor" class="modal-overlay hidden">
+                    <div class="modal-card" style="max-width: 48rem;">
+                        <div class="modal-header">
+                            <div>
+                                <h3 id="tituloModalProveedor" class="text-2xl font-bold">Nuevo Proveedor</h3>
                             </div>
-                        </section>
+                            <button onclick="cerrarModalProveedor()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+                        </div>
+                        <form id="formProveedor" class="modal-body p-6 grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off">
+                            <input type="hidden" id="formProveedorId">
+                            <!-- Columna Izquierda -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Nombre del Proveedor</label>
+                                    <input type="text" id="proveedorNombre" required placeholder="Ingresa el nombre del proveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">CUIT</label>
+                                    <input type="text" id="proveedorCuit" placeholder="30-12345678-9" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Categoría ARCA</label>
+                                    <input type="text" id="proveedorArcaCategoria" placeholder="Categoría para ARCA" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Cuenta Bancaria</label>
+                                    <input type="text" id="proveedorBancoCuenta" placeholder="Número de cuenta bancaria" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                            </div>
+                            <!-- Columna Derecha -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Teléfono</label>
+                                    <input type="text" id="proveedorTelefono" placeholder="(011) 1234-5678" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Dirección</label>
+                                    <input type="text" id="proveedorDireccion" placeholder="Dirección completa" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Email</label>
+                                    <input type="email" id="proveedorEmail" placeholder="proveedor@email.com" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold mb-1">Observaciones</label>
+                                    <textarea id="proveedorObservaciones" rows="3" placeholder="Observaciones" class="w-full border p-2 rounded-lg dark:bg-slate-700"></textarea>
+                                </div>
+                                <div class="pt-4 flex flex-wrap gap-3">
+                                    <button type="submit" class="flex-1 btn-primary">GUARDAR</button>
+                                    <button type="button" onclick="cerrarModalProveedor()" class="flex-1 btn-secondary">CANCELAR</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- SECCION CONFIGURACION (Oculta por defecto) -->
                 <div id="seccionConfig" class="hidden">

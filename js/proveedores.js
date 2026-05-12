@@ -1,5 +1,5 @@
 import { dibujarProveedores } from "./renderproveedores.js";
-import { cambiarSeccion, mostrarAlerta } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta, toggleModal } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
@@ -92,31 +92,31 @@ export function prepararEdicionProveedor(id) {
         if (!proveedor) return;
 
         document.getElementById("formProveedorId").value = proveedor.id;
-        document.getElementById("nombre").value = proveedor.nombre || "";
-        document.getElementById("cuit").value = proveedor.cuit || "";
-        document.getElementById("arca_categoria").value = proveedor.arca_categoria || "";
-        document.getElementById("banco_cuenta").value = proveedor.banco_cuenta || "";
-        document.getElementById("telefono").value = proveedor.telefono || "";
-        document.getElementById("direccion").value = proveedor.direccion || "";
-        document.getElementById("email").value = proveedor.email || "";
-        document.getElementById("observaciones").value = proveedor.observaciones || "";
+        document.getElementById("proveedorNombre").value = proveedor.nombre || "";
+        document.getElementById("proveedorCuit").value = proveedor.cuit || "";
+        document.getElementById("proveedorArcaCategoria").value = proveedor.arca_categoria || "";
+        document.getElementById("proveedorBancoCuenta").value = proveedor.banco_cuenta || "";
+        document.getElementById("proveedorTelefono").value = proveedor.telefono || "";
+        document.getElementById("proveedorDireccion").value = proveedor.direccion || "";
+        document.getElementById("proveedorEmail").value = proveedor.email || "";
+        document.getElementById("proveedorObservaciones").value = proveedor.observaciones || "";
 
         document.getElementById("tituloModalProveedor").textContent = "Editar Proveedor";
-        cambiarSeccion("pantallaProveedor");
+        toggleModal('modalProveedor', true);
     });
 }
 
 // 8. LIMPIAR FORMULARIO
 export function limpiarFormularioProveedor() {
     document.getElementById("formProveedorId").value = "";
-    document.getElementById("nombre").value = "";
-    document.getElementById("cuit").value = "";
-    document.getElementById("arca_categoria").value = "";
-    document.getElementById("banco_cuenta").value = "";
-    document.getElementById("telefono").value = "";
-    document.getElementById("direccion").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("observaciones").value = "";
+    document.getElementById("proveedorNombre").value = "";
+    document.getElementById("proveedorCuit").value = "";
+    document.getElementById("proveedorArcaCategoria").value = "";
+    document.getElementById("proveedorBancoCuenta").value = "";
+    document.getElementById("proveedorTelefono").value = "";
+    document.getElementById("proveedorDireccion").value = "";
+    document.getElementById("proveedorEmail").value = "";
+    document.getElementById("proveedorObservaciones").value = "";
 
     document.getElementById("tituloModalProveedor").textContent = "Nuevo Proveedor";
 }
@@ -127,14 +127,14 @@ export async function manejarSubmitProveedor(event) {
 
     const id = document.getElementById("formProveedorId").value;
     const proveedor = {
-        nombre: document.getElementById("nombre").value.trim().toUpperCase(),
-        cuit: document.getElementById("cuit").value.trim(),
-        arca_categoria: document.getElementById("arca_categoria").value.trim(),
-        banco_cuenta: document.getElementById("banco_cuenta").value.trim(),
-        telefono: document.getElementById("telefono").value.trim(),
-        direccion: document.getElementById("direccion").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        observaciones: document.getElementById("observaciones").value.trim()
+        nombre: document.getElementById("proveedorNombre").value.trim().toUpperCase(),
+        cuit: document.getElementById("proveedorCuit").value.trim(),
+        arca_categoria: document.getElementById("proveedorArcaCategoria").value.trim(),
+        banco_cuenta: document.getElementById("proveedorBancoCuenta").value.trim(),
+        telefono: document.getElementById("proveedorTelefono").value.trim(),
+        direccion: document.getElementById("proveedorDireccion").value.trim(),
+        email: document.getElementById("proveedorEmail").value.trim(),
+        observaciones: document.getElementById("proveedorObservaciones").value.trim()
     };
 
     try {
@@ -144,8 +144,13 @@ export async function manejarSubmitProveedor(event) {
             await crearProveedor(proveedor);
         }
         limpiarFormularioProveedor();
-        cambiarSeccion("seccionProveedores");
+        toggleModal('modalProveedor', false);
         listarProveedores();
+    } catch (error) {
+        console.error("Error al guardar el proveedor:", error);
+    }
+}
+
 // 10. INICIALIZACIÓN
 export async function initProveedores() {
     await listarProveedores();
@@ -156,7 +161,7 @@ export async function initProveedores() {
     if (btnAbrirModalProveedor) {
         btnAbrirModalProveedor.onclick = () => {
             limpiarFormularioProveedor();
-            cambiarSeccion("pantallaProveedor");
+            toggleModal('modalProveedor', true);
         };
     }
 }
@@ -169,6 +174,22 @@ function configurarFormularioProveedor() {
     }
 }
 
-// 13. EXPOSICIÓN GLOBAL PARA HTML
+// 12. CONFIGURAR BUSCADOR
+function configurarBuscadorProveedores() {
+    const input = document.getElementById("buscarProveedor");
+    if (input) {
+        input.addEventListener("input", (e) => {
+            buscarProveedores(e.target.value);
+        });
+    }
+}
+
+// 13. CERRAR MODAL PROVEEDOR
+export function cerrarModalProveedor() {
+    toggleModal('modalProveedor', false);
+}
+
+// 14. EXPOSICIÓN GLOBAL PARA HTML
 window.eliminarProveedor = eliminarProveedor;
 window.prepararEdicionProveedor = prepararEdicionProveedor;
+window.cerrarModalProveedor = cerrarModalProveedor;

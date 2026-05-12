@@ -25,24 +25,34 @@ for (const key of required) {
 }
 
 const caPath = process.env.DB_SSL_CA_PATH || path.join(__dirname, '../../isrgrootx1.pem');
-const caCert = fs.readFileSync(caPath, 'utf8');
+let caCert = null;
+if (fs.existsSync(caPath)) {
+    caCert = fs.readFileSync(caPath, 'utf8');
+}
 
 // Configuramos la conexión
-const db = mysql.createPool({
+const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'importados',
-    port:Number(process.env.DB_PORT) || 4000,
-    ssl: {
-        ca: caCert,
-        minVersion: 'TLSv1.2',
-        rejectUnauthorized: true
-    },
+    port: Number(process.env.DB_PORT) || 4000,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
-});
+};
+
+// Usar SSL si el certificado existe o si la variable de entorno lo habilita
+const sslEnabled = caCert || process.env.DB_SSL_MODE === 'require';
+if (sslEnabled) {
+    dbConfig.ssl = {
+        ca: caCert || undefined,
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: !!caCert
+    };
+}
+
+const db = mysql.createPool(dbConfig);
 
 // Esta función crea las tablas automáticamente si no existen
 const configurarTablas = async () => {
@@ -68,8 +78,8 @@ const configurarTablas = async () => {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nombre VARCHAR(150) UNIQUE NOT NULL,
                 cuit VARCHAR(50),
-                categoria_arca VARCHAR(100),
-                cuenta_bancaria VARCHAR(150),
+                arca_categoria VARCHAR(100),
+                banco_cuenta VARCHAR(150),
                 telefono VARCHAR(50),
                 direccion VARCHAR(255),
                 email VARCHAR(100),
