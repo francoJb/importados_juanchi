@@ -64,8 +64,8 @@ exports.crearProducto = async (req, res) => {
         if (existing.length > 0) {
             return res.status(400).json({ error: `El SKU "${p.sku}" ya esta registrado en otro producto` });
         }
-        const categoriaId = await obtenerOCrearCategoria(empresaId, p.categoria);
-        const proveedorId = await obtenerOCrearProveedor(empresaId, p.proveedor);
+        const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
+        const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
         const sql = `INSERT INTO productos (empresa_id, sku, descripcion, marca, modelo, categoria_id, proveedor, proveedor_id, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
         const params = [
@@ -102,6 +102,7 @@ exports.crearProducto = async (req, res) => {
 
 exports.editarProducto = async (req, res) => {
     const { id } = req.params;
+    const empresaId = req.empresaId;
     const p = req.body;
 
     if (!p.sku?.trim() || !p.descripcion?.trim()) {
@@ -110,9 +111,8 @@ exports.editarProducto = async (req, res) => {
 
     try {
         // Obtener o crear categoría
-        const categoriaId = await obtenerOCrearCategoria(p.categoria);
-
-        const proveedorId = await obtenerOCrearProveedor(p.proveedor);
+        const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
+        const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
 
         const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE empresa_id=? AND id=?`;
         
@@ -145,11 +145,12 @@ exports.editarProducto = async (req, res) => {
 };
 
 exports.eliminarProducto = async (req, res) => {
-    const { empresaId,id } = req.params;
+    const { id } = req.params;
+    const empresaId = req.empresaId;
     const sql = `UPDATE productos SET estado = 0 WHERE empresa_id=? AND id=?`;
 
     try {
-        const [result] = await db.query(sql, [id]);
+        const [result] = await db.query(sql, [empresaId, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Producto no encontrado" });
         }

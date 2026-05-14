@@ -184,6 +184,7 @@ const configurarTablas = async () => {
             estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
             saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
             observaciones TEXT,
+            estado TINYINT(1) DEFAULT 1,
             FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
             FOREIGN KEY (cliente_id) REFERENCES clientes(id)
         );
@@ -191,6 +192,7 @@ const configurarTablas = async () => {
         // 8. TABLA DE DETALLE_VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS detalle_ventas (
+                empresa_id INT NOT NULL,
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 venta_id INT NOT NULL,
                 producto_id INT NOT NULL,
@@ -198,6 +200,7 @@ const configurarTablas = async () => {
                 precio_unitario DECIMAL(12, 2) NOT NULL,
                 CONSTRAINT fk_detalle_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
                 CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id)
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,            
             )
         `);
         // 9. TABLA DE CUENTA_CORRIENTE

@@ -1,9 +1,9 @@
 // backend/controllers/proveedoresController.js
 const db = require('../database/database');
 
-const empresaId = req.empresaId; // Asegúrate de que este valor se establezca correctamente en tu middleware de autenticación
 exports.obtenerProveedores = async (req, res) => {
     try {
+        const empresaId = req.empresaId;
         const [rows] = await db.query("SELECT * FROM proveedores WHERE empresa_id=? AND estado = 1 ORDER BY nombre", [empresaId]);
         res.json(rows);
     } catch (err) {

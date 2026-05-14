@@ -51,7 +51,8 @@ exports.crearCliente = async (req, res) => {
 };
 
 exports.editarCliente = async (req, res) => {
-    const { empresaId, id } = req.params;
+    const { id } = req.params;
+    const empresaId = req.empresaId;
     const p = req.body;
 
     if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
@@ -61,7 +62,7 @@ exports.editarCliente = async (req, res) => {
     const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE empresa_id=? AND id=?`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0, id];
+    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0, empresaId, id];
 
     try {
         const [result] = await db.query(sql, params);
@@ -76,11 +77,12 @@ exports.editarCliente = async (req, res) => {
 };
 
 exports.eliminarCliente = async (req, res) => {
-    const { empresaId, id } = req.params;
+    const { id } = req.params;
+    const empresaId = req.empresaId;
     const sql = `UPDATE clientes SET estado = 0 WHERE empresa_id=? AND id = ?`;
 
     try {
-        const [result] = await db.query(sql, [id]);
+        const [result] = await db.query(sql, [empresaId, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Cliente no encontrado" });
         }

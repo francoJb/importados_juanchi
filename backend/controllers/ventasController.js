@@ -12,9 +12,10 @@ exports.crearVenta = async (req, res) => {
 
     // Validar que el cliente tenga habilitado el crédito si el pago es a cuenta corriente
     if (metodo_pago === 'Cuenta Corriente' && cliente_id && Number(cliente_id) !== 0) {
+        const empresaId = req.empresaId;
         const [clienteRows] = await db.query(
-            "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE id = ?",
-            [cliente_id]
+            "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE id = ? AND empresa_id = ?",
+            [cliente_id, empresaId]
         );
         const cliente = clienteRows[0];
         if (!cliente || !cliente.habilitar_cc) {
@@ -57,8 +58,8 @@ exports.crearVenta = async (req, res) => {
         for (const item of items) {
             // A. CONSULTA DE SEGURIDAD: Traemos el stock actual, el nombre del producto y si controla stock
             const [productoRows] = await connection.query(
-                "SELECT stock, descripcion, control_stock FROM productos WHERE id = ?",
-                [item.id]
+                "SELECT stock, descripcion, control_stock FROM productos WHERE id = ? AND empresa_id=?",
+                [item.id, empresaId]
             );
             const producto = productoRows[0];
             // B. VALIDACIÓN: Si no hay fila (raro) o si controla stock y el stock es menor a lo pedido
@@ -71,14 +72,14 @@ exports.crearVenta = async (req, res) => {
             }
             // C. REGISTRO DEL DETALLE (Solo si pasó la validación de arriba)
             await connection.query(
-                "INSERT INTO detalle_ventas (empresa_id, venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
+                "INSERT INTO detalle_ventas (empresa_id, venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?)",
                 [empresaId, ventaId, item.id, item.cantidad, item.precio]
             );
             // D. DESCUENTO DE STOCK (Solo si el producto controla stock)
             if (producto.control_stock) {
                 await connection.query(
                     "UPDATE productos SET stock = stock - ? WHERE empresa_id=? AND id=?",
-                    [empresaId, item.cantidad, item.id]
+                    [item.cantidad, empresaId, item.id]
                 );
             }
         }
@@ -88,26 +89,26 @@ exports.crearVenta = async (req, res) => {
     
             // A. Primero obtenemos el saldo actual del cliente
             const [rows] = await connection.query(
-                "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE cliente_id = ?",
-                [cliente_id]
+                "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ?",
+                [empresaId, cliente_id]
             );
             let saldoCalculado = parseFloat(rows[0].saldoActual);
 
             // B. Registrar la DEUDA (El DEBE)
             saldoCalculado += parseFloat(total); // Sumamos lo que se lleva
             await connection.query(
-                `INSERT INTO cuenta_corriente (emrpesa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
+                `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
                 VALUES (?, ?, ?, ?, ?, 0, ?)`,
-                [cliente_id, ventaId, `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`, total, saldoCalculado]
+                [empresaId, cliente_id, ventaId, `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`, total, saldoCalculado]
             );
 
             // C. Si hubo ENTREGA INICIAL, registrar el pago (El HABER)
             if (entrega_inicial > 0) {
                 saldoCalculado -= parseFloat(entrega_inicial); // Restamos lo que pagó
                 await connection.query(
-                    `INSERT INTO cuenta_corriente (cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
-                    VALUES (?, ?, ?, 0, ?, ?)`,
-                    [cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entrega_inicial, saldoCalculado]
+                    `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
+                    VALUES (?, ?, ?, ?, 0, ?, ?)`,
+                    [empresaId, cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entrega_inicial, saldoCalculado]
                 );
             }
         }
@@ -126,6 +127,7 @@ exports.crearVenta = async (req, res) => {
 
 exports.obtenerVentas = async (req, res) => {
     try {
+        const empresaId = req.empresaId;
         const [rows] = await db.query(`
             SELECT 
                 v.id,
@@ -163,9 +165,9 @@ exports.obtenerVenta = async (req, res) => {
                 c.nombre AS cliente_nombre, 
                 c.apellido AS cliente_apellido
             FROM ventas v
-            LEFT JOIN clientes c ON v.cliente_id = c.id
-            WHERE v.id = ? AND empresa_id=?
-        `, [id]);
+            LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id = v.empresa_id
+            WHERE v.id = ? AND v.empresa_id=?
+        `, [id, req.empresaId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Venta no encontrada' });
         }
@@ -186,9 +188,9 @@ exports.obtenerDetalleVenta = async (req, res) => {
                 p.descripcion, 
                 p.sku 
             FROM detalle_ventas d
-            JOIN productos p ON d.producto_id = p.id
-            WHERE d.venta_id = ? AND empresa_id=?` , 
-        [id]);
+            JOIN productos p ON d.producto_id = p.id AND p.empresa_id = d.empresa_id
+            WHERE d.venta_id = ? AND d.empresa_id=?` , 
+        [id, req.empresaId]);
 
         res.json(rows);
     } catch (error) {
@@ -211,7 +213,7 @@ exports.eliminarVenta = async (req, res) => {
 
         const [ventaRows] = await connection.query(
             "SELECT id FROM ventas WHERE id=? AND empresa_id=?",
-            [ventaId]
+            [ventaId, req.empresaId]
         );
 
         if (ventaRows.length === 0) {
@@ -226,23 +228,23 @@ exports.eliminarVenta = async (req, res) => {
 
         for (const detalle of detalles) {
             await connection.query(
-                "UPDATE productos SET stock = stock + ? WHERE id = ?",
-                [detalle.cantidad, detalle.producto_id]
+                "UPDATE productos SET stock = stock + ? WHERE empresa_id=? AND id = ?",
+                [detalle.cantidad, req.empresaId, detalle.producto_id]
             );
         }
 
         await connection.query(
-            "DELETE FROM cuenta_corriente WHERE venta_id = ?",
-            [ventaId]
+            "DELETE FROM cuenta_corriente WHERE empresa_id=? AND venta_id = ?",
+            [req.empresaId, ventaId]
         );
 
         await connection.query(
-            "DELETE FROM detalle_ventas WHERE venta_id = ?",
-            [ventaId]
+            "DELETE FROM detalle_ventas WHERE empresa_id=? AND venta_id = ?",
+            [req.empresaId, ventaId]
         );
 
         await connection.query(
-            "UPDATE ventas SET estado_pago = 'Cancelada' WHERE id = ? AND empresa_id=?",
+            "UPDATE ventas SET estado = 0 WHERE id = ? AND empresa_id=?",
             [ventaId]
         );
 

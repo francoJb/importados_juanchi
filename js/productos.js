@@ -177,7 +177,7 @@ export async function eliminarProducto(id, descripcion) {
     if (!confirmacion) return;
 
     try {
-        const response = await fetch(`${API_URL}/${id}`, {
+        const response = await apiFetch(`${API_URL}/${id}`, {
             method: 'DELETE'
         });
 
