@@ -60,12 +60,15 @@ const configurarTablas = async () => {
         console.log("⏳ Verificando tablas en MySQL...");
         // 1. TABLA DE CATEGORIAS
         await db.query(`
-            CREATE TABLE IF NOT EXISTS categorias (
+            CREATE TABLE categorias (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                nombre VARCHAR(100) UNIQUE NOT NULL,
+                empresa_id INT NOT NULL,
+                nombre VARCHAR(100) NOT NULL,
                 estado TINYINT(1) DEFAULT 1,
-                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_categoria_empresa (empresa_id, nombre),
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+            );
         `);
         // Insertar categoría inicial si no existe
         await db.query(`
@@ -74,9 +77,10 @@ const configurarTablas = async () => {
 
         // 1. TABLA DE PROVEEDORES
         await db.query(`
-            CREATE TABLE IF NOT EXISTS proveedores (
+            CREATE TABLE proveedores (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                nombre VARCHAR(150) UNIQUE NOT NULL,
+                empresa_id INT NOT NULL,
+                nombre VARCHAR(150) NOT NULL,
                 cuit VARCHAR(50),
                 arca_categoria VARCHAR(100),
                 banco_cuenta VARCHAR(150),
@@ -85,8 +89,10 @@ const configurarTablas = async () => {
                 email VARCHAR(100),
                 observaciones TEXT,
                 estado TINYINT(1) DEFAULT 1,
-                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_proveedor_empresa (empresa_id, nombre),
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+            );
         `);
 
         // Insertar proveedor inicial si no existe
@@ -94,11 +100,12 @@ const configurarTablas = async () => {
             INSERT IGNORE INTO proveedores (nombre, estado) VALUES ('PROVEEDOR POR DEFECTO', 1)
         `);
 
-        // 2. TABLA DE PRODUCTOS (Tu estructura original)
+        // 2. TABLA DE PRODUCTOS
         await db.query(`
-            CREATE TABLE IF NOT EXISTS productos (
+            CREATE TABLE productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                sku VARCHAR(50) UNIQUE,
+                empresa_id INT NOT NULL,
+                sku VARCHAR(50) NOT NULL,
                 descripcion VARCHAR(255) NOT NULL,
                 marca VARCHAR(100),
                 modelo VARCHAR(100),
@@ -112,9 +119,11 @@ const configurarTablas = async () => {
                 stock INT DEFAULT 0,
                 stock_minimo INT DEFAULT 0,
                 estado TINYINT(1) DEFAULT 1,
-                CONSTRAINT fk_producto_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id),
-                CONSTRAINT fk_producto_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
-            )
+                UNIQUE KEY unique_sku_empresa (empresa_id, sku),
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+                FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+                FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+            );
         `);
 
         // Agregar columna categoria_id si existe la tabla antigua sin ella
@@ -152,22 +161,26 @@ const configurarTablas = async () => {
             SET p.proveedor_id = pr.id
             WHERE p.proveedor_id IS NULL AND p.proveedor IS NOT NULL
         `);
-        // 2. TABLA DE CLIENTES (Tu estructura original)
+        // 2. TABLA DE CLIENTES
         await db.query(`
-            CREATE TABLE IF NOT EXISTS clientes (
+            CREATE TABLE clientes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
                 nombre VARCHAR(100) NOT NULL,
                 apellido VARCHAR(100) NOT NULL,
                 telefono VARCHAR(50),
                 direccion VARCHAR(255),
-                dni VARCHAR(20) UNIQUE NOT NULL,
-                cuit VARCHAR(20) UNIQUE,
+                dni VARCHAR(20),
+                cuit VARCHAR(20),
                 arca ENUM('Consumidor Final', 'IVA Responsable Inscripto', 'Responsable Monotributo', 'Exento'),
                 email VARCHAR(100),
                 habilitar_cc TINYINT(1) DEFAULT 0,
-                fecha_alta DATE DEFAULT (CURRENT_DATE),
-                estado TINYINT(1) DEFAULT 1
-            )
+                fecha_alta DATE DEFAULT CURRENT_DATE,
+                estado TINYINT(1) DEFAULT 1,
+                UNIQUE KEY unique_dni_empresa (empresa_id, dni),
+                UNIQUE KEY unique_cuit_empresa (empresa_id, cuit),
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+            );
         `);
         // 3. TABLA DE EMPRESAS
         await db.query(`
@@ -201,21 +214,23 @@ const configurarTablas = async () => {
                 CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
             )
         `);
-        // 5. TABLA DE VENTAS (Agregada)
+        // 5. TABLA DE VENTAS
         await db.query(`
-            CREATE TABLE IF NOT EXISTS ventas (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                cliente_id INT NULL,
-                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-                total DECIMAL(12, 2) NOT NULL,
-                metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente') NOT NULL,
-                estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
-                saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
-                observaciones TEXT,
-                CONSTRAINT fk_venta_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-            )
+            CREATE TABLE ventas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            empresa_id INT NOT NULL,
+            cliente_id INT NULL,
+            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            total DECIMAL(12, 2) NOT NULL,
+            metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente') NOT NULL,
+            estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
+            saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
+            observaciones TEXT,
+            FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+            FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+        );
         `);
-        // 4. TABLA DE DETALLE_VENTAS (Agregada)
+        // 4. TABLA DE DETALLE_VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS detalle_ventas (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -227,10 +242,11 @@ const configurarTablas = async () => {
                 CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id)
             )
         `);
-        // 5. TABLA DE CUENTA_CORRIENTE (Agregada)
+        // 5. TABLA DE CUENTA_CORRIENTE
         await db.query(`
-            CREATE TABLE IF NOT EXISTS cuenta_corriente (
+            CREATE TABLE cuenta_corriente (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
                 cliente_id INT NOT NULL,
                 venta_id INT NULL,
                 fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -239,9 +255,10 @@ const configurarTablas = async () => {
                 debe DECIMAL(12, 2) DEFAULT 0.00,
                 haber DECIMAL(12, 2) DEFAULT 0.00,
                 saldo_acumulado DECIMAL(12, 2),
-                CONSTRAINT fk_cc_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-                CONSTRAINT fk_cc_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
-            )
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+                FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+                FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
+            );
         `);
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {

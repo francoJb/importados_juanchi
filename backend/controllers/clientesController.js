@@ -3,8 +3,8 @@ const db = require('../database/database');
 
 exports.obtenerClientes = async (req, res) => {
     try {
-        // En MySQL usamos await y desestructuramos [rows]
-        const [rows] = await db.query("SELECT * FROM clientes WHERE estado = 1");
+        const empresaId = req.empresaId;
+        const [rows] = await db.query("SELECT * FROM clientes WHERE empresa_id = ? AND estado = 1", [empresaId]);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -18,11 +18,11 @@ exports.crearCliente = async (req, res) => {
         return res.status(400).json({ error: "Nombre, apellido y DNI son obligatorios" });
     }
 
-    const sql = `INSERT INTO clientes (nombre, apellido, telefono, direccion, dni, cuit, arca, email, habilitar_cc, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+    const sql = `INSERT INTO clientes (empresa_id, nombre, apellido, telefono, direccion, dni, cuit, arca, email, habilitar_cc, estado)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;             
-    const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0];
+    const params = [req.empresaId, p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0];
 
     try {
         const [result] = await db.query(sql, params);
@@ -58,7 +58,7 @@ exports.editarCliente = async (req, res) => {
         return res.status(400).json({ error: "Datos inválidos" });
     }
 
-    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE id=?`;
+    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE empresa_id=? AND id=?`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0, id];
@@ -77,7 +77,7 @@ exports.editarCliente = async (req, res) => {
 
 exports.eliminarCliente = async (req, res) => {
     const { id } = req.params;
-    const sql = `UPDATE clientes SET estado = 0 WHERE id = ?`;
+    const sql = `UPDATE clientes SET estado = 0 WHERE empresa_id=? AND id = ?`;
 
     try {
         const [result] = await db.query(sql, [id]);
@@ -97,6 +97,7 @@ exports.eliminarCliente = async (req, res) => {
 exports.obtenerCuentaCorriente = async (req, res) => {
     const { id } = req.params;
     try {
+        const empresaId =req.empresaId;
         const [rows] = await db.query(`
             SELECT 
                 id, 
@@ -108,9 +109,9 @@ exports.obtenerCuentaCorriente = async (req, res) => {
                 saldo_acumulado,
                 observaciones
             FROM cuenta_corriente 
-            WHERE cliente_id = ? 
+            WHERE empresa_id=? AND cliente_id = ? 
             ORDER BY fecha DESC`, 
-        [id]);
+        [empresaId, id]);
 
         // También traemos el saldo total actual para mostrarlo arriba
         const [saldoTotal] = await db.query(

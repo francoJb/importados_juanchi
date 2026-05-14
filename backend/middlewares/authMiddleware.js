@@ -18,6 +18,10 @@ function verificarToken(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
+        // Agregar para que los controladores puedan usar estos valores
+        req.empresaId = decoded.empresaId;
+        req.usuarioId = decoded.usuarioId;
+        req.role = decoded.role;
         next();
     } catch (error) {
         return res.status(401).json({ error: "Token inválido o vencido." });
