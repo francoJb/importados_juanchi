@@ -1,6 +1,7 @@
 // backend/controllers/proveedoresController.js
 const db = require('../database/database');
 
+const empresaId = req.empresaId; // Asegúrate de que este valor se establezca correctamente en tu middleware de autenticación
 exports.obtenerProveedores = async (req, res) => {
     try {
         const [rows] = await db.query("SELECT * FROM proveedores WHERE empresa_id=? AND estado = 1 ORDER BY nombre", [empresaId]);
@@ -40,7 +41,7 @@ exports.actualizarProveedor = async (req, res) => {
 exports.eliminarProveedor = async (req, res) => {
     const { id } = req.params;
     try {
-        await db.query("UPDATE proveedores SET estado = 0 WHERE emrpesa_id=? AND id=?", [req.empresaId, id]);
+        await db.query("UPDATE proveedores SET estado = 0 WHERE empresa_id=? AND id=?", [req.empresaId, id]);
         res.json({ message: "Proveedor eliminado" });
     } catch (err) {
         res.status(500).json({ error: err.message });

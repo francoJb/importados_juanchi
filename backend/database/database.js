@@ -58,9 +58,26 @@ const db = mysql.createPool(dbConfig);
 const configurarTablas = async () => {
     try {
         console.log("⏳ Verificando tablas en MySQL...");
-        // 1. TABLA DE CATEGORIAS
+        
+        // 1. TABLA DE EMPRESAS
         await db.query(`
-            CREATE TABLE categorias (
+            CREATE TABLE IF NOT EXISTS empresas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) UNIQUE NOT NULL,
+                razon_social VARCHAR(255),
+                cuit VARCHAR(50) UNIQUE,
+                domicilio VARCHAR(255),
+                email VARCHAR(100),
+                telefono VARCHAR(50),
+                website VARCHAR(150),
+                condicion_iva VARCHAR(100),
+                estado TINYINT(1) DEFAULT 1,
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        // 2. TABLA DE CATEGORIAS
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS categorias (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 nombre VARCHAR(100) NOT NULL,
@@ -70,14 +87,10 @@ const configurarTablas = async () => {
                 FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
             );
         `);
-        // Insertar categoría inicial si no existe
-        await db.query(`
-            INSERT IGNORE INTO categorias (nombre, estado) VALUES ('ELECTRODOMÉSTICO', 1)
-        `);
 
-        // 1. TABLA DE PROVEEDORES
+        // 3. TABLA DE PROVEEDORES
         await db.query(`
-            CREATE TABLE proveedores (
+            CREATE TABLE IF NOT EXISTS proveedores (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 nombre VARCHAR(150) NOT NULL,
@@ -95,14 +108,9 @@ const configurarTablas = async () => {
             );
         `);
 
-        // Insertar proveedor inicial si no existe
+        // 4. TABLA DE PRODUCTOS
         await db.query(`
-            INSERT IGNORE INTO proveedores (nombre, estado) VALUES ('PROVEEDOR POR DEFECTO', 1)
-        `);
-
-        // 2. TABLA DE PRODUCTOS
-        await db.query(`
-            CREATE TABLE productos (
+            CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 sku VARCHAR(50) NOT NULL,
@@ -126,44 +134,9 @@ const configurarTablas = async () => {
             );
         `);
 
-        // Agregar columna categoria_id si existe la tabla antigua sin ella
-        const [categoriaColumn] = await db.query(
-            `SELECT COUNT(*) AS existe FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'productos' AND column_name = 'categoria_id'`
-        );
-        if (categoriaColumn[0].existe === 0) {
-            await db.query(`ALTER TABLE productos ADD COLUMN categoria_id INT NULL`);
-        }
-
-        // Agregar columna proveedor_id si existe la tabla antigua sin ella
-        const [proveedorColumn] = await db.query(
-            `SELECT COUNT(*) AS existe FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'productos' AND column_name = 'proveedor_id'`
-        );
-        if (proveedorColumn[0].existe === 0) {
-            await db.query(`ALTER TABLE productos ADD COLUMN proveedor_id INT NULL`);
-        }
-
-        // Migrar productos existentes con categoría string a categoria_id
+        // 5. TABLA DE CLIENTES
         await db.query(`
-            UPDATE productos p
-            JOIN categorias c ON UPPER(p.categoria) = c.nombre
-            SET p.categoria_id = c.id
-            WHERE p.categoria_id IS NULL AND p.categoria IS NOT NULL
-        `);
-
-        // Migrar productos existentes con proveedor string a proveedor_id
-        await db.query(`
-            INSERT IGNORE INTO proveedores (nombre, estado)
-            SELECT DISTINCT UPPER(TRIM(proveedor)), 1 FROM productos WHERE proveedor IS NOT NULL AND TRIM(proveedor) != ''
-        `);
-        await db.query(`
-            UPDATE productos p
-            JOIN proveedores pr ON UPPER(TRIM(p.proveedor)) = pr.nombre
-            SET p.proveedor_id = pr.id
-            WHERE p.proveedor_id IS NULL AND p.proveedor IS NOT NULL
-        `);
-        // 2. TABLA DE CLIENTES
-        await db.query(`
-            CREATE TABLE clientes (
+            CREATE TABLE IF NOT EXISTS clientes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 nombre VARCHAR(100) NOT NULL,
@@ -182,23 +155,8 @@ const configurarTablas = async () => {
                 FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
             );
         `);
-        // 3. TABLA DE EMPRESAS
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS empresas (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                nombre VARCHAR(100) UNIQUE NOT NULL,
-                razon_social VARCHAR(255),
-                cuit VARCHAR(50) UNIQUE,
-                domicilio VARCHAR(255),
-                email VARCHAR(100),
-                telefono VARCHAR(50),
-                website VARCHAR(150),
-                condicion_iva VARCHAR(100),
-                estado TINYINT(1) DEFAULT 1,
-                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        // 4. TABLA DE USUARIOS
+        
+        // 6. TABLA DE USUARIOS
         await db.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -214,9 +172,9 @@ const configurarTablas = async () => {
                 CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
             )
         `);
-        // 5. TABLA DE VENTAS
+        // 7. TABLA DE VENTAS
         await db.query(`
-            CREATE TABLE ventas (
+            CREATE TABLE IF NOT EXISTS ventas (
             id INT AUTO_INCREMENT PRIMARY KEY,
             empresa_id INT NOT NULL,
             cliente_id INT NULL,
@@ -230,7 +188,7 @@ const configurarTablas = async () => {
             FOREIGN KEY (cliente_id) REFERENCES clientes(id)
         );
         `);
-        // 4. TABLA DE DETALLE_VENTAS
+        // 8. TABLA DE DETALLE_VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS detalle_ventas (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -242,9 +200,9 @@ const configurarTablas = async () => {
                 CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id)
             )
         `);
-        // 5. TABLA DE CUENTA_CORRIENTE
+        // 9. TABLA DE CUENTA_CORRIENTE
         await db.query(`
-            CREATE TABLE cuenta_corriente (
+            CREATE TABLE IF NOT EXISTS cuenta_corriente  (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 cliente_id INT NOT NULL,

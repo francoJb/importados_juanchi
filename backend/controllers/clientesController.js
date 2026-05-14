@@ -51,7 +51,7 @@ exports.crearCliente = async (req, res) => {
 };
 
 exports.editarCliente = async (req, res) => {
-    const { id } = req.params;
+    const { empresaId, id } = req.params;
     const p = req.body;
 
     if (!p.nombre?.trim() || !p.apellido?.trim() || !p.dni?.trim()) {
@@ -76,7 +76,7 @@ exports.editarCliente = async (req, res) => {
 };
 
 exports.eliminarCliente = async (req, res) => {
-    const { id } = req.params;
+    const { empresaId, id } = req.params;
     const sql = `UPDATE clientes SET estado = 0 WHERE empresa_id=? AND id = ?`;
 
     try {
@@ -115,8 +115,8 @@ exports.obtenerCuentaCorriente = async (req, res) => {
 
         // También traemos el saldo total actual para mostrarlo arriba
         const [saldoTotal] = await db.query(
-            "SELECT IFNULL(SUM(debe - haber), 0) as total FROM cuenta_corriente WHERE cliente_id = ?",
-            [id]
+            "SELECT IFNULL(SUM(debe - haber), 0) as total FROM cuenta_corriente WHERE cliente_id = ? AND empresa_id = ?",
+            [id, empresaId]
         );
 
         res.json({
