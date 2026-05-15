@@ -199,8 +199,8 @@ const configurarTablas = async () => {
                 cantidad INT NOT NULL,
                 precio_unitario DECIMAL(12, 2) NOT NULL,
                 CONSTRAINT fk_detalle_venta FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
-                CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id)
-                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,            
+                CONSTRAINT fk_detalle_producto FOREIGN KEY (producto_id) REFERENCES productos(id),
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE           
             )
         `);
         // 9. TABLA DE CUENTA_CORRIENTE

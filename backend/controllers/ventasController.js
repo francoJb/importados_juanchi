@@ -140,7 +140,7 @@ exports.obtenerVentas = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id=?
-            WHERE v.empresa_id=?
+            WHERE v.empresa_id=? and v.estado = 1
             ORDER BY v.fecha DESC
             `, [empresaId, empresaId]
         );
@@ -166,7 +166,7 @@ exports.obtenerVenta = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id = v.empresa_id
-            WHERE v.id = ? AND v.empresa_id=?
+            WHERE v.id = ? AND v.empresa_id=? AND v.estado = 1
         `, [id, req.empresaId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Venta no encontrada' });
@@ -222,8 +222,8 @@ exports.eliminarVenta = async (req, res) => {
         }
 
         const [detalles] = await connection.query(
-            "SELECT producto_id, cantidad FROM detalle_ventas WHERE venta_id = ?",
-            [ventaId]
+            "SELECT producto_id, cantidad FROM detalle_ventas WHERE empresa_id = ? AND venta_id = ?",
+            [req.empresaId, ventaId]
         );
 
         for (const detalle of detalles) {
@@ -271,7 +271,7 @@ exports.registrarPago = async (req, res) => {
     if (isNaN(montoNum) || montoNum <= 0) {
         return res.status(400).json({ error: "Monto inválido. Debe ser mayor a 0." });
     }
-
+    const empresaId = req.empresaId;
     const connection = await db.getConnection();
 
     try {
@@ -279,8 +279,8 @@ exports.registrarPago = async (req, res) => {
 
         // 1) Buscar venta
         const [ventaRows] = await connection.query(
-            "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE id = ?",
-            [ventaIdNum]
+            "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
+            [req.empresaId, ventaIdNum]
         );
 
         if (ventaRows.length === 0) {
@@ -313,13 +313,13 @@ exports.registrarPago = async (req, res) => {
         // 2) Actualizar ventas
         await connection.query(
             "UPDATE ventas SET saldo_pendiente = ?, estado_pago = ? WHERE id = ? AND empresa_id=?",
-            [nuevoSaldo, nuevoEstado, ventaIdNum]
+            [nuevoSaldo, nuevoEstado, ventaIdNum, empresaId]
         );
 
         // 3) Registrar en cuenta corriente
         const [ccRows] = await connection.query(
-            "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE cliente_id = ?",
-            [idCliente]
+            "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ?",
+            [req.empresaId, idCliente]
         );
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
@@ -330,7 +330,7 @@ exports.registrarPago = async (req, res) => {
 
         await connection.query(
             `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 
-            VALUES (?. ?, ?, ?, 0, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, 0, ?, ?, ?)`,
             [idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
         );
 

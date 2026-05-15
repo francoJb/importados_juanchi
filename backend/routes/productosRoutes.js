@@ -3,13 +3,14 @@ const express = require('express');
 const router = express.Router();
 const productosController = require('../controllers/productosController');
 const verificarToken = require('../middlewares/authMiddleware');
+const verificarTenant = require('../middlewares/tenantMiddleware');
 
 // Definimos las rutas
-router.get('/', verificarToken, productosController.obtenerProductos);
-router.get('/categorias', verificarToken, productosController.obtenerCategorias);
-router.post('/', verificarToken, productosController.crearProducto);
-router.put('/:id', verificarToken, productosController.editarProducto);
-router.delete('/:id', verificarToken, productosController.eliminarProducto);
+router.get('/', verificarToken, verificarTenant, productosController.obtenerProductos);
+router.get('/categorias', verificarToken, verificarTenant, productosController.obtenerCategorias);
+router.post('/', verificarToken, verificarTenant, productosController.crearProducto);
+router.put('/:id', verificarToken, verificarTenant, productosController.editarProducto);
+router.delete('/:id', verificarToken, verificarTenant, productosController.eliminarProducto);
 
 
 module.exports = router;

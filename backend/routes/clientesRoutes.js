@@ -3,11 +3,12 @@ const express = require('express');
 const router = express.Router();
 const clientesController = require('../controllers/clientesController');
 const verificarToken = require('../middlewares/authMiddleware');
+const verificarTenant = require('../middlewares/tenantMiddleware');
 
-router.get('/', verificarToken, clientesController.obtenerClientes);
-router.post('/', verificarToken, clientesController.crearCliente);
-router.put('/:id', verificarToken, clientesController.editarCliente);
-router.delete('/:id', verificarToken, clientesController.eliminarCliente);
-router.get('/:id/cuenta-corriente', verificarToken, clientesController.obtenerCuentaCorriente);
+router.get('/', verificarToken, verificarTenant, clientesController.obtenerClientes);
+router.post('/', verificarToken, verificarTenant, clientesController.crearCliente);
+router.put('/:id', verificarToken, verificarTenant, clientesController.editarCliente);
+router.delete('/:id', verificarToken, verificarTenant, clientesController.eliminarCliente);
+router.get('/:id/cuenta-corriente', verificarToken, verificarTenant, clientesController.obtenerCuentaCorriente);
 
 module.exports = router;
