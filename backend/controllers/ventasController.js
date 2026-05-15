@@ -14,7 +14,7 @@ exports.crearVenta = async (req, res) => {
     if (metodo_pago === 'Cuenta Corriente' && cliente_id && Number(cliente_id) !== 0) {
         const empresaId = req.empresaId;
         const [clienteRows] = await db.query(
-            "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE id = ? AND empresa_id = ?",
+            "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE empresa_id = ? AND id = ?",
             [empresaId, cliente_id]
         );
         const cliente = clienteRows[0];
@@ -245,7 +245,7 @@ exports.eliminarVenta = async (req, res) => {
 
         await connection.query(
             "UPDATE ventas SET estado = 0 WHERE id = ? AND empresa_id=?",
-            [ventaId]
+            [ventaId, req.empresaId]
         );
 
         await connection.commit();
@@ -280,7 +280,7 @@ exports.registrarPago = async (req, res) => {
         // 1) Buscar venta
         const [ventaRows] = await connection.query(
             "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
-            [req.empresaId, ventaIdNum]
+            [empresaId, ventaIdNum]
         );
 
         if (ventaRows.length === 0) {
@@ -319,7 +319,7 @@ exports.registrarPago = async (req, res) => {
         // 3) Registrar en cuenta corriente
         const [ccRows] = await connection.query(
             "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ?",
-            [req.empresaId, idCliente]
+            [empresaId, idCliente]
         );
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
@@ -331,7 +331,7 @@ exports.registrarPago = async (req, res) => {
         await connection.query(
             `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 
             VALUES (?, ?, ?, ?, 0, ?, ?, ?)`,
-            [idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
+            [empresaId, idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
         );
 
         await connection.commit();
