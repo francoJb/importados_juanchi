@@ -15,7 +15,7 @@ exports.crearVenta = async (req, res) => {
         const empresaId = req.empresaId;
         const [clienteRows] = await db.query(
             "SELECT habilitar_cc, nombre, apellido FROM clientes WHERE id = ? AND empresa_id = ?",
-            [cliente_id, empresaId]
+            [empresaId, cliente_id]
         );
         const cliente = clienteRows[0];
         if (!cliente || !cliente.habilitar_cc) {
@@ -58,8 +58,8 @@ exports.crearVenta = async (req, res) => {
         for (const item of items) {
             // A. CONSULTA DE SEGURIDAD: Traemos el stock actual, el nombre del producto y si controla stock
             const [productoRows] = await connection.query(
-                "SELECT stock, descripcion, control_stock FROM productos WHERE id = ? AND empresa_id=?",
-                [item.id, empresaId]
+                "SELECT stock, descripcion, control_stock FROM productos WHERE empresa_id=? AND id=?",
+                [empresaId, item.id]
             );
             const producto = productoRows[0];
             // B. VALIDACIÓN: Si no hay fila (raro) o si controla stock y el stock es menor a lo pedido
