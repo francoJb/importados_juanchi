@@ -228,7 +228,7 @@ exports.eliminarVenta = async (req, res) => {
 
         for (const detalle of detalles) {
             await connection.query(
-                "UPDATE productos SET stock = stock + ? WHERE empresa_id=? AND id = ?",
+                "UPDATE productos SET stock = stock + ? WHERE empresa_id=? AND id = ? AND control_stock = 1",
                 [detalle.cantidad, req.empresaId, detalle.producto_id]
             );
         }
