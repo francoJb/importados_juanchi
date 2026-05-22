@@ -20,20 +20,32 @@ let currentSessionUser = null;
 // FUNCIONES DE UTILIDAD GLOBAL
 // ==========================================
 
-function esAdmin() {
-    return currentSessionUser?.role === 'admin';
+function esPlatformAdmin() {
+    return currentSessionUser?.role === 'platform_admin';
+}
+
+function esUsuarioEmpresa() {
+    return ['tenant_admin', 'user'].includes(currentSessionUser?.role);
 }
 
 function aplicarPermisosUsuario() {
+    const linksOperativos = [
+        'linkDashboard',
+        'linkVentas',
+        'linkClientes',
+        'linkProductos',
+        'linkProveedores'
+    ];
+
     const linkConfig = document.getElementById('linkConfig');
-    const seccionConfig = document.getElementById('seccionConfig');
-    if (!esAdmin()) {
-        linkConfig?.classList.add('hidden');
-        seccionConfig?.classList.add('hidden');
-    } else {
-        linkConfig?.classList.remove('hidden');
-        seccionConfig?.classList.remove('hidden');
-    }
+    const mostrarConfig = esPlatformAdmin();
+    const mostrarOperativos = esUsuarioEmpresa();
+
+    linksOperativos.forEach(id => {
+        document.getElementById(id)?.classList.toggle('hidden', !mostrarOperativos);
+    });
+
+    linkConfig?.classList.toggle('hidden', !mostrarConfig);
 }
 
 async function validarSesionActual() {
@@ -160,7 +172,7 @@ function popularUsuariosAdmin(usuarios) {
 }
 
 async function cargarAdminData() {
-    if (!esAdmin()) return;
+    if (!esPlatformAdmin()) return;
     const [empresas, usuarios] = await Promise.all([fetchEmpresasAdmin(), fetchUsuariosAdmin()]);
     popularEmpresasAdmin(empresas);
     popularUsuariosAdmin(usuarios);
@@ -406,7 +418,13 @@ async function initApp() {
     await initProveedores();
     await initVentas();
 
-    cambiarSeccion('seccionDashboard');
+    if (esPlatformAdmin()) {
+        cambiarSeccion('seccionConfig');
+        popularFormularioConfiguracion();
+    } else {
+        cambiarSeccion('seccionDashboard');
+        renderDashboard();
+    }
 
     const sidebar = document.getElementById("sidebar");
     const btnMenuMobile = document.getElementById("btnMenuMobile");
@@ -439,6 +457,7 @@ async function initApp() {
     // 1. Cuando hagan clic en Dashboard
     document.getElementById("linkDashboard").addEventListener("click", (e) => {
         e.preventDefault(); // Esto evita que la página salte al principio por el href="#"
+        if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionDashboard');
         renderDashboard();
     });
@@ -446,12 +465,14 @@ async function initApp() {
     // 2. Cuando hagan clic en Clientes
     document.getElementById("linkClientes").addEventListener("click", (e) => {
         e.preventDefault();
+        if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionClientes');
     });
 
     // 3. Cuando hagan clic en Ventas
     document.getElementById("linkVentas").addEventListener("click", (e) => {
         e.preventDefault();
+        if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionVentas');
         listarVentas();
     });
@@ -459,12 +480,14 @@ async function initApp() {
     // 4. Cuando hagan clic en Productos
     document.getElementById("linkProductos").addEventListener("click", (e) => {
         e.preventDefault();
+        if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionProductos');
     });
 
     // 5. Cuando hagan clic en Proveedores
     document.getElementById("linkProveedores").addEventListener("click", (e) => {
         e.preventDefault();
+        if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionProveedores');
         listarProveedores();
     });
@@ -472,6 +495,7 @@ async function initApp() {
     // 6. Cuando hagan clic en Configuracion
     document.getElementById("linkConfig").addEventListener("click", (e) => {
         e.preventDefault();
+        if (!esPlatformAdmin()) return;
         cambiarSeccion('seccionConfig');
         popularFormularioConfiguracion();
     });
@@ -497,7 +521,9 @@ async function initApp() {
     }
 
     popularFormularioConfiguracion();
-    renderDashboard();
+    if (esUsuarioEmpresa()) {
+        renderDashboard();
+    }
 
     // 1. Reloj profesional
     if(document.getElementById("pantallaGenerarVenta")){

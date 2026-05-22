@@ -21,14 +21,14 @@ function verificarToken(req, res, next) {
     }
 }
 
-function verificarAdmin(req, res, next) {
-    if (!req.user || req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Acceso denegado. Sólo usuarios admin pueden acceder.' });
+function verificarPlatformAdmin(req, res, next) {
+    if (!req.user || req.user.role !== 'platform_admin') {
+        return res.status(403).json({ error: 'Acceso denegado.' });
     }
     next();
 }
 
 module.exports = {
     verificarToken,
-    verificarAdmin
+    verificarPlatformAdmin
 };

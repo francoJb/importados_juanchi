@@ -165,7 +165,7 @@ const configurarTablas = async () => {
                 apellido VARCHAR(100),
                 usuario VARCHAR(100) NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
-                role ENUM('admin','user') DEFAULT 'user',
+                role ENUM('platform_admin','tenant_admin','user') DEFAULT 'user',
                 estado TINYINT(1) DEFAULT 1,
                 fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_usuario (usuario),

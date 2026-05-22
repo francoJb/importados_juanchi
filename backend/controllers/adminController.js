@@ -163,7 +163,7 @@ exports.createUser = async (req, res) => {
         return res.status(400).json({ error: 'Empresa, usuario y contraseña son obligatorios.' });
     }
 
-    if (!['admin', 'user'].includes(role || 'user')) {
+    if (!['platform_admin', 'tenant_admin', 'user'].includes(role || 'user')) {
         return res.status(400).json({ error: 'Rol inválido.' });
     }
 
@@ -193,7 +193,7 @@ exports.updateUser = async (req, res) => {
         return res.status(400).json({ error: 'Usuario es obligatorio.' });
     }
 
-    if (role && !['admin', 'user'].includes(role)) {
+    if (!['platform_admin', 'tenant_admin', 'user'].includes(role || 'user')) {
         return res.status(400).json({ error: 'Rol inválido.' });
     }
 

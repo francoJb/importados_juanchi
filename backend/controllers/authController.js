@@ -67,7 +67,7 @@ exports.login = async (req, res) => {
             {
                 usuario,
                 empresa,
-                role: 'admin',
+                role: 'platform_admin',
                 usuarioId: 0,
                 empresaId: 0
             },
@@ -82,7 +82,7 @@ exports.login = async (req, res) => {
             token,
             usuario,
             empresa,
-            role: 'admin',
+            role: 'platform_admin',
             usuarioId: 0,
             empresaId: 0
         });
