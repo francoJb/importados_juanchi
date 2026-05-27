@@ -75,6 +75,8 @@ function setSkuFocus() {
 
 function addPagoEntregaListener() {
     document.getElementById("pago-entrega")?.addEventListener("input", calcularSaldoCtaCte);
+    document.getElementById("pago-cuotas-cantidad")?.addEventListener("input", actualizarResumenCuotas);
+    document.getElementById("pago-cuotas-dias")?.addEventListener("input", actualizarResumenCuotas);
 }
 
 window.volverALista = () => {
@@ -255,14 +257,19 @@ window.abrirModalPago = () => {
     document.getElementById("pago-entrega").value = 0;
 
     const optCtaCte = document.getElementById("opt-cta-cte");
+    const optCuotas = document.getElementById("opt-cuotas");
     const selectMetodo = document.getElementById("pago-metodo");
     if (esConsumidorFinal) {
         optCtaCte.disabled = true;
         optCtaCte.innerText = "Cuenta Corriente (Solo clientes reg.)";
+        optCuotas.disabled = true;
+        optCuotas.innerText = "Cuotas (Solo clientes reg.)";
         selectMetodo.value = "Efectivo";
     } else {
         optCtaCte.disabled = false;
         optCtaCte.innerText = "Cuenta Corriente";
+        optCuotas.disabled = false;
+        optCuotas.innerText = "Cuotas";
     }
     toggleCamposCtaCte();
 
@@ -272,11 +279,19 @@ window.abrirModalPago = () => {
 window.toggleCamposCtaCte = () => {
     const metodo = document.getElementById("pago-metodo").value;
     const divCtaCte = document.getElementById("campos-ctacte");
+    const divCuotas = document.getElementById("campos-cuotas");
     if (metodo === "Cuenta Corriente") {
         divCtaCte.classList.remove("hidden");
         calcularSaldoCtaCte();
     } else {
         divCtaCte.classList.add("hidden");
+    }
+
+    if (metodo === "Cuotas") {
+        divCuotas.classList.remove("hidden");
+        actualizarResumenCuotas();
+    } else {
+        divCuotas.classList.add("hidden");
     }
 };
 
@@ -286,6 +301,17 @@ window.calcularSaldoCtaCte = () => {
     const saldo = total - entrega;
     document.getElementById("pago-saldo-final").innerText = `$${saldo.toFixed(2)}`;
 };
+
+function actualizarResumenCuotas() {
+    const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
+    const cantidad = parseInt(document.getElementById("pago-cuotas-cantidad")?.value, 10) || 1;
+    const dias = parseInt(document.getElementById("pago-cuotas-dias")?.value, 10) || 1;
+    const monto = total / cantidad;
+    const resumen = document.getElementById("pago-cuotas-resumen");
+    if (resumen) {
+        resumen.innerText = `${cantidad} cuotas de $${monto.toFixed(2)} cada ${dias} días`;
+    }
+}
 
 window.procesarVentaFinal = async () => {
     const btnConfirmar = document.getElementById("btn-confirmar-final");
@@ -308,6 +334,10 @@ window.procesarVentaFinal = async () => {
     }
     if (metodoPago === "Cuenta Corriente" && esConsumidorFinal) {
         mostrarAlerta("No se puede fiar a un Consumidor Final.", "Método de pago inválido", "error");
+        return;
+    }
+    if (metodoPago === "Cuotas" && esConsumidorFinal) {
+        mostrarAlerta("Seleccioná un cliente registrado para vender en cuotas.", "Método de pago inválido", "error");
         return;
     }
 
@@ -340,6 +370,12 @@ window.procesarVentaFinal = async () => {
         metodo_pago: metodoPago,
         entrega_inicial: entregaInicial,
         observaciones: observaciones,
+        cuotas: metodoPago === "Cuotas"
+            ? {
+                cantidad: parseInt(document.getElementById("pago-cuotas-cantidad").value, 10),
+                intervalo_dias: parseInt(document.getElementById("pago-cuotas-dias").value, 10)
+            }
+            : null,
         items: carritoVenta.map(item => ({
             id: item.id,
             cantidad: item.cantidad,
@@ -482,6 +518,7 @@ let saldoActual = 0;
 let clienteIdActualCobranza = null;
 let ventasPendientesModal = [];
 let ventasSeleccionadasModal = new Set();
+let modoCobranzaCuotas = false;
 
 function formatearMoneda(valor) {
     return `$${parseFloat(valor || 0).toFixed(2)}`;
@@ -509,6 +546,11 @@ function actualizarResumenPagoModal() {
 
 function renderVentasPendientesModal() {
     const tbody = document.getElementById('modalPago-ventasPendientes');
+    const titulo = document.getElementById('modalPago-listaTitulo');
+    if (titulo) {
+        titulo.textContent = modoCobranzaCuotas ? "Cuotas pendientes" : "Ventas pendientes del cliente";
+    }
+
     tbody.innerHTML = ventasPendientesModal.map(v => `
         <tr>
             <td class="p-2">
@@ -519,8 +561,8 @@ function renderVentasPendientesModal() {
                     ${ventasSeleccionadasModal.has(v.id) ? "checked" : ""}
                 >
             </td>
-            <td class="p-2 font-semibold">#${v.id}</td>
-            <td class="p-2">${new Date(v.fecha).toLocaleDateString('es-AR')}</td>
+            <td class="p-2 font-semibold">${v.label || `#${v.id}`}</td>
+            <td class="p-2">${new Date(v.fecha || v.fecha_vencimiento).toLocaleDateString('es-AR')}</td>
             <td class="p-2 text-right font-mono text-red-600">${formatearMoneda(v.saldo_pendiente)}</td>
         </tr>
     `).join('');
@@ -545,7 +587,7 @@ function renderVentasPendientesModal() {
 }
 
 // 2. Adaptación de la función para ABRIR el modal
-window.abrirPantallaCobranza = (ventaId, clienteId, saldoPendiente, ventasPendientes = null) => {
+window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente, ventasPendientes = null) => {
     // Guardamos los IDs para usarlos luego al presionar "Aceptar"
     ventaIdActual = ventaId;
     saldoActual = saldoPendiente;
@@ -557,14 +599,40 @@ window.abrirPantallaCobranza = (ventaId, clienteId, saldoPendiente, ventasPendie
     const inputObs = document.getElementById('modalPago-observaciones');
     const metodoInput = document.getElementById('modalPago-metodo');
 
-    // Cargamos ventas disponibles (modo simple o múltiple)
-    ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
-        ? ventasPendientes
-        : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
-    ventasSeleccionadasModal = new Set([ventaId]);
+    const params = new URLSearchParams();
+    if (ventaId) params.set("ventaId", ventaId);
+    if (clienteId) params.set("clienteId", clienteId);
+
+    try {
+        const response = await apiFetch(`${URL_API}/cuotas-pendientes?${params.toString()}`);
+        const cuotas = response.ok ? await response.json() : [];
+        modoCobranzaCuotas = cuotas.length > 0;
+        if (modoCobranzaCuotas) {
+            ventasPendientesModal = cuotas.map(c => ({
+                id: c.id,
+                venta_id: c.venta_id,
+                label: `Venta #${c.venta_id} - Cuota ${c.numero_cuota}`,
+                fecha: c.fecha_vencimiento,
+                saldo_pendiente: c.saldo_pendiente
+            }));
+            ventasSeleccionadasModal = new Set([ventasPendientesModal[0].id]);
+        } else {
+            ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
+                ? ventasPendientes
+                : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
+            ventasSeleccionadasModal = new Set([ventaId]);
+        }
+    } catch (error) {
+        console.error("Error cargando cuotas pendientes:", error);
+        modoCobranzaCuotas = false;
+        ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
+            ? ventasPendientes
+            : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
+        ventasSeleccionadasModal = new Set([ventaId]);
+    }
 
     renderVentasPendientesModal();
-    inputMonto.value = parseFloat(saldoPendiente).toFixed(2);
+    inputMonto.value = obtenerTotalSeleccionadoModal().toFixed(2);
     inputObs.value = "";
     metodoInput.value = "Efectivo";
     actualizarResumenPagoModal();
@@ -584,6 +652,7 @@ document.getElementById('btnCancelRegistroPago').addEventListener('click', () =>
     saldoActual = 0;
     ventasPendientesModal = [];
     ventasSeleccionadasModal.clear();
+    modoCobranzaCuotas = false;
 });
 
 // 4. Lógica para el botón ACEPTAR (Procesar el pago)
@@ -631,24 +700,26 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
             if (montoRestante <= 0) break;
             const saldoVenta = parseFloat(venta.saldo_pendiente);
             const montoParaVenta = Math.min(montoRestante, saldoVenta);
+            const ventaIdPago = modoCobranzaCuotas ? venta.venta_id : venta.id;
 
-            const response = await apiFetch(`${URL_API}/${venta.id}/pago`, {
+            const response = await apiFetch(`${URL_API}/${ventaIdPago}/pago`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     monto: montoParaVenta,
                     metodo: metodo,
-                    observaciones: observaciones
+                    observaciones: observaciones,
+                    cuota_ids: modoCobranzaCuotas ? [venta.id] : undefined
                 })
             });
 
             const data = await response.json();
                 if (!response.ok || !data.success) {
-                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${venta.id}`);
+                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${ventaIdPago}`);
                 }
 
             pagosRealizados.push({
-                ventaId: venta.id,
+                ventaId: ventaIdPago,
                 montoPagado: montoParaVenta,
                 nuevoSaldo: data.nuevoSaldo
             });
@@ -714,6 +785,18 @@ window.abrirPagoDesdeBalance = async () => {
         const response = await apiFetch(URL_API);
         if (!response.ok) throw new Error("No se pudieron cargar las ventas");
         const ventas = await response.json();
+        const cuotasResponse = await apiFetch(`${URL_API}/cuotas-pendientes?clienteId=${clienteId}`);
+        const cuotasPendientes = cuotasResponse.ok ? await cuotasResponse.json() : [];
+        if (cuotasPendientes.length > 0) {
+            const primera = cuotasPendientes[0];
+            abrirPantallaCobranza(
+                primera.venta_id,
+                clienteId,
+                cuotasPendientes.reduce((sum, c) => sum + parseFloat(c.saldo_pendiente || 0), 0)
+            );
+            return;
+        }
+
         const ventasPendientes = ventas.filter(v => v.cliente_id == clienteId && parseFloat(v.saldo_pendiente) > 0);
 
         if (ventasPendientes.length === 0) {

@@ -67,6 +67,8 @@ async function upsertUser({ empresaId, usuario, role, nombre, apellido, password
 }
 
 async function main() {
+    await db.ready;
+
     const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
     await ensureRoleSchema();

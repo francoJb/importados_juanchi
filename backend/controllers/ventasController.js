@@ -1,13 +1,58 @@
 const db = require('../database/database'); // Tu conexión a MySQL
 
+function redondear2(valor) {
+    return Math.round(Number(valor) * 100) / 100;
+}
+
+function generarCuotas(total, cantidadCuotas, intervaloDias) {
+    const cantidad = Number(cantidadCuotas);
+    const dias = Number(intervaloDias);
+
+    if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        throw new Error("La cantidad de cuotas debe ser mayor a 0.");
+    }
+
+    if (!Number.isInteger(dias) || dias <= 0) {
+        throw new Error("La frecuencia de cuotas debe ser mayor a 0 días.");
+    }
+
+    const totalCentavos = Math.round(Number(total) * 100);
+    const baseCentavos = Math.floor(totalCentavos / cantidad);
+    let restoCentavos = totalCentavos - (baseCentavos * cantidad);
+    const hoy = new Date();
+
+    return Array.from({ length: cantidad }, (_, index) => {
+        const montoCentavos = baseCentavos + (restoCentavos > 0 ? 1 : 0);
+        if (restoCentavos > 0) restoCentavos -= 1;
+
+        const vencimiento = new Date(hoy);
+        vencimiento.setDate(hoy.getDate() + (dias * (index + 1)));
+
+        return {
+            numero: index + 1,
+            monto: redondear2(montoCentavos / 100),
+            fecha_vencimiento: vencimiento.toISOString().slice(0, 10)
+        };
+    });
+}
+
 exports.crearVenta = async (req, res) => {
     
-    const { cliente_id, total, metodo_pago, entrega_inicial, items, observaciones } = req.body;
+    const { cliente_id, total, metodo_pago, entrega_inicial, cuotas, items, observaciones } = req.body;
     
-    if (metodo_pago === 'Cuenta Corriente' && (!cliente_id || Number(cliente_id) === 0)) {
+    if (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && (!cliente_id || Number(cliente_id) === 0)) {
         return res.status(400).json({
-            error: "No se puede registrar Cuenta Corriente para Consumidor Final. Seleccioná un cliente registrado."
+            error: "Seleccioná un cliente registrado para vender a crédito o en cuotas."
         });
+    }
+
+    let planCuotas = [];
+    if (metodo_pago === 'Cuotas') {
+        try {
+            planCuotas = generarCuotas(total, cuotas?.cantidad, cuotas?.intervalo_dias);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
     }
 
     // Validar que el cliente tenga habilitado el crédito si el pago es a cuenta corriente
@@ -41,9 +86,9 @@ exports.crearVenta = async (req, res) => {
         await connection.beginTransaction();
 
         // 1. Insertar la Cabecera de la Venta
-        // Si es Cta Cte, el saldo_pendiente es (Total - Entrega)
-        const saldoPendiente = (metodo_pago === 'Cuenta Corriente') ? (total - entrega_inicial) : 0;
-        const estadoPago = (metodo_pago === 'Cuenta Corriente' && saldoPendiente > 0) ? 'Pendiente' : 'Pagado';
+        // Si es Cta Cte o Cuotas, el saldo_pendiente queda abierto hasta cobrar.
+        const saldoPendiente = ['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) ? (total - (entrega_inicial || 0)) : 0;
+        const estadoPago = (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && saldoPendiente > 0) ? 'Pendiente' : 'Pagado';
 
         const empresaId = req.empresaId;
         const [ventaRes] = await connection.query(
@@ -84,8 +129,8 @@ exports.crearVenta = async (req, res) => {
             }
         }
 
-        // 3. LÓGICA DE CUENTA CORRIENTE (Si aplica)
-        if (metodo_pago === 'Cuenta Corriente' && cliente_id !== 0) {
+        // 3. LÓGICA DE CUENTA CORRIENTE / CUOTAS (Si aplica)
+        if (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && cliente_id !== 0) {
     
             // A. Primero obtenemos el saldo actual del cliente
             const [rows] = await connection.query(
@@ -96,10 +141,14 @@ exports.crearVenta = async (req, res) => {
 
             // B. Registrar la DEUDA (El DEBE)
             saldoCalculado += parseFloat(total); // Sumamos lo que se lleva
+            const descripcionDeuda = metodo_pago === 'Cuotas'
+                ? `Venta # ${ventaId} en ${planCuotas.length} cuotas - ${observaciones || 'Sin obs.'}`
+                : `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`;
+
             await connection.query(
                 `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
                 VALUES (?, ?, ?, ?, ?, 0, ?)`,
-                [empresaId, cliente_id, ventaId, `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`, total, saldoCalculado]
+                [empresaId, cliente_id, ventaId, descripcionDeuda, total, saldoCalculado]
             );
 
             // C. Si hubo ENTREGA INICIAL, registrar el pago (El HABER)
@@ -111,9 +160,20 @@ exports.crearVenta = async (req, res) => {
                     [empresaId, cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entrega_inicial, saldoCalculado]
                 );
             }
+
+            if (metodo_pago === 'Cuotas') {
+                for (const cuota of planCuotas) {
+                    await connection.query(
+                        `INSERT INTO venta_cuotas
+                         (empresa_id, venta_id, cliente_id, numero_cuota, fecha_vencimiento, monto, saldo_pendiente, estado)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
+                        [empresaId, ventaId, cliente_id, cuota.numero, cuota.fecha_vencimiento, cuota.monto, cuota.monto]
+                    );
+                }
+            }
         }
         await connection.commit();
-        res.json({ success: true, mensaje: "Venta y Cta. Cte. procesadas con éxito", ventaId });
+        res.json({ success: true, mensaje: "Venta procesada con éxito", ventaId, cuotas: planCuotas });
 
 
     } catch (error) {
@@ -134,6 +194,7 @@ exports.obtenerVentas = async (req, res) => {
                 v.cliente_id, 
                 v.fecha, 
                 v.total, 
+                v.metodo_pago,
                 v.saldo_pendiente, 
                 v.estado_pago, -- Usaremos esto para saber si está "Finalizado" o "Pendiente"
                 c.nombre AS cliente_nombre, 
@@ -158,6 +219,7 @@ exports.obtenerVenta = async (req, res) => {
                 v.id, 
                 v.fecha, 
                 v.total, 
+                v.metodo_pago,
                 v.saldo_pendiente, 
                 v.estado_pago,
                 v.cliente_id,
@@ -191,6 +253,48 @@ exports.obtenerDetalleVenta = async (req, res) => {
             JOIN productos p ON d.producto_id = p.id AND p.empresa_id = d.empresa_id
             WHERE d.venta_id = ? AND d.empresa_id=?` , 
         [id, req.empresaId]);
+
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.obtenerCuotasPendientes = async (req, res) => {
+    const { clienteId, ventaId } = req.query;
+    const filtros = ['vc.empresa_id = ?', "vc.estado <> 'Pagada'", 'vc.saldo_pendiente > 0'];
+    const params = [req.empresaId];
+
+    if (clienteId) {
+        filtros.push('vc.cliente_id = ?');
+        params.push(clienteId);
+    }
+
+    if (ventaId) {
+        filtros.push('vc.venta_id = ?');
+        params.push(ventaId);
+    }
+
+    try {
+        const [rows] = await db.query(`
+            SELECT
+                vc.id,
+                vc.venta_id,
+                vc.cliente_id,
+                vc.numero_cuota,
+                vc.fecha_vencimiento,
+                vc.monto,
+                vc.saldo_pendiente,
+                vc.estado,
+                v.fecha AS venta_fecha,
+                c.nombre AS cliente_nombre,
+                c.apellido AS cliente_apellido
+            FROM venta_cuotas vc
+            INNER JOIN ventas v ON v.id = vc.venta_id AND v.empresa_id = vc.empresa_id
+            INNER JOIN clientes c ON c.id = vc.cliente_id AND c.empresa_id = vc.empresa_id
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY vc.fecha_vencimiento ASC, vc.numero_cuota ASC
+        `, params);
 
         res.json(rows);
     } catch (error) {
@@ -234,6 +338,11 @@ exports.eliminarVenta = async (req, res) => {
         }
 
         await connection.query(
+            "DELETE FROM venta_cuotas WHERE empresa_id=? AND venta_id = ?",
+            [req.empresaId, ventaId]
+        );
+
+        await connection.query(
             "DELETE FROM cuenta_corriente WHERE empresa_id=? AND venta_id = ?",
             [req.empresaId, ventaId]
         );
@@ -260,7 +369,7 @@ exports.eliminarVenta = async (req, res) => {
 };
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
-    const { monto, observaciones } = req.body;
+    const { monto, observaciones, cuota_ids } = req.body;
 
     const ventaIdNum = Number(ventaId);
     if (!Number.isInteger(ventaIdNum) || ventaIdNum <= 0) {
@@ -279,7 +388,7 @@ exports.registrarPago = async (req, res) => {
 
         // 1) Buscar venta
         const [ventaRows] = await connection.query(
-            "SELECT cliente_id, total, saldo_pendiente FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
+            "SELECT cliente_id, total, saldo_pendiente, metodo_pago FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
             [empresaId, ventaIdNum]
         );
 
@@ -307,8 +416,45 @@ exports.registrarPago = async (req, res) => {
             return res.status(400).json({ error: "El monto supera el saldo pendiente" });
         }
 
-        const nuevoSaldo = saldoPendienteNum - montoNum;
+        const nuevoSaldo = redondear2(saldoPendienteNum - montoNum);
         const nuevoEstado = nuevoSaldo <= 0 ? "Pagado" : "Parcial";
+
+        const observacionesPago = observaciones && observaciones.trim()
+            ? observaciones.trim()
+            : null;
+
+        if (venta.metodo_pago === 'Cuotas') {
+            const filtrosCuotas = ['empresa_id = ?', 'venta_id = ?', "estado <> 'Pagada'", 'saldo_pendiente > 0'];
+            const paramsCuotas = [empresaId, ventaIdNum];
+
+            if (Array.isArray(cuota_ids) && cuota_ids.length > 0) {
+                filtrosCuotas.push(`id IN (${cuota_ids.map(() => '?').join(',')})`);
+                paramsCuotas.push(...cuota_ids.map(Number));
+            }
+
+            const [cuotasRows] = await connection.query(
+                `SELECT id, saldo_pendiente FROM venta_cuotas WHERE ${filtrosCuotas.join(' AND ')} ORDER BY fecha_vencimiento ASC, numero_cuota ASC`,
+                paramsCuotas
+            );
+
+            let montoRestanteCuotas = montoNum;
+            for (const cuota of cuotasRows) {
+                if (montoRestanteCuotas <= 0) break;
+                const saldoCuota = parseFloat(cuota.saldo_pendiente);
+                const pagoCuota = Math.min(montoRestanteCuotas, saldoCuota);
+                const nuevoSaldoCuota = redondear2(saldoCuota - pagoCuota);
+                const nuevoEstadoCuota = nuevoSaldoCuota <= 0 ? 'Pagada' : 'Parcial';
+
+                await connection.query(
+                    `UPDATE venta_cuotas
+                     SET saldo_pendiente = ?, estado = ?, fecha_pago = CASE WHEN ? = 'Pagada' THEN NOW() ELSE fecha_pago END, observaciones = ?
+                     WHERE empresa_id = ? AND id = ?`,
+                    [nuevoSaldoCuota, nuevoEstadoCuota, nuevoEstadoCuota, observacionesPago, empresaId, cuota.id]
+                );
+
+                montoRestanteCuotas = redondear2(montoRestanteCuotas - pagoCuota);
+            }
+        }
 
         // 2) Actualizar ventas
         await connection.query(
@@ -323,10 +469,6 @@ exports.registrarPago = async (req, res) => {
         );
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
-
-        const observacionesPago = observaciones && observaciones.trim()
-            ? observaciones.trim()
-            : null;
 
         await connection.query(
             `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 

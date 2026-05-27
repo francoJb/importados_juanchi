@@ -13,6 +13,7 @@ if (!fs.existsSync(path.resolve(__dirname, `../.env.${process.env.NODE_ENV || 'l
 const cors = require('cors');
 const express = require('express');
 const app = express();
+const db = require('./database/database');
 
 const allowedOrigins = [
   'https://elda-gestion.pages.dev',          // producción
@@ -58,8 +59,14 @@ app.use('/api/productos', productosRoutes);
 app.use('/api/proveedores', proveedoresRoutes);
 app.use('/api/clientes', clientesRoutes);
 
-// Iniciar servidor
 const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+db.ready
+  .catch((error) => {
+    console.error('No se pudo preparar la base de datos antes de iniciar:', error);
+    process.exit(1);
+  })
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    });
+  });

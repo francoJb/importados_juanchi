@@ -1052,6 +1052,7 @@
                             <option value="QR">QR</option>
                             <option value="Tarjeta">Tarjeta</option>
                             <option id="opt-cta-cte" value="Cuenta Corriente">Cuenta Corriente (Fiado)</option>
+                            <option id="opt-cuotas" value="Cuotas">Cuotas</option>
                         </select>
                     </div>
                     <div id="campos-ctacte" class="hidden space-y-4 border-l-4 border-yellow-500 pl-4 bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-r-xl">
@@ -1064,6 +1065,20 @@
                             <span>Saldo que irá a Cta. Cte:</span>
                             <span id="pago-saldo-final" class="font-bold text-red-500">$0.00</span>
                         </div>
+                    </div>
+                    <div id="campos-cuotas" class="hidden space-y-4 border-l-4 border-blue-500 pl-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-r-xl">
+                        <p class="text-xs text-blue-700 dark:text-blue-300 font-bold uppercase">Plan de cuotas</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm mb-1">Cantidad de cuotas</label>
+                                <input type="number" id="pago-cuotas-cantidad" value="3" min="1" step="1" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-1">Cada cuántos días</label>
+                                <input type="number" id="pago-cuotas-dias" value="30" min="1" step="1" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold">
+                            </div>
+                        </div>
+                        <p id="pago-cuotas-resumen" class="text-sm font-bold text-blue-700 dark:text-blue-300">$0.00 por cuota</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3 pt-4">
                         <button onclick="cerrarModalPago()" class="btn-tertiary">
@@ -1104,13 +1119,13 @@
                 </div>
                 <div class="p-6 space-y-5">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Ventas Pendientes del Cliente</label>
+                        <label id="modalPago-listaTitulo" class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Ventas Pendientes del Cliente</label>
                         <div class="border rounded-xl overflow-hidden">
                             <table class="w-full text-sm">
                                 <thead class="bg-gray-100 dark:bg-slate-700">
                                     <tr>
                                         <th class="p-2 text-left w-16">Sel.</th>
-                                        <th class="p-2 text-left">Venta</th>
+                                        <th class="p-2 text-left">Venta / Cuota</th>
                                         <th class="p-2 text-left">Fecha</th>
                                         <th class="p-2 text-right">Saldo Pendiente</th>
                                     </tr>

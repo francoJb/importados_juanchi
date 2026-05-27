@@ -144,6 +144,31 @@ async function asegurarColumnasMultiempresa() {
     await db.query('UPDATE cuenta_corriente SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
 }
 
+async function asegurarEsquemaCuotas() {
+    await db.query(`
+        ALTER TABLE ventas
+        MODIFY metodo_pago ENUM('Efectivo','Transferencia','Tarjeta','QR','Cuenta Corriente','Cuotas') NOT NULL
+    `);
+
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS venta_cuotas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            empresa_id INT NOT NULL,
+            venta_id INT NOT NULL,
+            cliente_id INT NOT NULL,
+            numero_cuota INT NOT NULL,
+            fecha_vencimiento DATE NOT NULL,
+            monto DECIMAL(12,2) NOT NULL,
+            saldo_pendiente DECIMAL(12,2) NOT NULL,
+            estado ENUM('Pendiente','Pagada','Parcial') DEFAULT 'Pendiente',
+            fecha_pago DATETIME NULL,
+            observaciones TEXT,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_cuota_venta (empresa_id, venta_id, numero_cuota)
+        )
+    `);
+}
+
 // Esta función crea las tablas automáticamente si no existen
 const configurarTablas = async () => {
     try {
@@ -287,7 +312,7 @@ const configurarTablas = async () => {
             cliente_id INT NULL,
             fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
             total DECIMAL(12, 2) NOT NULL,
-            metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente') NOT NULL,
+            metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente', 'Cuotas') NOT NULL,
             estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
             saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
             observaciones TEXT,
@@ -329,12 +354,14 @@ const configurarTablas = async () => {
             );
         `);
         await asegurarColumnasMultiempresa();
+        await asegurarEsquemaCuotas();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
     }
 };
 
-configurarTablas();
+const dbReady = configurarTablas();
+db.ready = dbReady;
 
 module.exports = db;
