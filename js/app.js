@@ -342,6 +342,10 @@ function crearGraficoVentas(ventas) {
 }
 
 async function renderDashboard() {
+    if (!esUsuarioEmpresa()) {
+        return;
+    }
+
     mostrarLoader();
 
     try {
@@ -412,18 +416,18 @@ async function renderDashboard() {
 // ==========================================
 
 async function initApp() {
-    // Inicializar módulos
-    await initClientes();
-    await initProductos();
-    await initProveedores();
-    await initVentas();
-
     if (esPlatformAdmin()) {
         cambiarSeccion('seccionConfig');
         popularFormularioConfiguracion();
-    } else {
+    } else if (esUsuarioEmpresa()) {
+        // Inicializar módulos operativos solo para usuarios de empresa.
+        await initClientes();
+        await initProductos();
+        await initProveedores();
+        await initVentas();
+
         cambiarSeccion('seccionDashboard');
-        renderDashboard();
+        await renderDashboard();
     }
 
     const sidebar = document.getElementById("sidebar");
@@ -521,9 +525,6 @@ async function initApp() {
     }
 
     popularFormularioConfiguracion();
-    if (esUsuarioEmpresa()) {
-        renderDashboard();
-    }
 
     // 1. Reloj profesional
     if(document.getElementById("pantallaGenerarVenta")){

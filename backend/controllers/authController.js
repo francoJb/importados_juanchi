@@ -51,41 +51,7 @@ exports.login = async (req, res) => {
             }
         }
 
-        const empresaOk = empresa === process.env.AUTH_EMPRESA;
-        const usuarioOk = usuario === process.env.AUTH_USER;
-
-        if (!empresaOk || !usuarioOk) {
-            return res.status(401).json({ error: 'Credenciales incorrectas.' });
-        }
-
-        const passwordOk = await bcrypt.compare(password, process.env.AUTH_PASSWORD_HASH || '');
-        if (!passwordOk) {
-            return res.status(401).json({ error: 'Credenciales incorrectas.' });
-        }
-
-        const token = jwt.sign(
-            {
-                usuario,
-                empresa,
-                role: 'platform_admin',
-                usuarioId: 0,
-                empresaId: 0
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: process.env.JWT_EXPIRES_IN || '20d'
-            }
-        );
-
-        return res.json({
-            success: true,
-            token,
-            usuario,
-            empresa,
-            role: 'platform_admin',
-            usuarioId: 0,
-            empresaId: 0
-        });
+        return res.status(401).json({ error: 'Credenciales incorrectas.' });
     } catch (error) {
         console.error('Error en login:', error);
         res.status(500).json({ error: 'Error al procesar el inicio de sesión.' });

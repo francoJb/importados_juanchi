@@ -6,7 +6,8 @@
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
     "test": "npm run test:syntax",
-    "test:syntax": "node --check backend/server.js && node --check backend/controllers/ventasController.js && node --check backend/controllers/clientesController.js && node --check backend/controllers/productosController.js && node --check backend/controllers/authController.js"
+    "test:syntax": "node --check backend/server.js && node --check backend/controllers/ventasController.js && node --check backend/controllers/clientesController.js && node --check backend/controllers/productosController.js && node --check backend/controllers/authController.js && node --check backend/scripts/seedInitialAccess.js",
+    "seed:initial-access": "node backend/scripts/seedInitialAccess.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

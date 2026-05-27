@@ -1079,6 +1079,21 @@ window.imprimirVenta = async (id) => {
 };
 
 export async function obtenerHistorialVentas() {
-    const response = await apiFetch(URL_API);
-    return await response.json();
+    try {
+        const response = await apiFetch(URL_API);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Error al obtener ventas");
+        }
+
+        if (!Array.isArray(data)) {
+            throw new Error("La respuesta de ventas no tiene el formato esperado");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error en obtenerHistorialVentas:", error);
+        return [];
+    }
 }
