@@ -54,6 +54,96 @@ if (sslEnabled) {
 
 const db = mysql.createPool(dbConfig);
 
+async function columnExists(table, column) {
+    const [rows] = await db.query(`SHOW COLUMNS FROM ${table} LIKE ?`, [column]);
+    return rows.length > 0;
+}
+
+async function addColumnIfMissing(table, column, definition) {
+    if (await columnExists(table, column)) {
+        return;
+    }
+    await db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+async function renameColumnIfNeeded(table, oldColumn, newColumn, definition) {
+    const hasOld = await columnExists(table, oldColumn);
+    const hasNew = await columnExists(table, newColumn);
+
+    if (hasOld && !hasNew) {
+        await db.query(`ALTER TABLE ${table} CHANGE ${oldColumn} ${newColumn} ${definition}`);
+    }
+}
+
+async function obtenerEmpresaOperativaDefault() {
+    const [jrimportRows] = await db.query("SELECT id FROM empresas WHERE nombre = 'Jrimport' LIMIT 1");
+    if (jrimportRows.length > 0) {
+        return jrimportRows[0].id;
+    }
+
+    const [tenantRows] = await db.query(`
+        SELECT e.id
+        FROM empresas e
+        LEFT JOIN usuarios u ON u.empresa_id = e.id
+        WHERE e.estado = 1 AND e.nombre <> 'eldaGestion' AND (u.role IS NULL OR u.role <> 'platform_admin')
+        ORDER BY e.id
+        LIMIT 1
+    `);
+    if (tenantRows.length > 0) {
+        return tenantRows[0].id;
+    }
+
+    const [companyRows] = await db.query('SELECT id FROM empresas WHERE estado = 1 ORDER BY id LIMIT 1');
+    if (companyRows.length > 0) {
+        return companyRows[0].id;
+    }
+
+    throw new Error('No hay empresas activas para migrar datos operativos.');
+}
+
+async function asegurarColumnasMultiempresa() {
+    const empresaOperativaId = await obtenerEmpresaOperativaDefault();
+
+    await addColumnIfMissing('clientes', 'empresa_id', 'INT NULL');
+    await db.query('UPDATE clientes SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+
+    await addColumnIfMissing('categorias', 'empresa_id', 'INT NULL');
+    await db.query('UPDATE categorias SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+
+    await renameColumnIfNeeded('proveedores', 'categoria_arca', 'arca_categoria', 'VARCHAR(100)');
+    await renameColumnIfNeeded('proveedores', 'cuenta_bancaria', 'banco_cuenta', 'VARCHAR(150)');
+    await addColumnIfMissing('proveedores', 'empresa_id', 'INT NULL');
+    await db.query('UPDATE proveedores SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+
+    await addColumnIfMissing('productos', 'empresa_id', 'INT NULL');
+    await addColumnIfMissing('productos', 'categoria_id', 'INT NULL');
+    await addColumnIfMissing('productos', 'proveedor_id', 'INT NULL');
+    await db.query('UPDATE productos SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+
+    await addColumnIfMissing('ventas', 'empresa_id', 'INT NULL');
+    await addColumnIfMissing('ventas', 'estado', 'TINYINT(1) DEFAULT 1');
+    await db.query('UPDATE ventas SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+    await db.query('UPDATE ventas SET estado = 1 WHERE estado IS NULL');
+
+    await addColumnIfMissing('detalle_ventas', 'empresa_id', 'INT NULL');
+    await db.query(`
+        UPDATE detalle_ventas d
+        INNER JOIN ventas v ON v.id = d.venta_id
+        SET d.empresa_id = v.empresa_id
+        WHERE d.empresa_id IS NULL
+    `);
+    await db.query('UPDATE detalle_ventas SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+
+    await addColumnIfMissing('cuenta_corriente', 'empresa_id', 'INT NULL');
+    await db.query(`
+        UPDATE cuenta_corriente cc
+        INNER JOIN clientes c ON c.id = cc.cliente_id
+        SET cc.empresa_id = c.empresa_id
+        WHERE cc.empresa_id IS NULL
+    `);
+    await db.query('UPDATE cuenta_corriente SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
+}
+
 // Esta función crea las tablas automáticamente si no existen
 const configurarTablas = async () => {
     try {
@@ -238,6 +328,7 @@ const configurarTablas = async () => {
                 FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
             );
         `);
+        await asegurarColumnasMultiempresa();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
