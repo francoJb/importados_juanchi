@@ -172,6 +172,23 @@ const configurarTablas = async () => {
                 CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
             )
         `);
+
+        await db.query(`
+            ALTER TABLE usuarios
+            MODIFY role ENUM('admin','platform_admin','tenant_admin','user') DEFAULT 'user'
+        `);
+
+        await db.query(`
+            UPDATE usuarios
+            SET role = 'platform_admin'
+            WHERE role = 'admin'
+        `);
+
+        await db.query(`
+            ALTER TABLE usuarios
+            MODIFY role ENUM('platform_admin','tenant_admin','user') DEFAULT 'user'
+        `);
+
         // 7. TABLA DE VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS ventas (

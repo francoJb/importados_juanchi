@@ -3,6 +3,24 @@ const db = require('../database/database');
 
 const DEFAULT_PASSWORD = process.env.INITIAL_USERS_PASSWORD || 'admin';
 
+async function ensureRoleSchema() {
+    await db.query(`
+        ALTER TABLE usuarios
+        MODIFY role ENUM('admin','platform_admin','tenant_admin','user') DEFAULT 'user'
+    `);
+
+    await db.query(`
+        UPDATE usuarios
+        SET role = 'platform_admin'
+        WHERE role = 'admin'
+    `);
+
+    await db.query(`
+        ALTER TABLE usuarios
+        MODIFY role ENUM('platform_admin','tenant_admin','user') DEFAULT 'user'
+    `);
+}
+
 async function upsertCompany(nombre) {
     await db.query(
         `INSERT INTO empresas (nombre, estado)
@@ -50,6 +68,8 @@ async function upsertUser({ empresaId, usuario, role, nombre, apellido, password
 
 async function main() {
     const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+    await ensureRoleSchema();
 
     const eldaGestion = await upsertCompany('eldaGestion');
     const jrimport = await upsertCompany('Jrimport');
