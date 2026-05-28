@@ -132,6 +132,90 @@
     background: #0f172a;
 }
 
+.modal-card-payment {
+    max-width: min(60rem, calc(100vw - 1rem));
+    max-height: calc(100dvh - 2rem);
+    min-height: 0;
+    border-radius: 1rem;
+}
+
+.modal-payment-header {
+    flex: 0 0 auto;
+    padding: 1rem 1.25rem;
+}
+
+.modal-payment-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.modal-payment-table {
+    max-height: min(38vh, 18rem);
+    overflow: auto;
+}
+
+.modal-payment-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.modal-payment-table th,
+.modal-payment-table td {
+    padding: 0.5rem;
+}
+
+.modal-payment-summary {
+    padding: 0.75rem;
+}
+
+.modal-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.modal-payment-control {
+    padding: 0.65rem 0.8rem;
+    font-size: 1rem;
+}
+
+.modal-payment-textarea {
+    padding: 0.65rem 0.8rem;
+    resize: vertical;
+}
+
+.modal-payment-actions {
+    padding-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+    .modal-overlay {
+        padding: 0.5rem;
+    }
+
+    .modal-card-payment {
+        max-height: calc(100dvh - 1rem);
+        border-radius: 0.85rem;
+    }
+
+    .modal-payment-header {
+        padding: 0.85rem 1rem;
+    }
+
+    .modal-payment-body {
+        padding: 0.85rem;
+        gap: 0.65rem;
+    }
+
+    .modal-payment-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .modal-header {
     padding: 1rem;
     display: flex;
