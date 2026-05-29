@@ -4,34 +4,48 @@ function redondear2(valor) {
     return Math.round(Number(valor) * 100) / 100;
 }
 
-function generarCuotas(total, cantidadCuotas, intervaloDias) {
+function formatearFechaLocal(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function obtenerUltimoDiaDelMes(anio, mesIndexadoDesdeCero) {
+    return new Date(anio, mesIndexadoDesdeCero + 1, 0).getDate();
+}
+
+function generarCuotas(total, cantidadCuotas, diaVencimientoMensual) {
     const cantidad = Number(cantidadCuotas);
-    const dias = Number(intervaloDias);
+    const diaVencimiento = Number(diaVencimientoMensual);
 
     if (!Number.isInteger(cantidad) || cantidad <= 0) {
         throw new Error("La cantidad de cuotas debe ser mayor a 0.");
     }
 
-    if (!Number.isInteger(dias) || dias <= 0) {
-        throw new Error("La frecuencia de cuotas debe ser mayor a 0 días.");
+    if (!Number.isInteger(diaVencimiento) || diaVencimiento < 1 || diaVencimiento > 31) {
+        throw new Error("El día de vencimiento mensual debe estar entre 1 y 31.");
     }
 
     const totalCentavos = Math.round(Number(total) * 100);
     const baseCentavos = Math.floor(totalCentavos / cantidad);
     let restoCentavos = totalCentavos - (baseCentavos * cantidad);
     const hoy = new Date();
+    const primerMesOffset = diaVencimiento > hoy.getDate() ? 0 : 1;
 
     return Array.from({ length: cantidad }, (_, index) => {
         const montoCentavos = baseCentavos + (restoCentavos > 0 ? 1 : 0);
         if (restoCentavos > 0) restoCentavos -= 1;
 
-        const vencimiento = new Date(hoy);
-        vencimiento.setDate(hoy.getDate() + (dias * (index + 1)));
+        const mesVencimiento = hoy.getMonth() + primerMesOffset + index;
+        const vencimiento = new Date(hoy.getFullYear(), mesVencimiento, 1);
+        const ultimoDia = obtenerUltimoDiaDelMes(vencimiento.getFullYear(), vencimiento.getMonth());
+        vencimiento.setDate(Math.min(diaVencimiento, ultimoDia));
 
         return {
             numero: index + 1,
             monto: redondear2(montoCentavos / 100),
-            fecha_vencimiento: vencimiento.toISOString().slice(0, 10)
+            fecha_vencimiento: formatearFechaLocal(vencimiento)
         };
     });
 }
@@ -39,20 +53,14 @@ function generarCuotas(total, cantidadCuotas, intervaloDias) {
 exports.crearVenta = async (req, res) => {
     
     const { cliente_id, total, metodo_pago, entrega_inicial, cuotas, items, observaciones } = req.body;
+    const totalVenta = Number(total);
+    const entregaInicial = Number(entrega_inicial || 0);
+    const saldoFinanciado = redondear2(totalVenta - entregaInicial);
     
     if (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && (!cliente_id || Number(cliente_id) === 0)) {
         return res.status(400).json({
             error: "Seleccioná un cliente registrado para vender a crédito o en cuotas."
         });
-    }
-
-    let planCuotas = [];
-    if (metodo_pago === 'Cuotas') {
-        try {
-            planCuotas = generarCuotas(total, cuotas?.cantidad, cuotas?.intervalo_dias);
-        } catch (error) {
-            return res.status(400).json({ error: error.message });
-        }
     }
 
     // Validar que el cliente tenga habilitado el crédito si el pago es a cuenta corriente
@@ -74,8 +82,25 @@ exports.crearVenta = async (req, res) => {
         return res.status(400).json({ error: "La venta debe tener al menos un ítem." });
     }
 
-    if (!total || Number(total) <= 0) {
+    if (!Number.isFinite(totalVenta) || totalVenta <= 0) {
         return res.status(400).json({ error: "El total de la venta debe ser mayor a 0." });
+    }
+
+    if (!Number.isFinite(entregaInicial) || entregaInicial < 0) {
+        return res.status(400).json({ error: "La entrega inicial no puede ser negativa." });
+    }
+
+    if (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && entregaInicial >= totalVenta) {
+        return res.status(400).json({ error: "La entrega inicial debe ser menor al total de la venta." });
+    }
+
+    let planCuotas = [];
+    if (metodo_pago === 'Cuotas') {
+        try {
+            planCuotas = generarCuotas(saldoFinanciado, cuotas?.cantidad, cuotas?.dia_vencimiento);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
     }
     
 
@@ -87,14 +112,14 @@ exports.crearVenta = async (req, res) => {
 
         // 1. Insertar la Cabecera de la Venta
         // Si es Cta Cte o Cuotas, el saldo_pendiente queda abierto hasta cobrar.
-        const saldoPendiente = ['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) ? (total - (entrega_inicial || 0)) : 0;
+        const saldoPendiente = ['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) ? saldoFinanciado : 0;
         const estadoPago = (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && saldoPendiente > 0) ? 'Pendiente' : 'Pagado';
 
         const empresaId = req.empresaId;
         const [ventaRes] = await connection.query(
             `INSERT INTO ventas (empresa_id, cliente_id, total, metodo_pago, estado_pago, saldo_pendiente, observaciones) 
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [empresaId, cliente_id === 0 ? null : cliente_id, total, metodo_pago, estadoPago, saldoPendiente, observaciones]
+            [empresaId, cliente_id === 0 ? null : cliente_id, totalVenta, metodo_pago, estadoPago, saldoPendiente, observaciones]
         );
         const ventaId = ventaRes.insertId;
 
@@ -134,13 +159,13 @@ exports.crearVenta = async (req, res) => {
     
             // A. Primero obtenemos el saldo actual del cliente
             const [rows] = await connection.query(
-                "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ?",
+                "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ? AND estado = 1",
                 [empresaId, cliente_id]
             );
             let saldoCalculado = parseFloat(rows[0].saldoActual);
 
             // B. Registrar la DEUDA (El DEBE)
-            saldoCalculado += parseFloat(total); // Sumamos lo que se lleva
+            saldoCalculado += totalVenta; // Sumamos lo que se lleva
             const descripcionDeuda = metodo_pago === 'Cuotas'
                 ? `Venta # ${ventaId} en ${planCuotas.length} cuotas - ${observaciones || 'Sin obs.'}`
                 : `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`;
@@ -148,16 +173,16 @@ exports.crearVenta = async (req, res) => {
             await connection.query(
                 `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
                 VALUES (?, ?, ?, ?, ?, 0, ?)`,
-                [empresaId, cliente_id, ventaId, descripcionDeuda, total, saldoCalculado]
+                [empresaId, cliente_id, ventaId, descripcionDeuda, totalVenta, saldoCalculado]
             );
 
             // C. Si hubo ENTREGA INICIAL, registrar el pago (El HABER)
-            if (entrega_inicial > 0) {
-                saldoCalculado -= parseFloat(entrega_inicial); // Restamos lo que pagó
+            if (entregaInicial > 0) {
+                saldoCalculado -= entregaInicial; // Restamos lo que pagó
                 await connection.query(
                     `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
                     VALUES (?, ?, ?, ?, 0, ?, ?)`,
-                    [empresaId, cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entrega_inicial, saldoCalculado]
+                    [empresaId, cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entregaInicial, saldoCalculado]
                 );
             }
 
@@ -188,6 +213,7 @@ exports.crearVenta = async (req, res) => {
 exports.obtenerVentas = async (req, res) => {
     try {
         const empresaId = req.empresaId;
+        const estado = req.query.estado === 'eliminados' ? 0 : 1;
         const [rows] = await db.query(`
             SELECT 
                 v.id,
@@ -201,9 +227,9 @@ exports.obtenerVentas = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id=?
-            WHERE v.empresa_id=? and v.estado = 1
+            WHERE v.empresa_id=? and v.estado = ?
             ORDER BY v.fecha DESC
-            `, [empresaId, empresaId]
+            `, [empresaId, empresaId, estado]
         );
         res.json(rows);
     } catch (error) {
@@ -283,6 +309,7 @@ exports.obtenerCuotasPendientes = async (req, res) => {
                 vc.cliente_id,
                 vc.numero_cuota,
                 vc.fecha_vencimiento,
+                vc.fecha_pago,
                 vc.monto,
                 vc.saldo_pendiente,
                 vc.estado,
@@ -292,9 +319,40 @@ exports.obtenerCuotasPendientes = async (req, res) => {
             FROM venta_cuotas vc
             INNER JOIN ventas v ON v.id = vc.venta_id AND v.empresa_id = vc.empresa_id
             INNER JOIN clientes c ON c.id = vc.cliente_id AND c.empresa_id = vc.empresa_id
-            WHERE ${filtros.join(' AND ')}
+            WHERE ${filtros.join(' AND ')} AND v.estado = 1
             ORDER BY vc.fecha_vencimiento ASC, vc.numero_cuota ASC
         `, params);
+
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.obtenerCuotasVenta = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [rows] = await db.query(`
+            SELECT
+                vc.id,
+                vc.venta_id,
+                vc.cliente_id,
+                vc.numero_cuota,
+                vc.fecha_vencimiento,
+                vc.fecha_pago,
+                vc.monto,
+                vc.saldo_pendiente,
+                vc.estado,
+                v.fecha AS venta_fecha,
+                c.nombre AS cliente_nombre,
+                c.apellido AS cliente_apellido
+            FROM venta_cuotas vc
+            INNER JOIN ventas v ON v.id = vc.venta_id AND v.empresa_id = vc.empresa_id
+            INNER JOIN clientes c ON c.id = vc.cliente_id AND c.empresa_id = vc.empresa_id
+            WHERE vc.empresa_id = ? AND vc.venta_id = ?
+            ORDER BY vc.numero_cuota ASC
+        `, [req.empresaId, id]);
 
         res.json(rows);
     } catch (error) {
@@ -316,13 +374,18 @@ exports.eliminarVenta = async (req, res) => {
         await connection.beginTransaction();
 
         const [ventaRows] = await connection.query(
-            "SELECT id FROM ventas WHERE id=? AND empresa_id=?",
+            "SELECT id, estado FROM ventas WHERE id=? AND empresa_id=?",
             [ventaId, req.empresaId]
         );
 
         if (ventaRows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ error: "Venta no encontrada" });
+        }
+
+        if (Number(ventaRows[0].estado) === 0) {
+            await connection.rollback();
+            return res.status(400).json({ error: "La venta ya está eliminada" });
         }
 
         const [detalles] = await connection.query(
@@ -338,17 +401,7 @@ exports.eliminarVenta = async (req, res) => {
         }
 
         await connection.query(
-            "DELETE FROM venta_cuotas WHERE empresa_id=? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        await connection.query(
-            "DELETE FROM cuenta_corriente WHERE empresa_id=? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        await connection.query(
-            "DELETE FROM detalle_ventas WHERE empresa_id=? AND venta_id = ?",
+            "UPDATE cuenta_corriente SET estado = 0 WHERE empresa_id=? AND venta_id = ?",
             [req.empresaId, ventaId]
         );
 
@@ -363,6 +416,67 @@ exports.eliminarVenta = async (req, res) => {
         await connection.rollback();
         console.error("ERROR AL ELIMINAR VENTA:", error.message);
         return res.status(500).json({ error: "Error interno al eliminar la venta" });
+    } finally {
+        connection.release();
+    }
+};
+
+exports.restaurarVenta = async (req, res) => {
+    const { id } = req.params;
+    const ventaId = Number(id);
+
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+        return res.status(400).json({ error: "ID de venta inválido" });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const [ventaRows] = await connection.query(
+            "SELECT id, estado FROM ventas WHERE id=? AND empresa_id=?",
+            [ventaId, req.empresaId]
+        );
+
+        if (ventaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: "Venta no encontrada" });
+        }
+
+        if (Number(ventaRows[0].estado) === 1) {
+            await connection.rollback();
+            return res.status(400).json({ error: "La venta ya está activa" });
+        }
+
+        const [detalles] = await connection.query(
+            "SELECT producto_id, cantidad FROM detalle_ventas WHERE empresa_id = ? AND venta_id = ?",
+            [req.empresaId, ventaId]
+        );
+
+        for (const detalle of detalles) {
+            await connection.query(
+                "UPDATE productos SET stock = stock - ? WHERE empresa_id=? AND id = ? AND control_stock = 1",
+                [detalle.cantidad, req.empresaId, detalle.producto_id]
+            );
+        }
+
+        await connection.query(
+            "UPDATE cuenta_corriente SET estado = 1 WHERE empresa_id=? AND venta_id = ?",
+            [req.empresaId, ventaId]
+        );
+
+        await connection.query(
+            "UPDATE ventas SET estado = 1 WHERE id = ? AND empresa_id=?",
+            [ventaId, req.empresaId]
+        );
+
+        await connection.commit();
+        return res.json({ success: true, message: "Venta restaurada correctamente" });
+    } catch (error) {
+        await connection.rollback();
+        console.error("ERROR AL RESTAURAR VENTA:", error.message);
+        return res.status(500).json({ error: "Error interno al restaurar la venta" });
     } finally {
         connection.release();
     }
@@ -464,7 +578,7 @@ exports.registrarPago = async (req, res) => {
 
         // 3) Registrar en cuenta corriente
         const [ccRows] = await connection.query(
-            "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ?",
+            "SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ? AND estado = 1",
             [empresaId, idCliente]
         );
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;

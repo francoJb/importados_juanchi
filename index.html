@@ -122,7 +122,12 @@
                     </a>
                 </nav>
                 <!-- Interruptor de Modo Oscuro -->
-                <div class="border-t border-cyan-400/10">
+                <div class="border-t border-cyan-400/10 p-4 space-y-3">
+                    <div id="sessionInfo" class="rounded-xl border border-cyan-400/15 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300/80">Sesión activa</p>
+                        <p id="sessionEmpresa" class="mt-1 truncate font-bold text-slate-100">Empresa</p>
+                        <p id="sessionUsuario" class="truncate text-slate-400">Usuario</p>
+                    </div>
                     <button id="btnDarkMode" class="w-full rounded-xl border border-cyan-400/20 bg-cyan-400/10 py-2 px-4 text-sm font-bold text-cyan-100 hover:bg-cyan-400/20 transition-all">
                         🌙 Cambiar Modo
                     </button>
@@ -946,6 +951,9 @@
                             <button id="btn-md-imprimir" onclick="imprimirFactura()" class="transition-all transform hover:scale-150 flex items-center gap-2" title="Imprimir">
                                 <span>🖨️</span>
                             </button>
+                            <button id="btn-md-plan-pagos" onclick="imprimirPlanPagosActual()" class="hidden transition-all transform hover:scale-150 flex items-center gap-2" title="Plan de pagos">
+                                <span>📄</span>
+                            </button>
                             <button id="btn-md-cobrar" class="hidden transition-all transform hover:scale-150 flex items-center gap-2" title="Registrar pago">
                                 <span>💵</span>
                             </button>
@@ -1068,14 +1076,18 @@
                     </div>
                     <div id="campos-cuotas" class="hidden space-y-4 border-l-4 border-blue-500 pl-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-r-xl">
                         <p class="text-xs text-blue-700 dark:text-blue-300 font-bold uppercase">Plan de cuotas</p>
+                        <div>
+                            <label class="block text-sm mb-1">Entrega de dinero</label>
+                            <input type="number" id="pago-cuotas-entrega" value="0" min="0" step="0.01" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold text-green-600">
+                        </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm mb-1">Cantidad de cuotas</label>
                                 <input type="number" id="pago-cuotas-cantidad" value="3" min="1" step="1" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold">
                             </div>
                             <div>
-                                <label class="block text-sm mb-1">Cada cuántos días</label>
-                                <input type="number" id="pago-cuotas-dias" value="30" min="1" step="1" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold">
+                                <label class="block text-sm mb-1">Día de vencimiento mensual</label>
+                                <input type="number" id="pago-cuotas-dia-vencimiento" value="5" min="1" max="31" step="1" class="w-full p-2 border rounded-lg bg-white dark:bg-slate-900 font-bold">
                             </div>
                         </div>
                         <p id="pago-cuotas-resumen" class="text-sm font-bold text-blue-700 dark:text-blue-300">$0.00 por cuota</p>
@@ -1167,6 +1179,22 @@
                     <div class="modal-payment-actions flex gap-3">
                         <button type="button" id="btnCancelRegistroPago" class="flex-1 btn-secondary">Cancelar</button>
                         <button type="button" id="btnAcceptRegistroPago" class="flex-1 btn-primary">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CONFIRMACIÓN -->
+        <div id="modalConfirmacion" class="modal-overlay hidden" style="z-index:115;">
+            <div class="modal-card transform transition-all duration-300 scale-95 opacity-0" id="modalConfirmacionContent" style="max-width:28rem; min-height:auto; border-radius:1.5rem; overflow:hidden;">
+                <div class="p-6 border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
+                    <h3 id="modalConfirmacionTitle" class="text-xl font-bold text-gray-900 dark:text-white">Confirmar acción</h3>
+                    <p id="modalConfirmacionMessage" class="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed"></p>
+                </div>
+                <div class="p-6">
+                    <div class="flex gap-3">
+                        <button type="button" id="modalConfirmacionCancel" class="flex-1 btn-secondary">Cancelar</button>
+                        <button type="button" id="modalConfirmacionAccept" class="flex-1 btn-primary">Confirmar</button>
                     </div>
                 </div>
             </div>

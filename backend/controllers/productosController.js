@@ -27,13 +27,15 @@ async function obtenerOCrearProveedor(nombreProveedor, empresaId) {
 exports.obtenerProductos = async (req, res) => {
     try {
         const empresaId = req.empresaId; // Del middleware
+        const estado = req.query.estado === 'eliminados' ? 0 : 1;
         const [rows] = await db.query(`
             SELECT p.*, c.nombre as categoria, COALESCE(pr.nombre, p.proveedor) as proveedor
             FROM productos p
             LEFT JOIN categorias c ON p.categoria_id = c.id AND c.empresa_id = ?
             LEFT JOIN proveedores pr ON p.proveedor_id = pr.id AND pr.empresa_id = ?
-            WHERE p.empresa_id = ? AND p.estado = 1
-        `, [empresaId, empresaId, empresaId]);
+            WHERE p.empresa_id = ? AND p.estado = ?
+            ORDER BY p.descripcion
+        `, [empresaId, empresaId, empresaId, estado]);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -160,6 +162,25 @@ exports.eliminarProducto = async (req, res) => {
         });
     } catch (err) {
         console.error("Error al desactivar producto:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.restaurarProducto = async (req, res) => {
+    const { id } = req.params;
+    const empresaId = req.empresaId;
+
+    try {
+        const [result] = await db.query(
+            "UPDATE productos SET estado = 1 WHERE empresa_id = ? AND id = ? AND estado = 0",
+            [empresaId, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensaje: "Producto eliminado no encontrado" });
+        }
+        res.json({ mensaje: "Producto restaurado correctamente", id });
+    } catch (err) {
+        console.error("Error al restaurar producto:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

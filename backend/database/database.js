@@ -347,12 +347,14 @@ const configurarTablas = async () => {
                 observaciones TEXT NULL,
                 debe DECIMAL(12, 2) DEFAULT 0.00,
                 haber DECIMAL(12, 2) DEFAULT 0.00,
+                estado TINYINT DEFAULT 1,
                 saldo_acumulado DECIMAL(12, 2),
                 FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id),
                 FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
             );
         `);
+        await addColumnIfMissing('cuenta_corriente', 'estado', 'TINYINT DEFAULT 1');
         await asegurarColumnasMultiempresa();
         await asegurarEsquemaCuotas();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");

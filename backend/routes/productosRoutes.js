@@ -10,6 +10,7 @@ router.get('/', verificarToken, verificarTenant, productosController.obtenerProd
 router.get('/categorias', verificarToken, verificarTenant, productosController.obtenerCategorias);
 router.post('/', verificarToken, verificarTenant, productosController.crearProducto);
 router.put('/:id', verificarToken, verificarTenant, productosController.editarProducto);
+router.put('/:id/restaurar', verificarToken, verificarTenant, productosController.restaurarProducto);
 router.delete('/:id', verificarToken, verificarTenant, productosController.eliminarProducto);
 
 

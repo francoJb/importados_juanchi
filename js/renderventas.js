@@ -93,6 +93,7 @@ export function renderTablaVentas(ventas) {
                 <td class="p-2 flex gap-2 justify-center">
                     <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Ver Detalle">👁️</button>
                     <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Imprimir">🖨️</button>
+                    ${v.metodo_pago === 'Cuotas' ? `<button onclick="imprimirPlanPagosVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Plan de pagos">📄</button>` : ''}
                     <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
                 </td>
             </tr>

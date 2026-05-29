@@ -1,5 +1,5 @@
 import { dibujarProductos } from "./renderproductos.js";
-import { cambiarSeccion, mostrarAlerta } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta, mostrarConfirmacion } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
@@ -173,7 +173,11 @@ export async function prepararEdicionProducto(id) {
 
 // 7. ELIMINAR PRODUCTO (Soft Delete)
 export async function eliminarProducto(id, descripcion) {
-    const confirmacion = confirm(`¿Estás seguro de que quieres eliminar el producto "${descripcion}"? Esta acción solo lo desactivará.`);
+    const confirmacion = await mostrarConfirmacion({
+        title: "Eliminar producto",
+        message: `¿Estás seguro de que querés eliminar el producto "${descripcion}"? Esta acción solo lo desactivará.`,
+        confirmText: "Eliminar"
+    });
     if (!confirmacion) return;
 
     try {

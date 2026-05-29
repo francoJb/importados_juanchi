@@ -1,7 +1,7 @@
 import { fetchClientes, cargarDatosBalance } from "./clientes.js";
 import { fetchProductos } from "./productos.js";
 import { actualizarTablaVenta, renderTablaVentas } from "./renderventas.js";
-import { cambiarSeccion, mostrarAlerta } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta, mostrarConfirmacion } from "./ui.js";
 import { load } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
@@ -75,8 +75,9 @@ function setSkuFocus() {
 
 function addPagoEntregaListener() {
     document.getElementById("pago-entrega")?.addEventListener("input", calcularSaldoCtaCte);
+    document.getElementById("pago-cuotas-entrega")?.addEventListener("input", actualizarResumenCuotas);
     document.getElementById("pago-cuotas-cantidad")?.addEventListener("input", actualizarResumenCuotas);
-    document.getElementById("pago-cuotas-dias")?.addEventListener("input", actualizarResumenCuotas);
+    document.getElementById("pago-cuotas-dia-vencimiento")?.addEventListener("input", actualizarResumenCuotas);
 }
 
 window.volverALista = () => {
@@ -255,6 +256,7 @@ window.abrirModalPago = () => {
     
     document.getElementById("pago-total-monto").innerText = `$${total.toFixed(2)}`;
     document.getElementById("pago-entrega").value = 0;
+    document.getElementById("pago-cuotas-entrega").value = 0;
 
     const optCtaCte = document.getElementById("opt-cta-cte");
     const optCuotas = document.getElementById("opt-cuotas");
@@ -304,12 +306,14 @@ window.calcularSaldoCtaCte = () => {
 
 function actualizarResumenCuotas() {
     const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
+    const entrega = parseFloat(document.getElementById("pago-cuotas-entrega")?.value) || 0;
+    const saldoFinanciado = Math.max(total - entrega, 0);
     const cantidad = parseInt(document.getElementById("pago-cuotas-cantidad")?.value, 10) || 1;
-    const dias = parseInt(document.getElementById("pago-cuotas-dias")?.value, 10) || 1;
-    const monto = total / cantidad;
+    const diaVencimiento = parseInt(document.getElementById("pago-cuotas-dia-vencimiento")?.value, 10) || 1;
+    const monto = saldoFinanciado / cantidad;
     const resumen = document.getElementById("pago-cuotas-resumen");
     if (resumen) {
-        resumen.innerText = `${cantidad} cuotas de $${monto.toFixed(2)} cada ${dias} días`;
+        resumen.innerText = `Entrega $${entrega.toFixed(2)}. Saldo $${saldoFinanciado.toFixed(2)} en ${cantidad} cuotas de $${monto.toFixed(2)} con vencimiento el día ${diaVencimiento} de cada mes`;
     }
 }
 
@@ -323,7 +327,9 @@ window.procesarVentaFinal = async () => {
     const idCliente = esConsumidorFinal ? 0 : window.clienteSeleccionadoVenta;
     
     const metodoPago = document.getElementById("pago-metodo").value;
-    const entregaInicial = parseFloat(document.getElementById("pago-entrega").value) || 0;
+    const entregaInicial = metodoPago === "Cuotas"
+        ? (parseFloat(document.getElementById("pago-cuotas-entrega").value) || 0)
+        : (parseFloat(document.getElementById("pago-entrega").value) || 0);
     const observaciones = document.getElementById("v-observaciones").value;
 
     const totalVenta = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
@@ -338,6 +344,17 @@ window.procesarVentaFinal = async () => {
     }
     if (metodoPago === "Cuotas" && esConsumidorFinal) {
         mostrarAlerta("Seleccioná un cliente registrado para vender en cuotas.", "Método de pago inválido", "error");
+        return;
+    }
+    if (metodoPago === "Cuotas") {
+        const diaVencimiento = parseInt(document.getElementById("pago-cuotas-dia-vencimiento").value, 10);
+        if (!Number.isInteger(diaVencimiento) || diaVencimiento < 1 || diaVencimiento > 31) {
+            mostrarAlerta("Ingresá un día de vencimiento entre 1 y 31.", "Plan de cuotas inválido", "error");
+            return;
+        }
+    }
+    if (['Cuenta Corriente', 'Cuotas'].includes(metodoPago) && (entregaInicial < 0 || entregaInicial >= totalVenta)) {
+        mostrarAlerta("La entrega debe ser menor al total de la venta.", "Entrega inválida", "warning");
         return;
     }
 
@@ -373,7 +390,7 @@ window.procesarVentaFinal = async () => {
         cuotas: metodoPago === "Cuotas"
             ? {
                 cantidad: parseInt(document.getElementById("pago-cuotas-cantidad").value, 10),
-                intervalo_dias: parseInt(document.getElementById("pago-cuotas-dias").value, 10)
+                dia_vencimiento: parseInt(document.getElementById("pago-cuotas-dia-vencimiento").value, 10)
             }
             : null,
         items: carritoVenta.map(item => ({
@@ -393,10 +410,37 @@ window.procesarVentaFinal = async () => {
         const resultado = await respuesta.json();
 
         if (respuesta.ok) {
-            mostrarAlerta("Venta realizada con éxito.", "¡Éxito!", "success");
-            const ventaSimulada = { id: resultado.ventaId, fecha: new Date(), cliente_id: idCliente, total: totalVenta, observaciones: observaciones };
+            const ventaSimulada = {
+                id: resultado.ventaId,
+                fecha: new Date(),
+                cliente_id: idCliente,
+                total: totalVenta,
+                saldo_pendiente: totalVenta - entregaInicial,
+                metodo_pago: metodoPago,
+                entrega_inicial: entregaInicial,
+                observaciones: observaciones
+            };
             const detallesSimulados = carritoVenta.map(item => ({ sku: item.sku, descripcion: item.desc, precio_unitario: item.precio, cantidad: item.cantidad }));
-            await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
+            const cuotasGeneradas = Array.isArray(resultado.cuotas) ? resultado.cuotas : [];
+            const esVentaEnCuotas = metodoPago === "Cuotas";
+
+            await mostrarAlerta("Venta realizada con éxito.", "¡Éxito!", "success");
+            const imprimirComprobante = await mostrarConfirmacion({
+                title: esVentaEnCuotas ? "Imprimir plan de pagos" : "Imprimir comprobante",
+                message: esVentaEnCuotas
+                    ? "¿Querés imprimir el plan de pagos de esta venta?"
+                    : "¿Querés imprimir el comprobante de esta venta?",
+                confirmText: esVentaEnCuotas ? "Imprimir plan" : "Imprimir",
+                cancelText: "No imprimir"
+            });
+
+            if (imprimirComprobante) {
+                const doc = esVentaEnCuotas
+                    ? await generarPlanPagosPDF(ventaSimulada, detallesSimulados, cuotasGeneradas)
+                    : await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
+                abrirPreviewPDF(doc, `${esVentaEnCuotas ? 'PlanPagos' : 'Factura'}_${ventaSimulada.id}.pdf`);
+            }
+
             cerrarModalPago();
             // Resetear para nueva venta
             carritoVenta = [];
@@ -429,9 +473,17 @@ async function cargarDatosVenta(id) {
     const venta = await resVenta.json();
     const resDetalle = await apiFetch(`${URL_API}/${id}/detalle`);
     const detalles = await resDetalle.json();
+    const cuotas = venta.metodo_pago === "Cuotas" ? await fetchCuotasVenta(id) : [];
     window.ventaActual = venta;
     window.detallesActual = detalles;
-    return { venta, detalles };
+    window.cuotasActual = cuotas;
+    return { venta, detalles, cuotas };
+}
+
+async function fetchCuotasVenta(id) {
+    const response = await apiFetch(`${URL_API}/${id}/cuotas`);
+    if (!response.ok) return [];
+    return await response.json();
 }
 
 window.verDetalleVenta = async (id) => {
@@ -460,6 +512,9 @@ window.verDetalleVenta = async (id) => {
     }
 
     const btnCobrar = document.getElementById("btn-md-cobrar");
+    const btnPlanPagos = document.getElementById("btn-md-plan-pagos");
+    btnPlanPagos?.classList.toggle("hidden", venta.metodo_pago !== "Cuotas");
+
     if (saldo > 0) {
         btnCobrar.classList.remove("hidden");
         const idDelCliente = venta.cliente_id;
@@ -949,21 +1004,26 @@ window.imprimirVenta = (id) => {
 };
 
 window.eliminarVenta = async (id) => {
-    if (confirm("¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.")) {
-        try {
-            const response = await apiFetch(`${URL_API}/${id}`, { method: "DELETE" });
-            const data = await response.json();
+    const confirmacion = await mostrarConfirmacion({
+        title: "Eliminar venta",
+        message: "¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.",
+        confirmText: "Eliminar"
+    });
+    if (!confirmacion) return;
 
-            if (!response.ok) {
-                throw new Error(data.error || "No se pudo eliminar la venta");
-            }
+    try {
+        const response = await apiFetch(`${URL_API}/${id}`, { method: "DELETE" });
+        const data = await response.json();
 
-            mostrarAlerta(data.message || "Venta eliminada correctamente", "¡Éxito!", "success");
-            await listarVentas();
-        } catch (error) {
-            console.error("Error al eliminar venta:", error);
-            mostrarAlerta(`No se pudo eliminar la venta: ${error.message}`, "Error", "error");
+        if (!response.ok) {
+            throw new Error(data.error || "No se pudo eliminar la venta");
         }
+
+        mostrarAlerta(data.message || "Venta eliminada correctamente", "¡Éxito!", "success");
+        await listarVentas();
+    } catch (error) {
+        console.error("Error al eliminar venta:", error);
+        mostrarAlerta(`No se pudo eliminar la venta: ${error.message}`, "Error", "error");
     }
 };
 
@@ -1027,6 +1087,191 @@ export async function listarVentas() {
     } catch (error) {
         console.error("Error al listar ventas:", error);
     }
+}
+
+function formatearFechaDocumento(fecha) {
+    if (!fecha) return "-";
+    if (typeof fecha === 'string') {
+        const match = fecha.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (match) {
+            const [, anio, mes, dia] = match;
+            return new Date(Number(anio), Number(mes) - 1, Number(dia)).toLocaleDateString('es-AR');
+        }
+    }
+    const parsed = new Date(fecha);
+    if (Number.isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleDateString('es-AR');
+}
+
+async function obtenerDatosClienteDocumento(venta) {
+    if (!venta?.cliente_id || Number(venta.cliente_id) <= 0) {
+        return ["Consumidor Final"];
+    }
+
+    if (venta.cliente_nombre || venta.cliente_apellido) {
+        return [`${venta.cliente_nombre || ''} ${venta.cliente_apellido || ''}`.trim()];
+    }
+
+    const clientes = await fetchClientes();
+    const cliente = clientes.find(c => c.id == venta.cliente_id);
+    if (!cliente) return ["Cliente registrado"];
+
+    return [
+        `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim(),
+        cliente.dni ? `DNI: ${cliente.dni}` : '',
+        cliente.cuit ? `CUIT: ${cliente.cuit}` : '',
+        cliente.direccion ? `Dirección: ${cliente.direccion}` : '',
+        cliente.telefono ? `Teléfono: ${cliente.telefono}` : ''
+    ].filter(Boolean);
+}
+
+async function generarPlanPagosPDF(venta, detalles, cuotas) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    let y = margin;
+
+    const datosEmpresa = obtenerDatosEmpresa();
+    const cuotasNormalizadas = (cuotas || []).map((cuota, index) => ({
+        numero: cuota.numero_cuota || cuota.numero || index + 1,
+        fecha_vencimiento: cuota.fecha_vencimiento,
+        fecha_pago: cuota.fecha_pago,
+        monto: parseFloat(cuota.monto || 0),
+        saldo_pendiente: cuota.saldo_pendiente !== undefined ? parseFloat(cuota.saldo_pendiente || 0) : parseFloat(cuota.monto || 0),
+        estado: cuota.estado || 'Pendiente'
+    }));
+    const totalCuotas = cuotasNormalizadas.reduce((sum, cuota) => sum + cuota.monto, 0);
+    const totalOperacion = parseFloat(venta.total || 0);
+    const totalFinanciado = totalCuotas || parseFloat(venta.saldo_pendiente || 0);
+    const entregaInicial = venta.entrega_inicial !== undefined
+        ? parseFloat(venta.entrega_inicial || 0)
+        : Math.max(totalOperacion - totalFinanciado, 0);
+
+    const nuevaPaginaSiHaceFalta = (altoNecesario = 20) => {
+        if (y + altoNecesario <= pageHeight - margin) return;
+        doc.addPage();
+        y = margin;
+    };
+
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("PLAN DE PAGOS", pageWidth / 2, y, { align: "center" });
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operación N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth / 2, y, { align: "center" });
+    y += 12;
+
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(datosEmpresa.razonSocial, margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Fecha: ${formatearFechaDocumento(venta.fecha)}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`CUIT: ${datosEmpresa.cuit}`, margin, y);
+    y += 5;
+    doc.text(`Domicilio: ${datosEmpresa.domicilio}`, margin, y);
+    y += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Cliente", margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    const clienteLines = await obtenerDatosClienteDocumento(venta);
+    doc.text(clienteLines, margin, y);
+    y += clienteLines.length * 5 + 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumen de la operación", margin, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total de la operación: $${totalOperacion.toFixed(2)}`, margin, y);
+    doc.text(`Cantidad de cuotas: ${cuotasNormalizadas.length}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`Entrega inicial: $${entregaInicial.toFixed(2)}`, margin, y);
+    doc.text(`Total financiado: $${totalFinanciado.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`Método de pago: ${venta.metodo_pago || 'Cuotas'}`, margin, y);
+    doc.text(`Saldo pendiente: $${parseFloat(venta.saldo_pendiente ?? totalFinanciado).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    y += 10;
+
+    nuevaPaginaSiHaceFalta(35);
+    doc.setFont("helvetica", "bold");
+    doc.text("Detalle de productos", margin, y);
+    y += 8;
+    doc.setFontSize(9);
+    doc.text("Cant.", margin, y);
+    doc.text("Descripción", margin + 20, y);
+    doc.text("P.Unit.", pageWidth - 60, y, { align: "right" });
+    doc.text("Subtotal", pageWidth - margin, y, { align: "right" });
+    y += 4;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+
+    detalles.forEach(item => {
+        nuevaPaginaSiHaceFalta(14);
+        const descLines = doc.splitTextToSize(item.descripcion || item.desc || "-", 80);
+        doc.text(String(item.cantidad), margin, y);
+        doc.text(descLines, margin + 20, y);
+        doc.text(`$${parseFloat(item.precio_unitario || item.precio || 0).toFixed(2)}`, pageWidth - 60, y, { align: "right" });
+        doc.text(`$${(parseFloat(item.cantidad || 0) * parseFloat(item.precio_unitario || item.precio || 0)).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+        y += descLines.length * 5 + 2;
+    });
+
+    y += 6;
+    nuevaPaginaSiHaceFalta(40);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Cronograma de vencimientos", margin, y);
+    y += 8;
+    doc.setFontSize(9);
+    doc.text("Cuota", margin, y);
+    doc.text("Vencimiento", margin + 24, y);
+    doc.text("Pago", margin + 58, y);
+    doc.text("Monto", pageWidth - 78, y, { align: "right" });
+    doc.text("Saldo", pageWidth - 45, y, { align: "right" });
+    doc.text("Estado", pageWidth - margin, y, { align: "right" });
+    y += 4;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+
+    cuotasNormalizadas.forEach(cuota => {
+        nuevaPaginaSiHaceFalta(10);
+        doc.text(String(cuota.numero), margin, y);
+        doc.text(formatearFechaDocumento(cuota.fecha_vencimiento), margin + 24, y);
+        doc.text(cuota.fecha_pago ? formatearFechaDocumento(cuota.fecha_pago) : "-", margin + 58, y);
+        doc.text(`$${cuota.monto.toFixed(2)}`, pageWidth - 78, y, { align: "right" });
+        doc.text(`$${cuota.saldo_pendiente.toFixed(2)}`, pageWidth - 45, y, { align: "right" });
+        doc.text(cuota.estado, pageWidth - margin, y, { align: "right" });
+        y += 6;
+    });
+
+    y += 6;
+    nuevaPaginaSiHaceFalta(25);
+    doc.setFont("helvetica", "bold");
+    doc.text(`TOTAL PLAN: $${totalFinanciado.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    y += 10;
+
+    if (venta.observaciones) {
+        doc.setFont("helvetica", "normal");
+        doc.text("Observaciones:", margin, y);
+        y += 5;
+        const obsLines = doc.splitTextToSize(venta.observaciones, pageWidth - 2 * margin);
+        doc.text(obsLines, margin, y);
+    }
+
+    doc.setFontSize(8);
+    doc.text("Este documento detalla las condiciones y vencimientos del plan de pagos asociado a la operación.", pageWidth / 2, pageHeight - 20, { align: "center" });
+
+    return doc;
 }
 
 async function generarFacturaPDFExistente(venta, detalles) {
@@ -1156,9 +1401,25 @@ window.imprimirFactura = async () => {
     abrirPreviewPDF(doc, `Factura_${window.ventaActual.id}.pdf`);
 };
 
+window.imprimirPlanPagosActual = async () => {
+    if (!window.ventaActual || window.ventaActual.metodo_pago !== "Cuotas") {
+        mostrarAlerta("Esta venta no tiene un plan de pagos asociado.", "Sin plan de pagos", "warning");
+        return;
+    }
+
+    const cuotas = window.cuotasActual?.length ? window.cuotasActual : await fetchCuotasVenta(window.ventaActual.id);
+    const doc = await generarPlanPagosPDF(window.ventaActual, window.detallesActual || [], cuotas);
+    abrirPreviewPDF(doc, `PlanPagos_${window.ventaActual.id}.pdf`);
+};
+
 window.imprimirVenta = async (id) => {
     await cargarDatosVenta(id);
     await imprimirFactura();
+};
+
+window.imprimirPlanPagosVenta = async (id) => {
+    await cargarDatosVenta(id);
+    await imprimirPlanPagosActual();
 };
 
 export async function obtenerHistorialVentas() {

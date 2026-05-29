@@ -4,7 +4,11 @@ const db = require('../database/database');
 exports.obtenerClientes = async (req, res) => {
     try {
         const empresaId = req.empresaId;
-        const [rows] = await db.query("SELECT * FROM clientes WHERE empresa_id = ? AND estado = 1", [empresaId]);
+        const estado = req.query.estado === 'eliminados' ? 0 : 1;
+        const [rows] = await db.query(
+            "SELECT * FROM clientes WHERE empresa_id = ? AND estado = ? ORDER BY nombre, apellido",
+            [empresaId, estado]
+        );
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -96,6 +100,25 @@ exports.eliminarCliente = async (req, res) => {
     }
 };
 
+exports.restaurarCliente = async (req, res) => {
+    const { id } = req.params;
+    const empresaId = req.empresaId;
+
+    try {
+        const [result] = await db.query(
+            "UPDATE clientes SET estado = 1 WHERE empresa_id = ? AND id = ? AND estado = 0",
+            [empresaId, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensaje: "Cliente eliminado no encontrado" });
+        }
+        res.json({ mensaje: "Cliente restaurado correctamente", id });
+    } catch (err) {
+        console.error("Error al restaurar cliente:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.obtenerCuentaCorriente = async (req, res) => {
     const { id } = req.params;
     try {
@@ -111,13 +134,13 @@ exports.obtenerCuentaCorriente = async (req, res) => {
                 saldo_acumulado,
                 observaciones
             FROM cuenta_corriente 
-            WHERE empresa_id=? AND cliente_id = ? 
+            WHERE empresa_id=? AND cliente_id = ? AND estado = 1
             ORDER BY fecha DESC`, 
         [empresaId, id]);
 
         // También traemos el saldo total actual para mostrarlo arriba
         const [saldoTotal] = await db.query(
-            "SELECT IFNULL(SUM(debe - haber), 0) as total FROM cuenta_corriente WHERE cliente_id = ? AND empresa_id = ?",
+            "SELECT IFNULL(SUM(debe - haber), 0) as total FROM cuenta_corriente WHERE cliente_id = ? AND empresa_id = ? AND estado = 1",
             [id, empresaId]
         );
 

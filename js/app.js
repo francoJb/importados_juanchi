@@ -48,6 +48,21 @@ function aplicarPermisosUsuario() {
     linkConfig?.classList.toggle('hidden', !mostrarConfig);
 }
 
+function actualizarInfoSesion() {
+    const empresa = document.getElementById('sessionEmpresa');
+    const usuario = document.getElementById('sessionUsuario');
+
+    if (empresa) {
+        empresa.textContent = currentSessionUser?.empresa || 'Empresa';
+        empresa.title = currentSessionUser?.empresa || '';
+    }
+
+    if (usuario) {
+        usuario.textContent = currentSessionUser?.usuario ? `Usuario: ${currentSessionUser.usuario}` : 'Usuario';
+        usuario.title = currentSessionUser?.usuario || '';
+    }
+}
+
 async function validarSesionActual() {
     const token = sessionStorage.getItem('authToken');
 
@@ -581,6 +596,7 @@ function showApp() {
 
 async function iniciarApp() {
     showApp();
+    actualizarInfoSesion();
     await initApp();
     aplicarPermisosUsuario();
     await cargarAdminData();

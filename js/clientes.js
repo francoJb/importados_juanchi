@@ -1,5 +1,5 @@
 import { dibujarClientes } from "./renderclientes.js";
-import { cambiarSeccion, mostrarAlerta } from "./ui.js";
+import { cambiarSeccion, mostrarAlerta, mostrarConfirmacion } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
@@ -128,25 +128,27 @@ export async function prepararEdicionCliente(id) {
 };
 
 export async function eliminarCliente(id, nombre){
-    // 1. El cartel de confirmación
-    const rta = confirm(`¿Estás seguro de que querés eliminar a "${nombre}"?, esa accion solo desactivara el cliente`);
-    if (rta) {
-        try {
-            // 2. Avisamos al Backend (Controller) que cambie el estado a 0
-           const response = await apiFetch(`${API_BASE_URL}/api/clientes/${id}`, {
-                method: 'DELETE' // El método que definiste en tus rutas
-            });
-            if (response.ok) {
-                mostrarAlerta("Cliente eliminado con éxito.", "¡Éxito!", "success");
-                // 3. Recargamos la lista para que el cliente "desaparezca"
-                const clientesActualizados = await fetchClientes();
-                dibujarClientes(clientesActualizados);
-            } else {
-                mostrarAlerta("No se pudo eliminar el cliente.", "Error", "error");
-            }
-        } catch (error) {
-            console.error("Error en la conexión:", error);
+    const rta = await mostrarConfirmacion({
+        title: "Eliminar cliente",
+        message: `¿Estás seguro de que querés eliminar a "${nombre}"? Esta acción solo desactivará el cliente.`,
+        confirmText: "Eliminar"
+    });
+    if (!rta) return;
+
+    try {
+        const response = await apiFetch(`${API_BASE_URL}/api/clientes/${id}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            mostrarAlerta("Cliente eliminado con éxito.", "¡Éxito!", "success");
+            const clientesActualizados = await fetchClientes();
+            dibujarClientes(clientesActualizados);
+        } else {
+            mostrarAlerta("No se pudo eliminar el cliente.", "Error", "error");
         }
+    } catch (error) {
+        console.error("Error en la conexión:", error);
+        mostrarAlerta("Error de conexión al eliminar el cliente.", "Error de conexión", "error");
     }
 };
 

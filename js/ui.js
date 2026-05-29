@@ -95,6 +95,10 @@ export const mostrarAlerta = (message, title = '', type = 'info') => {
     const messageEl = document.getElementById('modalAlertaMessage');
     const btn = document.getElementById('modalAlertaBtn');
 
+    if (!modal || !content || !icon || !titleEl || !messageEl || !btn) {
+        return Promise.resolve();
+    }
+
     // Configurar icono y colores según el tipo
     const config = {
         success: { icon: '✅', title: title || '¡Éxito!' },
@@ -119,40 +123,101 @@ export const mostrarAlerta = (message, title = '', type = 'info') => {
         content.classList.add('scale-100', 'opacity-100');
     }, 10);
 
-    // Función para cerrar
-    const cerrarModal = () => {
-        content.classList.remove('scale-100', 'opacity-100');
-        content.classList.add('scale-95', 'opacity-0');
+    return new Promise((resolve) => {
+        const cerrarModal = () => {
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
 
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
-    };
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
 
-    // Event listener para el botón
-    const handleClick = () => {
-        cerrarModal();
-        btn.removeEventListener('click', handleClick);
-    };
-
-    btn.addEventListener('click', handleClick);
-
-    // Cerrar al hacer click fuera del modal
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            cerrarModal();
-        }
-    });
-
-    // Cerrar con tecla Escape
-    const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-            cerrarModal();
+            btn.removeEventListener('click', handleClick);
+            modal.removeEventListener('click', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
-        }
-    };
-    document.addEventListener('keydown', handleEscape);
+            resolve();
+        };
+
+        const handleClick = () => cerrarModal();
+        const handleOutsideClick = (e) => {
+            if (e.target === modal) {
+                cerrarModal();
+            }
+        };
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                cerrarModal();
+            }
+        };
+
+        btn.addEventListener('click', handleClick);
+        modal.addEventListener('click', handleOutsideClick);
+        document.addEventListener('keydown', handleEscape);
+    });
+};
+
+export const mostrarConfirmacion = ({
+    title = 'Confirmar acción',
+    message = '¿Deseas continuar?',
+    confirmText = 'Confirmar',
+    cancelText = 'Cancelar'
+} = {}) => {
+    const modal = document.getElementById('modalConfirmacion');
+    const content = document.getElementById('modalConfirmacionContent');
+    const titleEl = document.getElementById('modalConfirmacionTitle');
+    const messageEl = document.getElementById('modalConfirmacionMessage');
+    const btnCancel = document.getElementById('modalConfirmacionCancel');
+    const btnAccept = document.getElementById('modalConfirmacionAccept');
+
+    if (!modal || !content || !titleEl || !messageEl || !btnCancel || !btnAccept) {
+        return Promise.resolve(window.confirm(message));
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    btnCancel.textContent = cancelText;
+    btnAccept.textContent = confirmText;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+
+    return new Promise((resolve) => {
+        const cerrar = (confirmado) => {
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+
+            btnCancel.removeEventListener('click', cancelar);
+            btnAccept.removeEventListener('click', confirmar);
+            modal.removeEventListener('click', clickFuera);
+            document.removeEventListener('keydown', escape);
+            resolve(confirmado);
+        };
+
+        const cancelar = () => cerrar(false);
+        const confirmar = () => cerrar(true);
+        const clickFuera = (e) => {
+            if (e.target === modal) cerrar(false);
+        };
+        const escape = (e) => {
+            if (e.key === 'Escape') cerrar(false);
+        };
+
+        btnCancel.addEventListener('click', cancelar);
+        btnAccept.addEventListener('click', confirmar);
+        modal.addEventListener('click', clickFuera);
+        document.addEventListener('keydown', escape);
+    });
 };
 
 /**
@@ -160,6 +225,7 @@ export const mostrarAlerta = (message, title = '', type = 'info') => {
  * @param {string} message - Mensaje a mostrar
  */
 window.mostrarAlerta = mostrarAlerta;
+window.mostrarConfirmacion = mostrarConfirmacion;
 
 // Función de compatibilidad para reemplazar alert()
 window.alert = (message) => {
