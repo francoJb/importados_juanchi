@@ -190,6 +190,17 @@ const configurarTablas = async () => {
                 fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        // =================================================================
+// INSERTAR EMPRESA POR DEFECTO SI ESTÁ VACÍA (AÑADE ESTE BLOQUE)
+// =================================================================
+const [empresaCheck] = await db.query("SELECT id FROM empresas LIMIT 1");
+if (empresaCheck.length === 0) {
+  console.log("🌱 Insertando empresa por defecto para la inicialización...");
+  await db.query(`
+    INSERT INTO empresas (nombre, razon_social, estado) 
+    VALUES ('Jrimport', 'Jrimport S.A.', 1)
+  `);
+}
         // 2. TABLA DE CATEGORIAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS categorias (
