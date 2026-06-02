@@ -37,6 +37,7 @@ const dbConfig = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'importados',
     port: Number(process.env.DB_PORT) || 4000,
+    timezone: process.env.DB_TIMEZONE || '-03:00',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -124,6 +125,12 @@ async function asegurarColumnasMultiempresa() {
     await addColumnIfMissing('ventas', 'estado', 'TINYINT(1) DEFAULT 1');
     await db.query('UPDATE ventas SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
     await db.query('UPDATE ventas SET estado = 1 WHERE estado IS NULL');
+    await addColumnIfMissing('ventas', 'numero', 'INT NULL');
+    try {
+        await db.query('ALTER TABLE ventas ADD UNIQUE KEY unique_venta_numero_empresa (empresa_id, numero)');
+    } catch (e) {
+        // Si ya existe la llave única, ignorar el error
+    }
 
     await addColumnIfMissing('detalle_ventas', 'empresa_id', 'INT NULL');
     await db.query(`
@@ -343,6 +350,20 @@ const configurarTablas = async () => {
             );
         `);
         await addColumnIfMissing('cuenta_corriente', 'estado', 'TINYINT DEFAULT 1');
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS auditoria (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
+                usuario_id INT NULL,
+                accion VARCHAR(50) NOT NULL,
+                entidad VARCHAR(50) NOT NULL,
+                entidad_id INT NULL,
+                descripcion TEXT NULL,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_auditoria_empresa (empresa_id),
+                INDEX idx_auditoria_entidad (entidad, entidad_id)
+            );
+        `);
         await asegurarColumnasMultiempresa();
         await asegurarEsquemaCuotas();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");

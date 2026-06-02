@@ -4,11 +4,14 @@ import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
 const API_URL = `${API_BASE_URL}/api/proveedores`;
+let proveedoresEstado = 'activos';
+let proveedoresCache = [];
 
 // 1. OBTENER DATOS (API)
-export async function fetchProveedores() {
+export async function fetchProveedores(estado = 'activos') {
     try {
-        const res = await apiFetch(API_URL);
+        const url = estado === 'eliminados' ? `${API_URL}?estado=eliminados` : API_URL;
+        const res = await apiFetch(url);
         if (!res.ok) throw new Error("Error al obtener proveedores");
         return await res.json();
     } catch (error) {
@@ -62,6 +65,7 @@ export async function eliminarProveedor(id, nombre) {
         const res = await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error("Error al eliminar proveedor");
         mostrarAlerta("Proveedor eliminado exitosamente", "success");
+        await listarProveedores(proveedoresEstado);
         return true;
     } catch (error) {
         console.error("Error en eliminarProveedor:", error);
@@ -70,19 +74,37 @@ export async function eliminarProveedor(id, nombre) {
     }
 }
 
+export async function restaurarProveedor(id) {
+    try {
+        const res = await apiFetch(`${API_URL}/${id}/restaurar`, { method: 'PUT' });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Error al restaurar proveedor');
+        }
+        mostrarAlerta('Proveedor restaurado exitosamente', 'success');
+        await listarProveedores(proveedoresEstado);
+        return true;
+    } catch (error) {
+        console.error('Error en restaurarProveedor:', error);
+        mostrarAlerta('Error al restaurar proveedor: ' + error.message, 'error');
+        return false;
+    }
+}
+
 // 5. LISTAR PROVEEDORES (con búsqueda)
-export async function listarProveedores() {
-    const proveedores = await fetchProveedores();
-    dibujarProveedores(proveedores);
+export async function listarProveedores(estado = 'activos') {
+    proveedoresEstado = estado;
+    proveedoresCache = await fetchProveedores(estado);
+    dibujarProveedores(proveedoresCache, estado);
 }
 
 // 6. BUSCAR PROVEEDORES
 export function buscarProveedores(query) {
-    const filas = document.querySelectorAll("#tablaProveedoresBody tr");
-    filas.forEach(fila => {
-        const texto = fila.textContent.toLowerCase();
-        fila.style.display = texto.includes(query.toLowerCase()) ? "" : "none";
+    const filtrados = proveedoresCache.filter(p => {
+        const texto = `${p.nombre} ${p.cuit} ${p.telefono} ${p.email}`.toLowerCase();
+        return texto.includes(query.toLowerCase());
     });
+    dibujarProveedores(filtrados, proveedoresEstado);
 }
 
 // 7. PREPARAR FORMULARIO PARA EDICIÓN
@@ -145,7 +167,7 @@ export async function manejarSubmitProveedor(event) {
         }
         limpiarFormularioProveedor();
         toggleModal('modalProveedor', false);
-        listarProveedores();
+        await listarProveedores(proveedoresEstado);
     } catch (error) {
         console.error("Error al guardar el proveedor:", error);
     }
@@ -164,6 +186,15 @@ export async function initProveedores() {
             toggleModal('modalProveedor', true);
         };
     }
+
+    const toggleEliminados = document.getElementById("toggleProveedoresEliminados");
+    if (toggleEliminados) {
+        toggleEliminados.onchange = async (e) => {
+            await listarProveedores(e.target.checked ? 'eliminados' : 'activos');
+        };
+    }
+
+    window.restaurarProveedor = restaurarProveedor;
 }
 
 // 11. CONFIGURAR FORMULARIO

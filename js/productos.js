@@ -4,10 +4,13 @@ import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
 const API_URL = `${API_BASE_URL}/api/productos`;
+let productosEstado = 'activos';
+let productosCache = [];
 // 1. OBTENER DATOS (API)
-export async function fetchProductos() {
+export async function fetchProductos(estado = 'activos') {
     try {
-        const res = await apiFetch(API_URL);
+        const url = estado === 'eliminados' ? `${API_URL}?estado=eliminados` : API_URL;
+        const res = await apiFetch(url);
         if (!res.ok) throw new Error("Error al obtener productos");
         return await res.json();
     } catch (error) {
@@ -65,9 +68,10 @@ export async function poblarSelectProveedores() {
 }
 
 // 2. LISTAR (Une API + RENDER)
-export async function listarProductos() {
-    const productos = await fetchProductos();
-    dibujarProductos(productos);
+export async function listarProductos(estado = 'activos') {
+    productosEstado = estado;
+    productosCache = await fetchProductos(estado);
+    dibujarProductos(productosCache, estado);
 }
 
 // 3. GUARDAR (API)
@@ -87,6 +91,23 @@ export async function guardarProductoAPI(datos, id = null) {
         return true;
     } catch (error) {
         mostrarAlerta("❌ " + error.message, "Error", "error");
+        return false;
+    }
+}
+
+export async function restaurarProducto(id) {
+    try {
+        const res = await apiFetch(`${API_URL}/${id}/restaurar`, { method: 'PUT' });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Error al restaurar producto');
+        }
+        mostrarAlerta('Producto restaurado correctamente', '¡Éxito!', 'success');
+        await listarProductos(productosEstado);
+        return true;
+    } catch (error) {
+        console.error('Error al restaurar producto:', error);
+        mostrarAlerta('Error al restaurar el producto: ' + error.message, 'Error', 'error');
         return false;
     }
 }
@@ -125,7 +146,7 @@ export function configurarFormularioProducto() {
             formProducto.reset();
             await poblarSelectCategorias();
             await poblarSelectProveedores();
-            listarProductos(); // Recarga la tabla automáticamente
+            await listarProductos(productosEstado); // Recarga la tabla automáticamente
             cambiarSeccion('seccionProductos');
         }
     };
@@ -137,21 +158,19 @@ export function configurarBuscadorProductos() {
     if (inputBusqueda) {
         inputBusqueda.oninput = async (e) => {
             const termino = e.target.value.toLowerCase();
-            const todosLosProductos = await fetchProductos();
-            const filtrados = todosLosProductos.filter(p => 
+            const filtrados = productosCache.filter(p => 
                 (p.descripcion || "").toLowerCase().includes(termino) || 
                 (p.sku || "").toLowerCase().includes(termino) ||
                 (p.marca || "").toLowerCase().includes(termino)
             );
-            dibujarProductos(filtrados);
+            dibujarProductos(filtrados, productosEstado);
         };
     }
 }
 
 // 6. PREPARAR EDICIÓN
 export async function prepararEdicionProducto(id) {
-    const productos = await fetchProductos();
-    const p = productos.find(prod => prod.id == id);
+    const p = productosCache.find(prod => prod.id == id);
     if (!p) return;
 
     document.getElementById("formProductoId").value = p.id;
@@ -187,7 +206,7 @@ export async function eliminarProducto(id, descripcion) {
 
         if (response.ok) {
             mostrarAlerta("Producto eliminado correctamente.", "¡Éxito!", "success");
-            listarProductos(); // Recarga la tabla automáticamente
+            await listarProductos(productosEstado); // Recarga la tabla automáticamente
         } else {
             const errorData = await response.json();
             mostrarAlerta("Error al eliminar el producto: " + (errorData.error || "Error desconocido"), "Error", "error");
@@ -217,10 +236,19 @@ export async function initProductos() {
         };
     }
 
+    const toggleEliminados = document.getElementById("toggleProductosEliminados");
+    if (toggleEliminados) {
+        toggleEliminados.onchange = async (e) => {
+            await listarProductos(e.target.checked ? 'eliminados' : 'activos');
+        };
+    }
+
     const btnCerrarModalProducto = document.getElementById("btnCerrarModalProducto");
     if (btnCerrarModalProducto) {
         btnCerrarModalProducto.onclick = () => cambiarSeccion("seccionProductos");
     }
+
+    window.restaurarProducto = restaurarProducto;
 }
 
 // EXPOSICIÓN GLOBAL PARA HTML

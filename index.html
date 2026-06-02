@@ -239,8 +239,12 @@
                             + Nuevo Cliente
                         </button>
                     </header>
-                    <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input type="text" id="buscarCliente" placeholder="Buscar por Nombre, apellido, DNI o CUIT..." class="form-input">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="checkbox" id="toggleClientesEliminados" class="form-checkbox">
+                            Mostrar eliminados
+                        </label>
                     </div>
                     <div class="bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-lg shadow-slate-900/5 border border-slate-200 dark:border-cyan-400/10 backdrop-blur overflow-x-auto">
                         <table class="w-full min-w-[760px] text-left border-collapse">
@@ -416,6 +420,12 @@
                             + Nueva Venta
                         </button>
                     </header>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="checkbox" id="toggleVentasEliminados" class="form-checkbox">
+                            Mostrar eliminados
+                        </label>
+                    </div>
                     <div class="bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-lg shadow-slate-900/5 border border-slate-200 dark:border-cyan-400/10 backdrop-blur overflow-x-auto">
                         <table class="w-full min-w-[760px] text-left border-collapse">
                             <thead>
@@ -525,8 +535,12 @@
                             + Nuevo Producto
                         </button>
                     </header>
-                    <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input type="text" id="buscarProducto" placeholder="Buscar por Código, descripción, marca o categoría..." class="form-input">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="checkbox" id="toggleProductosEliminados" class="form-checkbox">
+                            Mostrar eliminados
+                        </label>
                     </div>
                     <div class="bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-lg shadow-slate-900/5 border border-slate-200 dark:border-cyan-400/10 backdrop-blur overflow-x-auto">
                         <table class="w-full min-w-[760px] text-left border-collapse">
@@ -645,8 +659,12 @@
                             + Nuevo Proveedor
                         </button>
                     </header>
-                    <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input type="text" id="buscarProveedor" placeholder="Buscar por nombre, CUIT, teléfono o email..." class="form-input">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="checkbox" id="toggleProveedoresEliminados" class="form-checkbox">
+                            Mostrar eliminados
+                        </label>
                     </div>
                     <div class="bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-lg shadow-slate-900/5 border border-slate-200 dark:border-cyan-400/10 backdrop-blur overflow-x-auto">
                         <table class="w-full min-w-[760px] text-left border-collapse">

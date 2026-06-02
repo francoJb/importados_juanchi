@@ -11,6 +11,23 @@ function formatearFechaLocal(fecha) {
     return `${anio}-${mes}-${dia}`;
 }
 
+function ahoraArgentinaDate() {
+    const d = new Date();
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    const offsetHoras = -3; // Argentina UTC-3
+    return new Date(utc + (3600000 * offsetHoras));
+}
+
+function formatearFechaHoraArgentina(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const hora = String(fecha.getHours()).padStart(2, '0');
+    const min = String(fecha.getMinutes()).padStart(2, '0');
+    const seg = String(fecha.getSeconds()).padStart(2, '0');
+    return `${anio}-${mes}-${dia} ${hora}:${min}:${seg}`;
+}
+
 function obtenerUltimoDiaDelMes(anio, mesIndexadoDesdeCero) {
     return new Date(anio, mesIndexadoDesdeCero + 1, 0).getDate();
 }
@@ -30,7 +47,7 @@ function generarCuotas(total, cantidadCuotas, diaVencimientoMensual) {
     const totalCentavos = Math.round(Number(total) * 100);
     const baseCentavos = Math.floor(totalCentavos / cantidad);
     let restoCentavos = totalCentavos - (baseCentavos * cantidad);
-    const hoy = new Date();
+    const hoy = ahoraArgentinaDate();
     const primerMesOffset = diaVencimiento > hoy.getDate() ? 0 : 1;
 
     return Array.from({ length: cantidad }, (_, index) => {
@@ -116,10 +133,20 @@ exports.crearVenta = async (req, res) => {
         const estadoPago = (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && saldoPendiente > 0) ? 'Pendiente' : 'Pagado';
 
         const empresaId = req.empresaId;
+
+        // Obtener próximo número correlativo de factura para esta empresa
+        const [numRows] = await connection.query(
+            "SELECT IFNULL(MAX(numero), 0) AS maxNumero FROM ventas WHERE empresa_id = ?",
+            [empresaId]
+        );
+        const nuevoNumero = (numRows[0].maxNumero || 0) + 1;
+
+        // Fecha explícita en zona Argentina para evitar usar la zona del servidor
+        const fechaArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
         const [ventaRes] = await connection.query(
-            `INSERT INTO ventas (empresa_id, cliente_id, total, metodo_pago, estado_pago, saldo_pendiente, observaciones) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [empresaId, cliente_id === 0 ? null : cliente_id, totalVenta, metodo_pago, estadoPago, saldoPendiente, observaciones]
+            `INSERT INTO ventas (empresa_id, cliente_id, fecha, total, metodo_pago, estado_pago, saldo_pendiente, observaciones, numero) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [empresaId, cliente_id === 0 ? null : cliente_id, fechaArg, totalVenta, metodo_pago, estadoPago, saldoPendiente, observaciones, nuevoNumero]
         );
         const ventaId = ventaRes.insertId;
 
@@ -170,19 +197,20 @@ exports.crearVenta = async (req, res) => {
                 ? `Venta # ${ventaId} en ${planCuotas.length} cuotas - ${observaciones || 'Sin obs.'}`
                 : `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`;
 
+            const fechaCuentaArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
             await connection.query(
-                `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
-                VALUES (?, ?, ?, ?, ?, 0, ?)`,
-                [empresaId, cliente_id, ventaId, descripcionDeuda, totalVenta, saldoCalculado]
+                `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado) 
+                VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+                [empresaId, cliente_id, ventaId, fechaCuentaArg, descripcionDeuda, totalVenta, saldoCalculado]
             );
 
             // C. Si hubo ENTREGA INICIAL, registrar el pago (El HABER)
             if (entregaInicial > 0) {
                 saldoCalculado -= entregaInicial; // Restamos lo que pagó
                 await connection.query(
-                    `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado) 
-                    VALUES (?, ?, ?, ?, 0, ?, ?)`,
-                    [empresaId, cliente_id, ventaId, `Entrega inicial Venta #${ventaId}`, entregaInicial, saldoCalculado]
+                    `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado) 
+                    VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+                    [empresaId, cliente_id, ventaId, fechaCuentaArg, `Entrega inicial Venta #${ventaId}`, entregaInicial, saldoCalculado]
                 );
             }
 
@@ -214,9 +242,11 @@ exports.obtenerVentas = async (req, res) => {
     try {
         const empresaId = req.empresaId;
         const estado = req.query.estado === 'eliminados' ? 0 : 1;
+        const incluirAnuladas = req.query.anuladas === '1';
         const [rows] = await db.query(`
             SELECT 
                 v.id,
+                v.numero,
                 v.cliente_id, 
                 v.fecha, 
                 v.total, 
@@ -227,7 +257,7 @@ exports.obtenerVentas = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id=?
-            WHERE v.empresa_id=? and v.estado = ?
+            WHERE v.empresa_id=? AND v.estado = ? ${incluirAnuladas ? '' : 'AND v.anulada = 0'}
             ORDER BY v.fecha DESC
             `, [empresaId, empresaId, estado]
         );
@@ -243,6 +273,7 @@ exports.obtenerVenta = async (req, res) => {
         const [rows] = await db.query(`
             SELECT 
                 v.id, 
+                v.numero,
                 v.fecha, 
                 v.total, 
                 v.metodo_pago,
@@ -254,7 +285,7 @@ exports.obtenerVenta = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id = v.empresa_id
-            WHERE v.id = ? AND v.empresa_id=? AND v.estado = 1
+            WHERE v.id = ? AND v.empresa_id=? AND v.estado = 1 AND v.anulada = 0
         `, [id, req.empresaId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Venta no encontrada' });
@@ -320,7 +351,7 @@ exports.obtenerCuotasPendientes = async (req, res) => {
             FROM venta_cuotas vc
             INNER JOIN ventas v ON v.id = vc.venta_id AND v.empresa_id = vc.empresa_id
             INNER JOIN clientes c ON c.id = vc.cliente_id AND c.empresa_id = vc.empresa_id
-            WHERE ${filtros.join(' AND ')} AND v.estado = 1
+            WHERE ${filtros.join(' AND ')} AND v.estado = 1 AND v.anulada = 0
             ORDER BY vc.fecha_vencimiento ASC, vc.numero_cuota ASC
         `, params);
 
@@ -352,13 +383,95 @@ exports.obtenerCuotasVenta = async (req, res) => {
             FROM venta_cuotas vc
             INNER JOIN ventas v ON v.id = vc.venta_id AND v.empresa_id = vc.empresa_id
             INNER JOIN clientes c ON c.id = vc.cliente_id AND c.empresa_id = vc.empresa_id
-            WHERE vc.empresa_id = ? AND vc.venta_id = ?
+            WHERE vc.empresa_id = ? AND vc.venta_id = ? AND v.anulada = 0
             ORDER BY vc.numero_cuota ASC
         `, [req.empresaId, id]);
 
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+exports.anularVenta = async (req, res) => {
+    const { id } = req.params;
+    const { motivo, revertStock = false, revertCtaCte = false } = req.body || {};
+
+    if (!id || Number(id) <= 0) return res.status(400).json({ error: 'ID de venta inválido' });
+
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [ventaRows] = await connection.query(
+            'SELECT id, cliente_id, total, estado, anulada FROM ventas WHERE id = ? AND empresa_id = ? FOR UPDATE',
+            [id, req.empresaId]
+        );
+        if (ventaRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Venta no encontrada' });
+        }
+
+        const venta = ventaRows[0];
+        if (venta.anulada) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'La venta ya está anulada' });
+        }
+
+        const fechaArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
+
+        await connection.query(
+            `UPDATE ventas SET anulada = 1, motivo_anulacion = ?, anulado_por = ?, fecha_anulacion = ? WHERE id = ? AND empresa_id = ?`,
+            [motivo || null, req.usuarioId || null, fechaArg, id, req.empresaId]
+        );
+
+        // Registrar auditoría de anulación
+        await logAction(connection, { empresaId: req.empresaId, usuarioId: req.usuarioId || null, accion: 'anular', entidad: 'ventas', entidadId: id, descripcion: motivo || 'Venta anulada' });
+
+        // Revertir stock si se solicita
+        if (revertStock) {
+            const [detalles] = await connection.query(
+                'SELECT producto_id, cantidad FROM detalle_ventas WHERE empresa_id = ? AND venta_id = ?',
+                [req.empresaId, id]
+            );
+            for (const d of detalles) {
+                await connection.query(
+                    'UPDATE productos SET stock = stock + ? WHERE empresa_id = ? AND id = ? AND control_stock = 1',
+                    [d.cantidad, req.empresaId, d.producto_id]
+                );
+            }
+        }
+
+        // Revertir cuenta corriente (insertar asiento de haber) si se solicita
+        let reversalCcId = null;
+        if (revertCtaCte && venta.cliente_id) {
+            // obtener saldo actual
+            const [ccRows] = await connection.query(
+                'SELECT IFNULL(SUM(debe - haber), 0) as saldoActual FROM cuenta_corriente WHERE empresa_id = ? AND cliente_id = ? AND estado = 1',
+                [req.empresaId, venta.cliente_id]
+            );
+            const saldoActual = parseFloat(ccRows[0].saldoActual) || 0;
+            const nuevoSaldo = redondear2(saldoActual - parseFloat(venta.total || 0));
+
+            const descripcion = `Anulación Venta #${venta.id} - ${motivo || 'Sin motivo'}`;
+            const fechaCuentaArg = fechaArg;
+
+            const [ins] = await connection.query(
+                `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones)
+                 VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+                [req.empresaId, venta.cliente_id, venta.id, fechaCuentaArg, descripcion, parseFloat(venta.total || 0), nuevoSaldo, 'Reversión por anulación']
+            );
+            reversalCcId = ins.insertId;
+        }
+
+        await connection.commit();
+        return res.json({ success: true, message: 'Venta anulada', reversalCcId });
+    } catch (error) {
+        await connection.rollback();
+        console.error('ERROR AL ANULAR VENTA:', error.message);
+        return res.status(500).json({ error: 'Error interno al anular la venta' });
+    } finally {
+        connection.release();
     }
 };
 
@@ -562,11 +675,12 @@ exports.registrarPago = async (req, res) => {
                 const nuevoSaldoCuota = redondear2(saldoCuota - pagoCuota);
                 const nuevoEstadoCuota = nuevoSaldoCuota <= 0 ? 'Pagada' : 'Parcial';
 
+                const fechaPagoArg = nuevoEstadoCuota === 'Pagada' ? formatearFechaHoraArgentina(ahoraArgentinaDate()) : null;
                 await connection.query(
                     `UPDATE venta_cuotas
-                     SET saldo_pendiente = ?, estado = ?, fecha_pago = CASE WHEN ? = 'Pagada' THEN NOW() ELSE fecha_pago END, observaciones = ?
+                     SET saldo_pendiente = ?, estado = ?, fecha_pago = CASE WHEN ? = 'Pagada' THEN ? ELSE fecha_pago END, observaciones = ?
                      WHERE empresa_id = ? AND id = ?`,
-                    [nuevoSaldoCuota, nuevoEstadoCuota, nuevoEstadoCuota, observacionesPago, empresaId, cuota.id]
+                    [nuevoSaldoCuota, nuevoEstadoCuota, nuevoEstadoCuota, fechaPagoArg, observacionesPago, empresaId, cuota.id]
                 );
 
                 montoRestanteCuotas = redondear2(montoRestanteCuotas - pagoCuota);
@@ -588,10 +702,11 @@ exports.registrarPago = async (req, res) => {
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
 
+        const fechaCuentaPagoArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
         const [insertCcResult] = await connection.query(
-            `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 
-            VALUES (?, ?, ?, ?, 0, ?, ?, ?)`,
-            [empresaId, idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
+            `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones) 
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+            [empresaId, idCliente, ventaIdNum, fechaCuentaPagoArg, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
         );
 
         // Obtener el id del recibo (insertId de la inserción anterior)

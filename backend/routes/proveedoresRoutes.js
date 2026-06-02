@@ -9,6 +9,7 @@ const verificarTenant = require('../middlewares/tenantMiddleware');
 router.get('/', verificarToken, verificarTenant, proveedoresController.obtenerProveedores);
 router.post('/', verificarToken, verificarTenant, proveedoresController.crearProveedor);
 router.put('/:id', verificarToken, verificarTenant, proveedoresController.actualizarProveedor);
+router.put('/:id/restaurar', verificarToken, verificarTenant, proveedoresController.restaurarProveedor);
 router.delete('/:id', verificarToken, verificarTenant, proveedoresController.eliminarProveedor);
 
 module.exports = router;

@@ -74,27 +74,31 @@ export function renderTablaVentas(ventas) {
     cuerpoTabla.innerHTML = ""; // Limpiamos la tabla
 
     ventas.forEach(v => {
+        const isEliminado = v.estado === 0;
         const fechaFormateada = new Date(v.fecha).toLocaleString();
         const cliente = v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido}` : "Consumidor Final";
-        
-        // Lógica para el estado de entrega (puedes ajustarla según tu necesidad)
         const estadoEntrega = v.estado_pago === 'Pagado' 
             ? '<span class="text-cyan-600 font-bold">Finalizado</span>' 
             : '<span class="text-orange-500 font-bold">Pendiente</span>';
+        const numeroVenta = v.numero || v.id;
 
         cuerpoTabla.innerHTML += `
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                <td class="p-2 text-center">#${v.id}</td>
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${isEliminado ? 'bg-red-50 dark:bg-red-900/10 opacity-90' : ''}">
+                <td class="p-2 text-center">#${numeroVenta}</td>
                 <td class="p-2">${fechaFormateada}</td>
                 <td class="p-2 text-right">$${v.total}</td>
                 <td class="p-2 text-right">$${v.saldo_pendiente}</td>
                 <td class="p-2 text-center">${estadoEntrega}</td>
                 <td class="p-2 text-center">${cliente}</td>
                 <td class="p-2 flex gap-2 justify-center">
-                    <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Ver Detalle">👁️</button>
-                    <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Imprimir">🖨️</button>
-                    ${v.metodo_pago === 'Cuotas' ? `<button onclick="imprimirPlanPagosVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Plan de pagos">📄</button>` : ''}
-                    <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
+                    ${isEliminado ? `
+                        <button onclick="restaurarVenta(${v.id})" class="text-green-600 hover:scale-150 transition-transform" title="Restaurar">♻️</button>
+                    ` : `
+                        <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Ver Detalle">👁️</button>
+                        <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Imprimir">🖨️</button>
+                        ${v.metodo_pago === 'Cuotas' ? `<button onclick="imprimirPlanPagosVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Plan de pagos">📄</button>` : ''}
+                        <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
+                    `}
                 </td>
             </tr>
         `;

@@ -6,8 +6,9 @@ export function dibujarProductos(productos) {
     if (!tabla) return;
     tabla.innerHTML = "";
     productos.forEach(p => {
+        const isEliminado = p.estado === 0;
         tabla.innerHTML += `
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${isEliminado ? 'bg-red-50 dark:bg-red-900/10 opacity-90' : ''}">
                 <td class="p-3 text-center font-mono text-xs">${p.sku || '---'}</td>
                 <td class="p-3">${p.descripcion || ''}</td>
                 <td class="p-3">${p.marca || ''}</td>
@@ -18,8 +19,12 @@ export function dibujarProductos(productos) {
                 <td class="p-3 text-right">$${p.precio_neto}</td>
                 <td class="p-3 text-center ${(Number(p.stock) <= Number(p.stock_minimo)) ? 'text-red-600 font-black' : ''}">${p.stock}</td>
                 <td class="p-3 text-center">
-                    <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>
-                    <button onclick="eliminarProducto(${p.id}, '${p.descripcion || p.sku}')" class="btn-eliminar hover:scale-150 transition-transform" title="Eliminar"> 🗑️</button>
+                    ${isEliminado ? `
+                        <button onclick="restaurarProducto(${p.id})" class="text-green-600 hover:scale-150 transition-transform" title="Restaurar">♻️</button>
+                    ` : `
+                        <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>
+                        <button onclick="eliminarProducto(${p.id}, '${p.descripcion || p.sku}')" class="btn-eliminar hover:scale-150 transition-transform" title="Eliminar"> 🗑️</button>
+                    `}
                 </td>
             </tr>
         `;

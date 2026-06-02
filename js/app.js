@@ -588,7 +588,8 @@ async function initApp() {
         e.preventDefault();
         if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionVentas');
-        listarVentas();
+        const mostrarEliminados = document.getElementById('toggleVentasEliminados')?.checked;
+        listarVentas(mostrarEliminados ? 'eliminados' : 'activos');
     });
 
     // 4. Cuando hagan clic en Productos

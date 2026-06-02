@@ -4,11 +4,14 @@ import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
 const API_URL = `${API_BASE_URL}/api/clientes`;
+let clientesEstado = 'activos';
+let clientesCache = [];
 
 // 1. OBTENER DATOS (API)
-export async function fetchClientes() {
+export async function fetchClientes(estado = 'activos') {
     try {
-        const res = await apiFetch(API_URL);
+        const url = estado === 'eliminados' ? `${API_URL}?estado=eliminados` : API_URL;
+        const res = await apiFetch(url);
         if (!res.ok) throw new Error("Error al obtener clientes");
         return await res.json();
     } catch (error) {
@@ -18,9 +21,10 @@ export async function fetchClientes() {
 }
 
 // 2. LISTAR (Une API + RENDER)
-export async function listarClientes() {
-    const clientes = await fetchClientes();
-    dibujarClientes(clientes);
+export async function listarClientes(estado = 'activos') {
+    clientesEstado = estado;
+    clientesCache = await fetchClientes(estado);
+    dibujarClientes(clientesCache, estado);
 }
 
 // 3. GUARDAR (API)
@@ -96,13 +100,12 @@ export function configurarBuscadorClientes() {
     if (inputBusqueda) {
         inputBusqueda.oninput = async (e) => {
             const termino = e.target.value.toLowerCase();
-            const todosLosClientes = await fetchClientes();
-            const filtrados = todosLosClientes.filter(c => 
+            const filtrados = clientesCache.filter(c => 
                 (c.nombre || "").toLowerCase().includes(termino) || 
                 (c.apellido || "").toLowerCase().includes(termino) ||
                 (c.dni || "").toLowerCase().includes(termino)
             );
-            dibujarClientes(filtrados);
+            dibujarClientes(filtrados, clientesEstado);
         };
     }
 }
@@ -141,8 +144,7 @@ export async function eliminarCliente(id, nombre){
         });
         if (response.ok) {
             mostrarAlerta("Cliente eliminado con éxito.", "¡Éxito!", "success");
-            const clientesActualizados = await fetchClientes();
-            dibujarClientes(clientesActualizados);
+            await listarClientes(clientesEstado);
         } else {
             mostrarAlerta("No se pudo eliminar el cliente.", "Error", "error");
         }
@@ -151,6 +153,23 @@ export async function eliminarCliente(id, nombre){
         mostrarAlerta("Error de conexión al eliminar el cliente.", "Error de conexión", "error");
     }
 };
+
+export async function restaurarCliente(id) {
+    try {
+        const response = await apiFetch(`${API_URL}/${id}/restaurar`, {
+            method: 'PUT'
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'No se pudo restaurar el cliente');
+        }
+        mostrarAlerta('Cliente restaurado correctamente.', '¡Éxito!', 'success');
+        await listarClientes(clientesEstado);
+    } catch (error) {
+        console.error('Error al restaurar cliente:', error);
+        mostrarAlerta('Error al restaurar el cliente: ' + error.message, 'Error', 'error');
+    }
+}
 
 export async function cargarDatosBalance(clienteId) {
     try {
@@ -287,6 +306,13 @@ export async function initClientes() {
         btnCerrarModalCliente.onclick = () => cambiarSeccion("seccionClientes");
     }
 
+    const toggleEliminados = document.getElementById("toggleClientesEliminados");
+    if (toggleEliminados) {
+        toggleEliminados.onchange = async (e) => {
+            await listarClientes(e.target.checked ? 'eliminados' : 'activos');
+        };
+    }
+
     document.addEventListener("click", (ec) => {
         const btn = ec.target.closest(".btn-eliminarCli");
         if (!btn) return;
@@ -294,7 +320,8 @@ export async function initClientes() {
         const desc = btn.dataset.desc;
         eliminarCliente(id, desc);
     });
-    
+
+    window.restaurarCliente = restaurarCliente;
     console.log("✅ Módulo de Clientes inicializado");
 }
 

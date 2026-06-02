@@ -1,4 +1,6 @@
 const db = require('../database/database');
+const { formatearFechaHoraArgentina, ahoraArgentinaDate } = require('../utils/time');
+const { logAction } = require('../utils/audit');
 
 // Función auxiliar para obtener o crear categoría
 async function obtenerOCrearCategoria(nombreCategoria, empresaId) {
@@ -116,7 +118,7 @@ exports.editarProducto = async (req, res) => {
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
 
-        const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE empresa_id=? AND id=?`;
+        const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE empresa_id=? AND id=? AND estado = 1`;
         
         const params = [   
             p.sku, 
@@ -138,7 +140,7 @@ exports.editarProducto = async (req, res) => {
 
         const [result] = await db.query(sql, params);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ mensaje: "Producto no encontrado" });
+            return res.status(404).json({ mensaje: "Producto no encontrado o inactivo" });
         }
         res.json({ mensaje: "Actualizado", cambios: result.affectedRows });
     } catch (err) {
@@ -149,13 +151,14 @@ exports.editarProducto = async (req, res) => {
 exports.eliminarProducto = async (req, res) => {
     const { id } = req.params;
     const empresaId = req.empresaId;
-    const sql = `UPDATE productos SET estado = 0 WHERE empresa_id=? AND id=?`;
-
+    const sql = `UPDATE productos SET estado = 0, deleted_at = ?, deleted_by = ? WHERE empresa_id=? AND id=?`;
+    const fecha = formatearFechaHoraArgentina(ahoraArgentinaDate());
     try {
-        const [result] = await db.query(sql, [empresaId, id]);
+        const [result] = await db.query(sql, [fecha, req.usuarioId || null, empresaId, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Producto no encontrado" });
         }
+        await logAction(db, { empresaId, usuarioId: req.usuarioId || null, accion: 'soft_delete', entidad: 'productos', entidadId: id, descripcion: 'Producto desactivado' });
         res.json({ 
             mensaje: "Producto desactivado correctamente",
             id: id 
@@ -178,6 +181,7 @@ exports.restaurarProducto = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Producto eliminado no encontrado" });
         }
+        await logAction(db, { empresaId, usuarioId: req.usuarioId || null, accion: 'restore', entidad: 'productos', entidadId: id, descripcion: 'Producto restaurado' });
         res.json({ mensaje: "Producto restaurado correctamente", id });
     } catch (err) {
         console.error("Error al restaurar producto:", err.message);

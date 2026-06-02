@@ -30,6 +30,7 @@ function obtenerDatosEmpresa() {
 
 let carritoVenta = [];
 let productosVenta = [];
+let ventasEstado = 'activos';
 
 export async function enviarVentaAlServidor(datos) {
     const response = await apiFetch(URL_API, {
@@ -494,7 +495,7 @@ window.verDetalleVenta = async (id) => {
         return;
     }
 
-    document.getElementById("md-titulo").innerText = `Detalle de Venta #${venta.id}`;
+    document.getElementById("md-titulo").innerText = `Detalle de Venta #${venta.numero || venta.id}`;
     document.getElementById("md-fecha").innerText = new Date(venta.fecha).toLocaleString('es-AR');
     document.getElementById("md-cliente").innerText = venta.cliente_nombre ? `${venta.cliente_nombre} ${venta.cliente_apellido}` : "Consumidor Final";
     document.getElementById("md-total-final").innerText = `$${parseFloat(venta.total).toFixed(2)}`;
@@ -812,7 +813,7 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
                     observaciones,
                     metodo
                 );
-                abrirPreviewPDF(doc, `ReciboPago_${ventaActualizada ? ventaActualizada.id : 'sin-id'}.pdf`);
+                abrirPreviewPDF(doc, `ReciboPago_${ventaActualizada ? (ventaActualizada.numero || ventaActualizada.id) : 'sin-id'}.pdf`);
             }
         }
         // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
@@ -915,7 +916,7 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodifi
             ? decodeURIComponent(observacionesCodificadas)
             : "";
         const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados, observacionesPago, venta.metodo_pago);
-        abrirPreviewPDF(doc, `ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
+        abrirPreviewPDF(doc, `ReciboPago_${venta ? (venta.numero || venta.id) : 'sin-id'}.pdf`);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);
         mostrarAlerta("No se pudo generar el recibo de pago.", "Error", "error");
@@ -979,7 +980,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.setFontSize(10);
     doc.text (`Recibi la suma de: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
     y += 7;
-    doc.text(`en concepto de pago por venta N° ${venta ? `0001 - ${String(venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
+    doc.text(`en concepto de pago por venta N° ${venta ? `0001 - ${String(venta.numero || venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
     y += 7;
     const metodoPagoTexto = metodoPago || venta?.metodo_pago || "No especificado";
     doc.text(`Método de pago: ${metodoPagoTexto}`, margin, y);
@@ -1032,12 +1033,27 @@ window.eliminarVenta = async (id) => {
         }
 
         mostrarAlerta(data.message || "Venta eliminada correctamente", "¡Éxito!", "success");
-        await listarVentas();
+        await listarVentas(ventasEstado);
     } catch (error) {
         console.error("Error al eliminar venta:", error);
         mostrarAlerta(`No se pudo eliminar la venta: ${error.message}`, "Error", "error");
     }
 };
+
+export async function restaurarVenta(id) {
+    try {
+        const response = await apiFetch(`${URL_API}/${id}/restaurar`, { method: 'PUT' });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'No se pudo restaurar la venta');
+        }
+        mostrarAlerta('Venta restaurada correctamente', '¡Éxito!', 'success');
+        await listarVentas(ventasEstado);
+    } catch (error) {
+        console.error('Error al restaurar venta:', error);
+        mostrarAlerta(`No se pudo restaurar la venta: ${error.message}`, 'Error', 'error');
+    }
+}
 
 export async function initVentas() {
     carritoVenta = [];
@@ -1085,14 +1101,25 @@ export async function initVentas() {
     setSkuFocus();
     addPagoEntregaListener();
     await cargarDatosParaVenta();
+
+    const toggleEliminados = document.getElementById('toggleVentasEliminados');
+    if (toggleEliminados) {
+        toggleEliminados.onchange = async (e) => {
+            await listarVentas(e.target.checked ? 'eliminados' : 'activos');
+        };
+    }
+
+    window.restaurarVenta = restaurarVenta;
 }
 
-export async function listarVentas() {
+export async function listarVentas(estado = 'activos') {
+    ventasEstado = estado;
     const cuerpoTabla = document.getElementById("cuerpo-tabla-ventas");
     if (!cuerpoTabla) return;
 
     try {
-        const respuesta = await apiFetch(URL_API);
+        const url = estado === 'eliminados' ? `${URL_API}?estado=eliminados` : URL_API;
+        const respuesta = await apiFetch(url);
         if (!respuesta.ok) throw new Error("Error al obtener ventas");
         const ventas = await respuesta.json();
         renderTablaVentas(ventas);
@@ -1175,13 +1202,13 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Operación N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth / 2, y, { align: "center" });
+    doc.text(`Operación N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth / 2, y, { align: "center" });
     y += 12;
 
     // Mostrar la factura vinculada a la venta
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Factura N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth - margin, y - 12, { align: "right" });
+    doc.text(`Factura N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth - margin, y - 12, { align: "right" });
 
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
@@ -1334,7 +1361,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
     // Número y fecha (derecha)
     doc.text(`Fecha: ${new Date(venta.fecha).toLocaleDateString('es-AR')}`, pageWidth - margin, y, { align: "right" });
     y += 5;
-    doc.text(`Factura N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth - margin, y, { align: "right" }); // Punto de venta 0001
+    doc.text(`Factura N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth - margin, y, { align: "right" }); // Punto de venta 0001
     y += 15;
 
     // Datos del cliente
@@ -1425,7 +1452,7 @@ window.imprimirFactura = async () => {
         return;
     }
     const doc = await generarFacturaPDFExistente(window.ventaActual, window.detallesActual);
-    abrirPreviewPDF(doc, `Factura_${window.ventaActual.id}.pdf`);
+    abrirPreviewPDF(doc, `Factura_${window.ventaActual.numero || window.ventaActual.id}.pdf`);
 };
 
 window.imprimirPlanPagosActual = async () => {
@@ -1436,7 +1463,7 @@ window.imprimirPlanPagosActual = async () => {
 
     const cuotas = window.cuotasActual?.length ? window.cuotasActual : await fetchCuotasVenta(window.ventaActual.id);
     const doc = await generarPlanPagosPDF(window.ventaActual, window.detallesActual || [], cuotas);
-    abrirPreviewPDF(doc, `PlanPagos_${window.ventaActual.id}.pdf`);
+    abrirPreviewPDF(doc, `PlanPagos_${window.ventaActual.numero || window.ventaActual.id}.pdf`);
 };
 
 window.imprimirVenta = async (id) => {

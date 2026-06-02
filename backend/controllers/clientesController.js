@@ -1,4 +1,6 @@
 const db = require('../database/database');
+const { formatearFechaHoraArgentina, ahoraArgentinaDate } = require('../utils/time');
+const { logAction } = require('../utils/audit');
 
 
 exports.obtenerClientes = async (req, res) => {
@@ -63,7 +65,7 @@ exports.editarCliente = async (req, res) => {
         return res.status(400).json({ error: "Datos inválidos" });
     }
 
-    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE empresa_id=? AND id=?`;
+    const sql = `UPDATE clientes SET nombre=?, apellido=?, telefono=?, direccion=?, dni=?, cuit=?, arca=?, email=?, habilitar_cc=? WHERE empresa_id=? AND id=? AND estado = 1`;
     const cuitLimpio = (p.cuit || "").trim();
     const cuitParaGuardar = cuitLimpio === "" ? null : cuitLimpio;
     const params = [p.nombre, p.apellido, p.telefono, p.direccion, p.dni, cuitParaGuardar, p.arca, p.email, p.habilitar_cc ? 1 : 0, empresaId, id];
@@ -83,13 +85,15 @@ exports.editarCliente = async (req, res) => {
 exports.eliminarCliente = async (req, res) => {
     const { id } = req.params;
     const empresaId = req.empresaId;
-    const sql = `UPDATE clientes SET estado = 0 WHERE empresa_id=? AND id = ?`;
-
+    const sql = `UPDATE clientes SET estado = 0, deleted_at = ?, deleted_by = ? WHERE empresa_id=? AND id = ?`;
+    const fecha = formatearFechaHoraArgentina(ahoraArgentinaDate());
     try {
-        const [result] = await db.query(sql, [empresaId, id]);
+        const [result] = await db.query(sql, [fecha, req.usuarioId || null, empresaId, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Cliente no encontrado" });
         }
+        // Registrar auditoría
+        await logAction(db, { empresaId, usuarioId: req.usuarioId || null, accion: 'soft_delete', entidad: 'clientes', entidadId: id, descripcion: 'Cliente desactivado' });
         res.json({ 
             mensaje: "Cliente desactivado correctamente",
             id: id 
@@ -106,12 +110,13 @@ exports.restaurarCliente = async (req, res) => {
 
     try {
         const [result] = await db.query(
-            "UPDATE clientes SET estado = 1 WHERE empresa_id = ? AND id = ? AND estado = 0",
+            "UPDATE clientes SET estado = 1, deleted_at = NULL, deleted_by = NULL WHERE empresa_id = ? AND id = ? AND estado = 0",
             [empresaId, id]
         );
         if (result.affectedRows === 0) {
             return res.status(404).json({ mensaje: "Cliente eliminado no encontrado" });
         }
+        await logAction(db, { empresaId, usuarioId: req.usuarioId || null, accion: 'restore', entidad: 'clientes', entidadId: id, descripcion: 'Cliente restaurado' });
         res.json({ mensaje: "Cliente restaurado correctamente", id });
     } catch (err) {
         console.error("Error al restaurar cliente:", err.message);
