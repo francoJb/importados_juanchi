@@ -190,7 +190,7 @@ const configurarTablas = async () => {
                 estado TINYINT(1) DEFAULT 1,
                 fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        `);T
+        `);
         // 3. TABLA DE PROVEEDORES
         await db.query(`
             CREATE TABLE IF NOT EXISTS proveedores (
