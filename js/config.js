@@ -12,8 +12,8 @@ const API_URLS = {
 };
 
 function resolveApiBaseUrl() {
-  // 1) Local
-  if (API_URLS.localFronts.includes(host)) {
+  // 1) Local: localhost, 127.0.0.1 o si abrimos el HTML directamente como file://
+  if (!host || window.location.protocol === 'file:' || API_URLS.localFronts.includes(host)) {
     return API_URLS.localApi;
   }
 
