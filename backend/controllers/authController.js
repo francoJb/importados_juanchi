@@ -69,3 +69,30 @@ exports.me = (req, res) => {
         empresaId: empresaId || null
     });
 };
+
+exports.getEmpresaActual = async (req, res) => {
+    try {
+        const { empresaId } = req.user;
+        
+        if (!empresaId) {
+            return res.status(400).json({ error: 'No se pudo identificar la empresa del usuario.' });
+        }
+
+        const [rows] = await db.query(
+            'SELECT id, nombre, razon_social, cuit, domicilio, email, telefono, website, condicion_iva, estado FROM empresas WHERE id = ? AND estado = 1 LIMIT 1',
+            [empresaId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Empresa no encontrada.' });
+        }
+
+        res.json({
+            success: true,
+            empresa: rows[0]
+        });
+    } catch (error) {
+        console.error('Error obteniendo empresa actual:', error);
+        res.status(500).json({ error: 'No se pudo obtener la información de la empresa.' });
+    }
+};

@@ -6,6 +6,7 @@ import { initClientes, fetchClientes } from "./clientes.js";
 import { initProductos, fetchProductos } from "./productos.js";
 import { initProveedores, listarProveedores } from "./proveedores.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
+import { initImportarProductos } from "./importarProductos.js";
 import { cambiarSeccion, mostrarLoader, ocultarLoader, mostrarAlerta } from "./ui.js";
 import { load, save } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
@@ -105,6 +106,8 @@ async function validarSesionActual() {
 
         const data = await response.json();
         currentSessionUser = data;
+        window.currentSessionUser = data;
+        sessionStorage.setItem('empresaId', data.empresaId);
         return data;
     } catch (error) {
         console.error('Error validando sesión:', error);
@@ -533,6 +536,7 @@ async function initApp() {
         // Inicializar módulos operativos solo para usuarios de empresa.
         await initClientes();
         await initProductos();
+        initImportarProductos();
         await initProveedores();
         await initVentas();
 
@@ -681,7 +685,9 @@ function closeLogoutConfirm() {
 function confirmLogout() {
     sessionStorage.removeItem('loggedIn');
     sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('empresaId');
     currentSessionUser = null;
+    window.currentSessionUser = null;
     closeLogoutConfirm();
     location.reload();
 }
@@ -751,7 +757,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 sessionStorage.setItem('authToken', data.token);
                 sessionStorage.setItem('loggedIn', 'true');
+                sessionStorage.setItem('empresaId', data.empresaId);
                 currentSessionUser = data;
+                window.currentSessionUser = data;
 
                 await iniciarApp();
             } catch (error) {

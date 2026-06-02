@@ -531,9 +531,14 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Productos</h1>
                         </div>
-                        <button id="btnAbrirModalProducto" class="w-full md:w-auto btn-primary">
-                            + Nuevo Producto
-                        </button>
+                        <div class="flex gap-2 w-full md:w-auto flex-col md:flex-row">
+                            <button id="btnAbrirModalProducto" class="w-full md:w-auto btn-primary">
+                                + Nuevo Producto
+                            </button>
+                            <button id="btnImportarProductos" class="w-full md:w-auto btn-secondary">
+                                📥 Importar Excel
+                            </button>
+                        </div>
                     </header>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input type="text" id="buscarProducto" placeholder="Buscar por Código, descripción, marca o categoría..." class="form-input">
@@ -1238,7 +1243,74 @@
             </div>
         </div>
 
+        <!-- MODAL DE IMPORTACIÓN DE PRODUCTOS -->
+        <div id="modalImportarProductos" class="modal-overlay hidden" style="z-index:100;">
+            <div class="modal-card transform transition-all duration-300 scale-95 opacity-0">
+                <div class="p-6 border-b dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Importar Productos desde Excel</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                        Selecciona un archivo Excel con los productos a importar. El archivo debe contener las siguientes columnas:
+                    </p>
+                    <ul class="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
+                        <li><strong>sku</strong> - Código del producto (requerido)</li>
+                        <li><strong>descripcion</strong> - Descripción (requerido)</li>
+                        <li><strong>marca</strong> - Marca (opcional)</li>
+                        <li><strong>modelo</strong> - Modelo (opcional)</li>
+                        <li><strong>proveedor</strong> - Nombre del proveedor (opcional)</li>
+                        <li><strong>categoria</strong> - Categoría (opcional)</li>
+                        <li><strong>costo</strong> - Costo unitario (opcional)</li>
+                        <li><strong>precio</strong> - Precio de venta sin IVA (opcional)</li>
+                        <li><strong>iva</strong> - IVA porcentaje (opcional, default 21)</li>
+                        <li><strong>stock</strong> - Cantidad en stock (opcional)</li>
+                    </ul>
+                    
+                    <div class="mt-6">
+                        <input type="file" id="archivoImportacion" accept=".xlsx,.xls" class="form-input">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Formatos soportados: Excel (.xlsx, .xls)</p>
+                    </div>
+
+                    <div id="previewImportacion" class="hidden mt-6 p-4 bg-blue-50 dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-slate-700">
+                        <p class="text-sm font-bold mb-3">Vista previa (<span id="cantidadProductosPreview">0</span> productos):</p>
+                        <div class="max-h-64 overflow-y-auto text-xs">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-blue-100 dark:bg-slate-700">
+                                        <th class="border p-2 text-left">SKU</th>
+                                        <th class="border p-2 text-left">Descripción</th>
+                                        <th class="border p-2 text-left">Precio</th>
+                                        <th class="border p-2 text-left">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewTabla"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="progressImportacion" class="hidden mt-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-bold">Importando...</p>
+                            <span id="progressText" class="text-xs text-gray-500">0/0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                            <div id="progressBar" class="bg-cyan-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t dark:border-slate-700 flex gap-3">
+                    <button type="button" id="btnCancelarImportacion" class="flex-1 btn-secondary">Cancelar</button>
+                    <button type="button" id="btnProcesarImportacion" disabled class="flex-1 btn-primary">Importar Productos</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Scripts de lógica -->
+        <script>
+            // Cargar SheetJS con callback para asegurar disponibilidad
+            window.xlsxLoaded = false;
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js" onload="window.xlsxLoaded = true;"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script type="module" src="js/ui.js"></script>
         <script type="module" src="js/app.js"></script>

@@ -28,6 +28,28 @@ function obtenerDatosEmpresa() {
     };
 }
 
+async function obtenerDatosEmpresaActual() {
+    try {
+        const response = await apiFetch(`${API_BASE_URL}/api/auth/empresa-actual`);
+        if (!response.ok) {
+            return obtenerDatosEmpresa();
+        }
+
+        const data = await response.json();
+        const empresa = data.empresa;
+        
+        return {
+            razonSocial: empresa.razon_social || DATOS_VENDEDOR.razonSocial,
+            nombreFantasia: empresa.nombre || DATOS_VENDEDOR.nombreFantasia,
+            domicilio: empresa.domicilio || DATOS_VENDEDOR.domicilio,
+            cuit: empresa.cuit || DATOS_VENDEDOR.cuit
+        };
+    } catch (error) {
+        console.error('Error obteniendo datos de empresa:', error);
+        return obtenerDatosEmpresa();
+    }
+}
+
 let carritoVenta = [];
 let productosVenta = [];
 let ventasEstado = 'activos';
@@ -942,7 +964,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.text("RECIBO DE PAGO", pageWidth / 2, y, { align: "center" });
     y += 12;
 
-    const datosEmpresa = obtenerDatosEmpresa();
+    const datosEmpresa = await obtenerDatosEmpresaActual();
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(datosEmpresa.razonSocial, margin, y);
@@ -1172,7 +1194,7 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     const margin = 20;
     let y = margin;
 
-    const datosEmpresa = obtenerDatosEmpresa();
+    const datosEmpresa = await obtenerDatosEmpresaActual();
     const cuotasNormalizadas = (cuotas || []).map((cuota, index) => ({
         numero: cuota.numero_cuota || cuota.numero || index + 1,
         fecha_vencimiento: cuota.fecha_vencimiento,
@@ -1348,7 +1370,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
     y += 10;
 
     // Datos del emisor (izquierda)
-    const datosEmpresa = obtenerDatosEmpresa();
+    const datosEmpresa = await obtenerDatosEmpresaActual();
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(datosEmpresa.razonSocial, margin, y);
