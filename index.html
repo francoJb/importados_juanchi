@@ -830,7 +830,8 @@
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-3 pt-4">
-                                    <button type="submit" class="btn-primary">Crear Empresa</button>
+                                    <button id="empresaSubmitButton" type="submit" class="btn-primary">Crear Empresa</button>
+                                    <button id="cancelarEdicionEmpresa" type="button" class="btn-secondary hidden">Cancelar edición</button>
                                 </div>
                             </form>
                             <div class="overflow-x-auto mt-6">
@@ -841,6 +842,7 @@
                                             <th class="p-3">Razón Social</th>
                                             <th class="p-3 text-right">CUIT</th>
                                             <th class="p-3">Domicilio</th>
+                                            <th class="p-3 text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="empresasLista" class="divide-y dark:divide-slate-700"></tbody>
@@ -869,6 +871,7 @@
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Rol</label>
                                         <select id="nuevoUsuarioRole" class="form-input">
+                                            <option value="platform_admin">Platform Admin</option>
                                             <option value="tenant_admin">Admin empresa</option>
                                             <option value="user">Usuario</option>
                                         </select>
@@ -885,7 +888,8 @@
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-3 pt-4">
-                                    <button type="submit" class="btn-primary">Crear Usuario</button>
+                                    <button id="usuarioSubmitButton" type="submit" class="btn-primary">Crear Usuario</button>
+                                    <button id="cancelarEdicionUsuario" type="button" class="btn-secondary hidden">Cancelar edición</button>
                                 </div>
                             </form>
                             <div class="overflow-x-auto mt-6">
@@ -897,6 +901,7 @@
                                             <th class="p-3">Usuario</th>
                                             <th class="p-3">Empresa</th>
                                             <th class="p-3 text-center">Rol</th>
+                                            <th class="p-3 text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="usuariosLista" class="divide-y dark:divide-slate-700"></tbody>

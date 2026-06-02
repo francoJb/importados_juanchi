@@ -15,6 +15,8 @@ const CONFIG_STORAGE_KEY = "empresaConfig";
 const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
 let currentSessionUser = null;
+let editingCompanyId = null;
+let editingUserId = null;
 
 // ==========================================
 // FUNCIONES DE UTILIDAD GLOBAL
@@ -46,6 +48,24 @@ function aplicarPermisosUsuario() {
     });
 
     linkConfig?.classList.toggle('hidden', !mostrarConfig);
+}
+
+function resetEmpresaForm() {
+    const form = document.getElementById('formNuevaEmpresa');
+    if (form) form.reset();
+    editingCompanyId = null;
+    document.getElementById('empresaSubmitButton')?.textContent = 'Crear Empresa';
+    document.getElementById('cancelarEdicionEmpresa')?.classList.add('hidden');
+}
+
+function resetUsuarioForm() {
+    const form = document.getElementById('formNuevoUsuario');
+    if (form) form.reset();
+    editingUserId = null;
+    document.getElementById('usuarioSubmitButton')?.textContent = 'Crear Usuario';
+    document.getElementById('cancelarEdicionUsuario')?.classList.add('hidden');
+    const empresaSelect = document.getElementById('nuevoUsuarioEmpresa');
+    if (empresaSelect) empresaSelect.disabled = false;
 }
 
 function actualizarInfoSesion() {
@@ -167,6 +187,9 @@ function popularEmpresasAdmin(empresas) {
                 <td class="p-3">${e.razon_social || '-'}</td>
                 <td class="p-3 text-right">${e.cuit || '-'}</td>
                 <td class="p-3">${e.domicilio || '-'}</td>
+                <td class="p-3 text-center">
+                    <button type="button" onclick="prepararEdicionEmpresa(${e.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
+                </td>
             </tr>
         `).join('');
     }
@@ -182,6 +205,9 @@ function popularUsuariosAdmin(usuarios) {
             <td class="p-3">${u.usuario}</td>
             <td class="p-3">${u.empresa_nombre}</td>
             <td class="p-3 text-center uppercase">${u.role}</td>
+            <td class="p-3 text-center">
+                <button type="button" onclick="prepararEdicionUsuario(${u.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
+            </td>
         </tr>
     `).join('');
 }
@@ -191,6 +217,45 @@ async function cargarAdminData() {
     const [empresas, usuarios] = await Promise.all([fetchEmpresasAdmin(), fetchUsuariosAdmin()]);
     popularEmpresasAdmin(empresas);
     popularUsuariosAdmin(usuarios);
+}
+
+async function prepararEdicionEmpresa(id) {
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/companies/${id}`);
+    if (!response.ok) {
+        mostrarAlerta('No se pudo cargar la empresa para edición.', 'Error', 'error');
+        return;
+    }
+    const empresa = await response.json();
+    document.getElementById('nuevaEmpresaNombre').value = empresa.nombre || '';
+    document.getElementById('nuevaEmpresaRazonSocial').value = empresa.razon_social || '';
+    document.getElementById('nuevaEmpresaCuit').value = empresa.cuit || '';
+    document.getElementById('nuevaEmpresaDomicilio').value = empresa.domicilio || '';
+    document.getElementById('nuevaEmpresaEmail').value = empresa.email || '';
+    document.getElementById('nuevaEmpresaTelefono').value = empresa.telefono || '';
+    document.getElementById('nuevaEmpresaWebsite').value = empresa.website || '';
+    document.getElementById('nuevaEmpresaCondicionIva').value = empresa.condicion_iva || '';
+    editingCompanyId = id;
+    document.getElementById('empresaSubmitButton').textContent = 'Guardar Cambios';
+    document.getElementById('cancelarEdicionEmpresa')?.classList.remove('hidden');
+}
+
+async function prepararEdicionUsuario(id) {
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/users/${id}`);
+    if (!response.ok) {
+        mostrarAlerta('No se pudo cargar el usuario para edición.', 'Error', 'error');
+        return;
+    }
+    const usuario = await response.json();
+    document.getElementById('nuevoUsuarioEmpresa').value = usuario.empresa_id || '';
+    document.getElementById('nuevoUsuarioEmpresa').disabled = true;
+    document.getElementById('nuevoUsuarioUsuario').value = usuario.usuario || '';
+    document.getElementById('nuevoUsuarioPassword').value = '';
+    document.getElementById('nuevoUsuarioRole').value = usuario.role || 'user';
+    document.getElementById('nuevoUsuarioNombre').value = usuario.nombre || '';
+    document.getElementById('nuevoUsuarioApellido').value = usuario.apellido || '';
+    editingUserId = id;
+    document.getElementById('usuarioSubmitButton').textContent = 'Guardar Cambios';
+    document.getElementById('cancelarEdicionUsuario')?.classList.remove('hidden');
 }
 
 async function crearEmpresa(event) {
@@ -209,20 +274,24 @@ async function crearEmpresa(event) {
         return;
     }
 
-    const response = await apiFetch(`${API_BASE_URL}/api/admin/companies`, {
-        method: 'POST',
+    const payload = { nombre, razon_social, cuit, domicilio, email, telefono, website, condicion_iva };
+    const url = editingCompanyId ? `${API_BASE_URL}/api/admin/companies/${editingCompanyId}` : `${API_BASE_URL}/api/admin/companies`;
+    const method = editingCompanyId ? 'PUT' : 'POST';
+
+    const response = await apiFetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, razon_social, cuit, domicilio, email, telefono, website, condicion_iva })
+        body: JSON.stringify(payload)
     });
 
     const data = await response.json();
     if (!response.ok) {
-        mostrarAlerta(data.error || 'No se pudo crear la empresa.', 'Error', 'error');
+        mostrarAlerta(data.error || 'No se pudo guardar la empresa.', 'Error', 'error');
         return;
     }
 
-    mostrarAlerta('Empresa creada correctamente.', '¡Éxito!', 'success');
-    document.getElementById('formNuevaEmpresa').reset();
+    mostrarAlerta(editingCompanyId ? 'Empresa actualizada correctamente.' : 'Empresa creada correctamente.', '¡Éxito!', 'success');
+    resetEmpresaForm();
     cargarAdminData();
 }
 
@@ -235,27 +304,51 @@ async function crearUsuario(event) {
     const nombre = document.getElementById('nuevoUsuarioNombre').value.trim();
     const apellido = document.getElementById('nuevoUsuarioApellido').value.trim();
 
-    if (!empresa_id || !usuario || !password) {
-        mostrarAlerta('Empresa, usuario y contraseña son obligatorios.', 'Error', 'warning');
+    if (!usuario || (!editingUserId && !password)) {
+        mostrarAlerta('El usuario y la contraseña son obligatorios al crear un usuario.', 'Error', 'warning');
         return;
     }
 
-    const response = await apiFetch(`${API_BASE_URL}/api/admin/users`, {
-        method: 'POST',
+    const payload = {
+        usuario,
+        role,
+        nombre,
+        apellido
+    };
+
+    let url = `${API_BASE_URL}/api/admin/users`;
+    let method = 'POST';
+
+    if (editingUserId) {
+        if (password) payload.password = password;
+        url = `${API_BASE_URL}/api/admin/users/${editingUserId}`;
+        method = 'PUT';
+    } else {
+        payload.empresa_id = empresa_id;
+        payload.password = password;
+    }
+
+    const response = await apiFetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ empresa_id, usuario, password, role, nombre, apellido })
+        body: JSON.stringify(payload)
     });
 
     const data = await response.json();
     if (!response.ok) {
-        mostrarAlerta(data.error || 'No se pudo crear el usuario.', 'Error', 'error');
+        mostrarAlerta(data.error || 'No se pudo guardar el usuario.', 'Error', 'error');
         return;
     }
 
-    mostrarAlerta('Usuario creado correctamente.', '¡Éxito!', 'success');
-    document.getElementById('formNuevoUsuario').reset();
+    mostrarAlerta(editingUserId ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.', '¡Éxito!', 'success');
+    resetUsuarioForm();
     cargarAdminData();
 }
+
+window.prepararEdicionEmpresa = prepararEdicionEmpresa;
+window.prepararEdicionUsuario = prepararEdicionUsuario;
+window.resetEmpresaForm = resetEmpresaForm;
+window.resetUsuarioForm = resetUsuarioForm;
 
 function formatMoney(value) {
     return `$${Number(value || 0).toFixed(2)}`;
@@ -534,9 +627,19 @@ async function initApp() {
         formNuevaEmpresa.addEventListener("submit", crearEmpresa);
     }
 
+    const botonCancelarEmpresa = document.getElementById('cancelarEdicionEmpresa');
+    if (botonCancelarEmpresa) {
+        botonCancelarEmpresa.addEventListener('click', resetEmpresaForm);
+    }
+
     const formNuevoUsuario = document.getElementById("formNuevoUsuario");
     if (formNuevoUsuario) {
         formNuevoUsuario.addEventListener("submit", crearUsuario);
+    }
+
+    const botonCancelarUsuario = document.getElementById('cancelarEdicionUsuario');
+    if (botonCancelarUsuario) {
+        botonCancelarUsuario.addEventListener('click', resetUsuarioForm);
     }
 
     popularFormularioConfiguracion();
