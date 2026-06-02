@@ -161,6 +161,7 @@ async function asegurarEsquemaCuotas() {
             monto DECIMAL(12,2) NOT NULL,
             saldo_pendiente DECIMAL(12,2) NOT NULL,
             estado ENUM('Pendiente','Pagada','Parcial') DEFAULT 'Pendiente',
+            recibo_id INT NULL,
             fecha_pago DATETIME NULL,
             observaciones TEXT,
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -189,31 +190,7 @@ const configurarTablas = async () => {
                 estado TINYINT(1) DEFAULT 1,
                 fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        `);
-        // =================================================================
-// INSERTAR EMPRESA POR DEFECTO SI ESTÁ VACÍA (AÑADE ESTE BLOQUE)
-// =================================================================
-const [empresaCheck] = await db.query("SELECT id FROM empresas LIMIT 1");
-if (empresaCheck.length === 0) {
-  console.log("🌱 Insertando empresa por defecto para la inicialización...");
-  await db.query(`
-    INSERT INTO empresas (nombre, razon_social, estado) 
-    VALUES ('Jrimport', 'Jrimport S.A.', 1)
-  `);
-}
-        // 2. TABLA DE CATEGORIAS
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS categorias (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                empresa_id INT NOT NULL,
-                nombre VARCHAR(100) NOT NULL,
-                estado TINYINT(1) DEFAULT 1,
-                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_categoria_empresa (empresa_id, nombre),
-                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
-            );
-        `);
-
+        `);T
         // 3. TABLA DE PROVEEDORES
         await db.query(`
             CREATE TABLE IF NOT EXISTS proveedores (

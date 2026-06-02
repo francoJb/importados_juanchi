@@ -776,7 +776,8 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
             pagosRealizados.push({
                 ventaId: ventaIdPago,
                 montoPagado: montoParaVenta,
-                nuevoSaldo: data.nuevoSaldo
+                nuevoSaldo: data.nuevoSaldo,
+                reciboId: data.reciboId || null
             });
             montoRestante -= montoParaVenta;
         }
@@ -790,21 +791,29 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
 
         document.getElementById('modalRegistroPago').classList.add('hidden');
         const comprobantesCancelados = pagosRealizados
-        .filter(p => parseFloat(p.nuevoSaldo) <= 0)
-        .map(p => Number(p.ventaId));
+            .filter(p => parseFloat(p.nuevoSaldo) <= 0)
+            .map(p => Number(p.ventaId));
 
+        const imprimirRecibo = await mostrarConfirmacion({
+            title: 'Imprimir recibo',
+            message: '¿Deseas imprimir el recibo de pago?',
+            confirmText: 'Sí, imprimir',
+            cancelText: 'No'
+        });
 
-        
-
-        for (const pago of pagosRealizados) {
-            const ventaActualizada = await fetchVentaPorId(pago.ventaId);
-            await generarReciboPagoPDF(
-                ventaActualizada,
-                pago.montoPagado,
-                pago.nuevoSaldo,
-                comprobantesCancelados,
-                observaciones
-            );
+        if (imprimirRecibo) {
+            for (const pago of pagosRealizados) {
+                const ventaActualizada = await fetchVentaPorId(pago.ventaId);
+                const doc = await generarReciboPagoPDF(
+                    ventaActualizada,
+                    pago.montoPagado,
+                    pago.nuevoSaldo,
+                    comprobantesCancelados,
+                    observaciones,
+                    metodo
+                );
+                abrirPreviewPDF(doc, `ReciboPago_${ventaActualizada ? ventaActualizada.id : 'sin-id'}.pdf`);
+            }
         }
         // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
         if (window.currentBalanceClienteId) {
@@ -905,7 +914,7 @@ window.imprimirReciboPagoMov = async (ventaId, monto, saldo, observacionesCodifi
         const observacionesPago = observacionesCodificadas
             ? decodeURIComponent(observacionesCodificadas)
             : "";
-        const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados, observacionesPago);
+        const doc = await generarReciboPagoPDF(venta, monto, saldo, comprobantesCancelados, observacionesPago, venta.metodo_pago);
         abrirPreviewPDF(doc, `ReciboPago_${venta ? venta.id : 'sin-id'}.pdf`);
     } catch (error) {
         console.error("Error generando recibo de pago:", error);
@@ -920,7 +929,7 @@ async function fetchVentaPorId(ventaId) {
     return ventas.find(v => v.id == ventaId);
 }
 
-async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "") {
+async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "", metodoPago = null) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -971,6 +980,9 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.text (`Recibi la suma de: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
     y += 7;
     doc.text(`en concepto de pago por venta N° ${venta ? `0001 - ${String(venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
+    y += 7;
+    const metodoPagoTexto = metodoPago || venta?.metodo_pago || "No especificado";
+    doc.text(`Método de pago: ${metodoPagoTexto}`, margin, y);
     y += 7;
     doc.text(`Saldo de cuenta corriente después del pago: $${parseFloat(nuevoSaldo).toFixed(2)}.`, margin, y);
     y += 15;
@@ -1140,6 +1152,7 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
         fecha_pago: cuota.fecha_pago,
         monto: parseFloat(cuota.monto || 0),
         saldo_pendiente: cuota.saldo_pendiente !== undefined ? parseFloat(cuota.saldo_pendiente || 0) : parseFloat(cuota.monto || 0),
+        recibo_id: cuota.recibo_id || null,
         estado: cuota.estado || 'Pendiente'
     }));
     const totalCuotas = cuotasNormalizadas.reduce((sum, cuota) => sum + cuota.monto, 0);
@@ -1164,6 +1177,11 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.setFont("helvetica", "normal");
     doc.text(`Operación N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth / 2, y, { align: "center" });
     y += 12;
+
+    // Mostrar la factura vinculada a la venta
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Factura N°: 0001 - ${String(venta.id).padStart(8, '0')}`, pageWidth - margin, y - 12, { align: "right" });
 
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
@@ -1235,6 +1253,7 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.text("Cuota", margin, y);
     doc.text("Vencimiento", margin + 24, y);
     doc.text("Pago", margin + 58, y);
+    doc.text("N° Recibo", pageWidth - 110, y, { align: "right" });
     doc.text("Monto", pageWidth - 78, y, { align: "right" });
     doc.text("Saldo", pageWidth - 45, y, { align: "right" });
     doc.text("Estado", pageWidth - margin, y, { align: "right" });
@@ -1248,6 +1267,8 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
         doc.text(String(cuota.numero), margin, y);
         doc.text(formatearFechaDocumento(cuota.fecha_vencimiento), margin + 24, y);
         doc.text(cuota.fecha_pago ? formatearFechaDocumento(cuota.fecha_pago) : "-", margin + 58, y);
+        const reciboTexto = cuota.recibo_id ? `R-${String(cuota.recibo_id).padStart(6, '0')}` : '-';
+        doc.text(reciboTexto, pageWidth - 110, y, { align: "right" });
         doc.text(`$${cuota.monto.toFixed(2)}`, pageWidth - 78, y, { align: "right" });
         doc.text(`$${cuota.saldo_pendiente.toFixed(2)}`, pageWidth - 45, y, { align: "right" });
         doc.text(cuota.estado, pageWidth - margin, y, { align: "right" });
@@ -1333,6 +1354,12 @@ async function generarFacturaPDFExistente(venta, detalles) {
     const clienteLines = doc.splitTextToSize(clienteData, 80);
     doc.text(clienteLines, margin, y);
     y += clienteLines.length * 5 + 10;
+
+    const metodoPagoTexto = venta.metodo_pago ? `Método de pago: ${venta.metodo_pago}` : "Método de pago: No especificado";
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(metodoPagoTexto, margin, y);
+    y += 8;
 
     // Tabla de detalles
     doc.setFont("helvetica", "bold");

@@ -312,6 +312,7 @@ exports.obtenerCuotasPendientes = async (req, res) => {
                 vc.fecha_pago,
                 vc.monto,
                 vc.saldo_pendiente,
+                vc.recibo_id,
                 vc.estado,
                 v.fecha AS venta_fecha,
                 c.nombre AS cliente_nombre,
@@ -343,6 +344,7 @@ exports.obtenerCuotasVenta = async (req, res) => {
                 vc.fecha_pago,
                 vc.monto,
                 vc.saldo_pendiente,
+                vc.recibo_id,
                 vc.estado,
                 v.fecha AS venta_fecha,
                 c.nombre AS cliente_nombre,
@@ -552,6 +554,7 @@ exports.registrarPago = async (req, res) => {
             );
 
             let montoRestanteCuotas = montoNum;
+            const cuotasPagadasIds = [];
             for (const cuota of cuotasRows) {
                 if (montoRestanteCuotas <= 0) break;
                 const saldoCuota = parseFloat(cuota.saldo_pendiente);
@@ -567,6 +570,7 @@ exports.registrarPago = async (req, res) => {
                 );
 
                 montoRestanteCuotas = redondear2(montoRestanteCuotas - pagoCuota);
+                if (pagoCuota > 0) cuotasPagadasIds.push(cuota.id);
             }
         }
 
@@ -584,14 +588,25 @@ exports.registrarPago = async (req, res) => {
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
 
-        await connection.query(
+        const [insertCcResult] = await connection.query(
             `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, descripcion, debe, haber, saldo_acumulado, observaciones) 
             VALUES (?, ?, ?, ?, 0, ?, ?, ?)`,
             [empresaId, idCliente, ventaIdNum, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
         );
 
+        // Obtener el id del recibo (insertId de la inserción anterior)
+        const reciboId = insertCcResult.insertId;
+
+        // Si se pagaron cuotas, vincular el recibo a las cuotas afectadas
+        if (Array.isArray(cuotasPagadasIds) && cuotasPagadasIds.length > 0) {
+            await connection.query(
+                `UPDATE venta_cuotas SET recibo_id = ? WHERE empresa_id = ? AND id IN (${cuotasPagadasIds.map(() => '?').join(',')})`,
+                [reciboId, empresaId, ...cuotasPagadasIds]
+            );
+        }
+
         await connection.commit();
-        return res.json({ success: true, nuevoSaldo });
+        return res.json({ success: true, nuevoSaldo, reciboId });
 
     } catch (error) {
         await connection.rollback();
