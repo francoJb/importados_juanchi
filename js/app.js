@@ -54,7 +54,8 @@ function resetEmpresaForm() {
     const form = document.getElementById('formNuevaEmpresa');
     if (form) form.reset();
     editingCompanyId = null;
-    document.getElementById('empresaSubmitButton')?.textContent = 'Crear Empresa';
+    const empresaSubmitButton = document.getElementById('empresaSubmitButton');
+    if (empresaSubmitButton) empresaSubmitButton.textContent = 'Crear Empresa';
     document.getElementById('cancelarEdicionEmpresa')?.classList.add('hidden');
 }
 
@@ -62,7 +63,8 @@ function resetUsuarioForm() {
     const form = document.getElementById('formNuevoUsuario');
     if (form) form.reset();
     editingUserId = null;
-    document.getElementById('usuarioSubmitButton')?.textContent = 'Crear Usuario';
+    const usuarioSubmitButton = document.getElementById('usuarioSubmitButton');
+    if (usuarioSubmitButton) usuarioSubmitButton.textContent = 'Crear Usuario';
     document.getElementById('cancelarEdicionUsuario')?.classList.add('hidden');
     const empresaSelect = document.getElementById('nuevoUsuarioEmpresa');
     if (empresaSelect) empresaSelect.disabled = false;
