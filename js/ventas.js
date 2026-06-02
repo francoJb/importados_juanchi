@@ -52,7 +52,7 @@ async function obtenerDatosEmpresaActual() {
 
 let carritoVenta = [];
 let productosVenta = [];
-let ventasEstado = 'activos';
+let ventasEstado = 'todos';
 
 export async function enviarVentaAlServidor(datos) {
     const response = await apiFetch(URL_API, {
@@ -1124,23 +1124,16 @@ export async function initVentas() {
     addPagoEntregaListener();
     await cargarDatosParaVenta();
 
-    const toggleEliminados = document.getElementById('toggleVentasEliminados');
-    if (toggleEliminados) {
-        toggleEliminados.onchange = async (e) => {
-            await listarVentas(e.target.checked ? 'eliminados' : 'activos');
-        };
-    }
-
     window.restaurarVenta = restaurarVenta;
 }
 
-export async function listarVentas(estado = 'activos') {
+export async function listarVentas(estado = 'todos') {
     ventasEstado = estado;
     const cuerpoTabla = document.getElementById("cuerpo-tabla-ventas");
     if (!cuerpoTabla) return;
 
     try {
-        const url = estado === 'eliminados' ? `${URL_API}?estado=eliminados` : URL_API;
+        const url = `${URL_API}?estado=${estado}`;
         const respuesta = await apiFetch(url);
         if (!respuesta.ok) throw new Error("Error al obtener ventas");
         const ventas = await respuesta.json();

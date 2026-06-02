@@ -241,12 +241,16 @@ exports.crearVenta = async (req, res) => {
 exports.obtenerVentas = async (req, res) => {
     try {
         const empresaId = req.empresaId;
+        const mostrarTodos = req.query.estado === 'todos';
         const estado = req.query.estado === 'eliminados' ? 0 : 1;
+        const filtroEstado = mostrarTodos ? '' : 'AND v.estado = ?';
+        const params = mostrarTodos ? [empresaId, empresaId] : [empresaId, empresaId, estado];
         const incluirAnuladas = req.query.anuladas === '1';
         const [rows] = await db.query(`
             SELECT 
                 v.id,
                 v.numero,
+                v.estado,
                 v.cliente_id, 
                 v.fecha, 
                 v.total, 
@@ -257,9 +261,9 @@ exports.obtenerVentas = async (req, res) => {
                 c.apellido AS cliente_apellido
             FROM ventas v
             LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id=?
-            WHERE v.empresa_id=? AND v.estado = ? ${incluirAnuladas ? '' : 'AND v.anulada = 0'}
+            WHERE v.empresa_id=? ${filtroEstado} ${incluirAnuladas ? '' : 'AND v.anulada = 0'}
             ORDER BY v.fecha DESC
-            `, [empresaId, empresaId, estado]
+            `, params
         );
         res.json(rows);
     } catch (error) {

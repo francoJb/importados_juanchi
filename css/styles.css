@@ -128,6 +128,34 @@
     background: #ffffff;
 }
 
+.modal-product-search-card {
+    max-width: min(64rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    min-height: 0;
+}
+
+.modal-product-search-card .modal-header,
+.modal-product-search-card .modal-body {
+    flex: 0 0 auto;
+}
+
+.modal-product-search-table {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.modal-product-search-table table {
+    min-width: 48rem;
+}
+
+.modal-product-search-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
 .dark .modal-card {
     background: #0f172a;
 }
@@ -195,6 +223,27 @@
 @media (max-width: 640px) {
     .modal-overlay {
         padding: 0.5rem;
+    }
+
+    .modal-product-search-card {
+        max-width: calc(100vw - 1rem);
+        max-height: calc(100dvh - 1rem);
+        border-radius: 0.85rem;
+    }
+
+    .modal-product-search-card .modal-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .modal-product-search-card .modal-header > div {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .modal-product-search-card .modal-body,
+    .modal-product-search-table {
+        padding: 0.75rem;
     }
 
     .modal-card-payment {
