@@ -1207,7 +1207,7 @@ async function obtenerDatosClienteDocumento(venta) {
 
 async function generarPlanPagosPDF(venta, detalles, cuotas) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF("landscape");
+    const doc = new jsPDF("p", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
@@ -1245,17 +1245,16 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Plan N°: ${formatearNumeroDocumento(venta.numero_plan_pagos || venta.numero || venta.id)}`, pageWidth / 2, y, { align: "center" });
+    doc.text(`N°: ${formatearNumeroDocumento(venta.numero_plan_pagos || venta.numero || venta.id)}`, pageWidth / 2, y, { align: "center" });
     y += 12;
 
-    // Mostrar la factura vinculada a la venta
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Factura N°: ${formatearNumeroDocumento(venta.numero || venta.id)}`, pageWidth - margin, y - 12, { align: "right" });
 
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
-    y += 8;
+    y += 6;
 
     doc.setFont("helvetica", "bold");
     doc.text(datosEmpresa.razonSocial, margin, y);
@@ -1319,20 +1318,20 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.setFont("helvetica", "bold");
     doc.text("Cronograma de vencimientos", margin, y);
     y += 8;
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     const columnasCuotas = {
         cuota: margin,
-        vencimiento: margin + 28,
-        pago: margin + 68,
-        recibo: margin + 108,
-        monto: pageWidth - 95,
-        saldo: pageWidth - 58,
+        vencimiento: margin + 15,
+        pago: margin + 45,
+        recibo: margin + 75,
+        monto: pageWidth - 75,
+        saldo: pageWidth - 45,
         estado: pageWidth - margin
     };
     doc.text("Cuota", columnasCuotas.cuota, y);
-    doc.text("Vencimiento", columnasCuotas.vencimiento, y);
+    doc.text("Vence", columnasCuotas.vencimiento, y);
     doc.text("Pago", columnasCuotas.pago, y);
-    doc.text("N° Recibo", columnasCuotas.recibo, y);
+    doc.text("Recibo", columnasCuotas.recibo, y);
     doc.text("Monto", columnasCuotas.monto, y, { align: "right" });
     doc.text("Saldo", columnasCuotas.saldo, y, { align: "right" });
     doc.text("Estado", columnasCuotas.estado, y, { align: "right" });
@@ -1419,10 +1418,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
     // Número y fecha (derecha)
     doc.text(`Fecha de emisión: ${new Date(venta.fecha).toLocaleDateString('es-AR')}`, pageWidth - margin, y, { align: "right" });
     y += 5;
-    doc.text(`Punto de Venta: ${PUNTO_VENTA_DEFAULT}`, pageWidth - margin, y, { align: "right" });
-    y += 5;
-    doc.text(`Comp. Nro: ${numeroFactura.split("-")[1]}`, pageWidth - margin, y, { align: "right" });
-    y += 5;
+
     doc.text(`Factura N°: ${numeroFactura}`, pageWidth - margin, y, { align: "right" });
     y += 15;
 
