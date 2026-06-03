@@ -67,6 +67,60 @@ function generarCuotas(total, cantidadCuotas, diaVencimientoMensual) {
     });
 }
 
+function imputarEntregaInicialACuotas(cuotas, entregaInicial, fechaPago, reciboNumero = null, reciboId = null) {
+    let entregaRestante = redondear2(entregaInicial);
+
+    return cuotas.map(cuota => {
+        const monto = Number(cuota.monto);
+        const pagoInicial = Math.min(entregaRestante, monto);
+        entregaRestante = redondear2(entregaRestante - pagoInicial);
+        const saldoPendiente = redondear2(monto - pagoInicial);
+
+        return {
+            ...cuota,
+            pago_inicial: pagoInicial,
+            saldo_pendiente: saldoPendiente,
+            estado: saldoPendiente <= 0 ? 'Pagada' : (pagoInicial > 0 ? 'Parcial' : 'Pendiente'),
+            fecha_pago: pagoInicial > 0 && saldoPendiente <= 0 ? fechaPago : null,
+            recibo_numero: pagoInicial > 0 ? reciboNumero : null,
+            recibo_id: pagoInicial > 0 ? reciboId : null
+        };
+    });
+}
+
+const DOCUMENTOS = {
+    factura: { tabla: 'ventas', columna: 'numero' },
+    recibo: { tabla: 'cuenta_corriente', columna: 'numero_recibo' },
+    plan_pagos: { tabla: 'ventas', columna: 'numero_plan_pagos' }
+};
+
+async function obtenerSiguienteNumeroDocumento(connection, empresaId, tipo) {
+    const config = DOCUMENTOS[tipo];
+    if (!config) {
+        throw new Error(`Tipo de documento inválido: ${tipo}`);
+    }
+
+    await connection.query(`
+        INSERT IGNORE INTO documentos_contadores (empresa_id, tipo, proximo_numero)
+        SELECT ?, ?, IFNULL(MAX(${config.columna}), 0) + 1
+        FROM ${config.tabla}
+        WHERE empresa_id = ?
+    `, [empresaId, tipo, empresaId]);
+
+    const [rows] = await connection.query(
+        `SELECT proximo_numero FROM documentos_contadores WHERE empresa_id = ? AND tipo = ? FOR UPDATE`,
+        [empresaId, tipo]
+    );
+
+    const proximoNumero = Number(rows[0]?.proximo_numero || 1);
+    await connection.query(
+        `UPDATE documentos_contadores SET proximo_numero = ? WHERE empresa_id = ? AND tipo = ?`,
+        [proximoNumero + 1, empresaId, tipo]
+    );
+
+    return proximoNumero;
+}
+
 exports.crearVenta = async (req, res) => {
     
     const { cliente_id, total, metodo_pago, entrega_inicial, cuotas, items, observaciones } = req.body;
@@ -114,7 +168,7 @@ exports.crearVenta = async (req, res) => {
     let planCuotas = [];
     if (metodo_pago === 'Cuotas') {
         try {
-            planCuotas = generarCuotas(saldoFinanciado, cuotas?.cantidad, cuotas?.dia_vencimiento);
+            planCuotas = generarCuotas(totalVenta, cuotas?.cantidad, cuotas?.dia_vencimiento);
         } catch (error) {
             return res.status(400).json({ error: error.message });
         }
@@ -130,23 +184,23 @@ exports.crearVenta = async (req, res) => {
         // 1. Insertar la Cabecera de la Venta
         // Si es Cta Cte o Cuotas, el saldo_pendiente queda abierto hasta cobrar.
         const saldoPendiente = ['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) ? saldoFinanciado : 0;
-        const estadoPago = (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && saldoPendiente > 0) ? 'Pendiente' : 'Pagado';
+        const estadoPago = (['Cuenta Corriente', 'Cuotas'].includes(metodo_pago) && saldoPendiente > 0)
+            ? (entregaInicial > 0 ? 'Parcial' : 'Pendiente')
+            : 'Pagado';
 
         const empresaId = req.empresaId;
 
-        // Obtener próximo número correlativo de factura para esta empresa
-        const [numRows] = await connection.query(
-            "SELECT IFNULL(MAX(numero), 0) AS maxNumero FROM ventas WHERE empresa_id = ?",
-            [empresaId]
-        );
-        const nuevoNumero = (numRows[0].maxNumero || 0) + 1;
+        const nuevoNumero = await obtenerSiguienteNumeroDocumento(connection, empresaId, 'factura');
+        const nuevoNumeroPlanPagos = metodo_pago === 'Cuotas'
+            ? await obtenerSiguienteNumeroDocumento(connection, empresaId, 'plan_pagos')
+            : null;
 
         // Fecha explícita en zona Argentina para evitar usar la zona del servidor
         const fechaArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
         const [ventaRes] = await connection.query(
-            `INSERT INTO ventas (empresa_id, cliente_id, fecha, total, metodo_pago, estado_pago, saldo_pendiente, observaciones, numero) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [empresaId, cliente_id === 0 ? null : cliente_id, fechaArg, totalVenta, metodo_pago, estadoPago, saldoPendiente, observaciones, nuevoNumero]
+            `INSERT INTO ventas (empresa_id, cliente_id, fecha, total, metodo_pago, estado_pago, saldo_pendiente, observaciones, numero, numero_plan_pagos) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [empresaId, cliente_id === 0 ? null : cliente_id, fechaArg, totalVenta, metodo_pago, estadoPago, saldoPendiente, observaciones, nuevoNumero, nuevoNumeroPlanPagos]
         );
         const ventaId = ventaRes.insertId;
 
@@ -194,8 +248,8 @@ exports.crearVenta = async (req, res) => {
             // B. Registrar la DEUDA (El DEBE)
             saldoCalculado += totalVenta; // Sumamos lo que se lleva
             const descripcionDeuda = metodo_pago === 'Cuotas'
-                ? `Venta # ${ventaId} en ${planCuotas.length} cuotas - ${observaciones || 'Sin obs.'}`
-                : `Venta # ${ventaId} - ${observaciones || 'Sin obs.'}`;
+                ? `Factura #${nuevoNumero} en ${planCuotas.length} cuotas - ${observaciones || 'Sin obs.'}`
+                : `Factura #${nuevoNumero} - ${observaciones || 'Sin obs.'}`;
 
             const fechaCuentaArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
             await connection.query(
@@ -204,29 +258,62 @@ exports.crearVenta = async (req, res) => {
                 [empresaId, cliente_id, ventaId, fechaCuentaArg, descripcionDeuda, totalVenta, saldoCalculado]
             );
 
+            let reciboEntregaId = null;
+            let reciboEntregaNumero = null;
+
             // C. Si hubo ENTREGA INICIAL, registrar el pago (El HABER)
             if (entregaInicial > 0) {
+                reciboEntregaNumero = await obtenerSiguienteNumeroDocumento(connection, empresaId, 'recibo');
                 saldoCalculado -= entregaInicial; // Restamos lo que pagó
-                await connection.query(
-                    `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado) 
-                    VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
-                    [empresaId, cliente_id, ventaId, fechaCuentaArg, `Entrega inicial Venta #${ventaId}`, entregaInicial, saldoCalculado]
+                const [reciboEntregaResult] = await connection.query(
+                    `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, numero_recibo) 
+                    VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+                    [empresaId, cliente_id, ventaId, fechaCuentaArg, `Entrega inicial Factura #${nuevoNumero}`, entregaInicial, saldoCalculado, reciboEntregaNumero]
                 );
+                reciboEntregaId = reciboEntregaResult.insertId;
             }
 
             if (metodo_pago === 'Cuotas') {
+                planCuotas = imputarEntregaInicialACuotas(
+                    planCuotas,
+                    entregaInicial,
+                    fechaCuentaArg,
+                    reciboEntregaNumero,
+                    reciboEntregaId
+                );
+
                 for (const cuota of planCuotas) {
                     await connection.query(
                         `INSERT INTO venta_cuotas
-                         (empresa_id, venta_id, cliente_id, numero_cuota, fecha_vencimiento, monto, saldo_pendiente, estado)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente')`,
-                        [empresaId, ventaId, cliente_id, cuota.numero, cuota.fecha_vencimiento, cuota.monto, cuota.monto]
+                         (empresa_id, venta_id, cliente_id, numero_cuota, fecha_vencimiento, monto, saldo_pendiente, estado, recibo_id, recibo_numero, fecha_pago, observaciones)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            empresaId,
+                            ventaId,
+                            cliente_id,
+                            cuota.numero,
+                            cuota.fecha_vencimiento,
+                            cuota.monto,
+                            cuota.saldo_pendiente,
+                            cuota.estado,
+                            cuota.recibo_id,
+                            cuota.recibo_numero,
+                            cuota.fecha_pago,
+                            cuota.pago_inicial > 0 ? `Entrega inicial imputada: ${cuota.pago_inicial}` : null
+                        ]
                     );
                 }
             }
         }
         await connection.commit();
-        res.json({ success: true, mensaje: "Venta procesada con éxito", ventaId, cuotas: planCuotas });
+        res.json({
+            success: true,
+            mensaje: "Venta procesada con éxito",
+            ventaId,
+            numero: nuevoNumero,
+            numeroPlanPagos: nuevoNumeroPlanPagos,
+            cuotas: planCuotas
+        });
 
 
     } catch (error) {
@@ -250,6 +337,7 @@ exports.obtenerVentas = async (req, res) => {
             SELECT 
                 v.id,
                 v.numero,
+                v.numero_plan_pagos,
                 v.estado,
                 v.cliente_id, 
                 v.fecha, 
@@ -278,6 +366,7 @@ exports.obtenerVenta = async (req, res) => {
             SELECT 
                 v.id, 
                 v.numero,
+                v.numero_plan_pagos,
                 v.fecha, 
                 v.total, 
                 v.metodo_pago,
@@ -348,6 +437,7 @@ exports.obtenerCuotasPendientes = async (req, res) => {
                 vc.monto,
                 vc.saldo_pendiente,
                 vc.recibo_id,
+                vc.recibo_numero,
                 vc.estado,
                 v.fecha AS venta_fecha,
                 c.nombre AS cliente_nombre,
@@ -380,6 +470,7 @@ exports.obtenerCuotasVenta = async (req, res) => {
                 vc.monto,
                 vc.saldo_pendiente,
                 vc.recibo_id,
+                vc.recibo_numero,
                 vc.estado,
                 v.fecha AS venta_fecha,
                 c.nombre AS cliente_nombre,
@@ -656,6 +747,7 @@ exports.registrarPago = async (req, res) => {
             ? observaciones.trim()
             : null;
 
+        const cuotasPagadasIds = [];
         if (venta.metodo_pago === 'Cuotas') {
             const filtrosCuotas = ['empresa_id = ?', 'venta_id = ?', "estado <> 'Pagada'", 'saldo_pendiente > 0'];
             const paramsCuotas = [empresaId, ventaIdNum];
@@ -671,7 +763,6 @@ exports.registrarPago = async (req, res) => {
             );
 
             let montoRestanteCuotas = montoNum;
-            const cuotasPagadasIds = [];
             for (const cuota of cuotasRows) {
                 if (montoRestanteCuotas <= 0) break;
                 const saldoCuota = parseFloat(cuota.saldo_pendiente);
@@ -705,12 +796,13 @@ exports.registrarPago = async (req, res) => {
         );
         const saldoActualNum = parseFloat(ccRows[0].saldoActual) || 0;
         const nuevoSaldoAcumulado = saldoActualNum - montoNum;
+        const reciboNumero = await obtenerSiguienteNumeroDocumento(connection, empresaId, 'recibo');
 
         const fechaCuentaPagoArg = formatearFechaHoraArgentina(ahoraArgentinaDate());
         const [insertCcResult] = await connection.query(
-            `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones) 
-            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
-            [empresaId, idCliente, ventaIdNum, fechaCuentaPagoArg, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago]
+            `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones, numero_recibo) 
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+            [empresaId, idCliente, ventaIdNum, fechaCuentaPagoArg, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago, reciboNumero]
         );
 
         // Obtener el id del recibo (insertId de la inserción anterior)
@@ -719,13 +811,13 @@ exports.registrarPago = async (req, res) => {
         // Si se pagaron cuotas, vincular el recibo a las cuotas afectadas
         if (Array.isArray(cuotasPagadasIds) && cuotasPagadasIds.length > 0) {
             await connection.query(
-                `UPDATE venta_cuotas SET recibo_id = ? WHERE empresa_id = ? AND id IN (${cuotasPagadasIds.map(() => '?').join(',')})`,
-                [reciboId, empresaId, ...cuotasPagadasIds]
+                `UPDATE venta_cuotas SET recibo_id = ?, recibo_numero = ? WHERE empresa_id = ? AND id IN (${cuotasPagadasIds.map(() => '?').join(',')})`,
+                [reciboId, reciboNumero, empresaId, ...cuotasPagadasIds]
             );
         }
 
         await connection.commit();
-        return res.json({ success: true, nuevoSaldo, reciboId });
+        return res.json({ success: true, nuevoSaldo, reciboId, reciboNumero });
 
     } catch (error) {
         await connection.rollback();

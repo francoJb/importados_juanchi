@@ -88,6 +88,19 @@
     color: #f8fafc;
 }
 
+.sidebar-link-active {
+    background: rgba(34, 211, 238, 0.18);
+    color: #ffffff;
+    box-shadow:
+        inset 4px 0 0 #22d3ee,
+        0 12px 30px rgba(8, 145, 178, 0.18);
+}
+
+.sidebar-link-active:hover {
+    background: rgba(34, 211, 238, 0.24);
+    color: #ffffff;
+}
+
 .panel {
     background: #ffffff;
     border: 1px solid #e5e7eb;

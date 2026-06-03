@@ -7,6 +7,7 @@ import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
 const URL_API = `${API_BASE_URL}/api/ventas`;
+const PUNTO_VENTA_DEFAULT = "0001";
 // Datos del vendedor por defecto
 const DATOS_VENDEDOR = {
     razonSocial: "JR Import S.A.",
@@ -26,6 +27,15 @@ function obtenerDatosEmpresa() {
         domicilio: config.domicilio || DATOS_VENDEDOR.domicilio,
         cuit: config.cuit || DATOS_VENDEDOR.cuit
     };
+}
+
+function formatearNumeroDocumento(numero, puntoVenta = PUNTO_VENTA_DEFAULT) {
+    const numeroNormalizado = Number(numero);
+    const numeroComprobante = Number.isFinite(numeroNormalizado) && numeroNormalizado > 0
+        ? Math.trunc(numeroNormalizado)
+        : 1;
+
+    return `${puntoVenta}-${String(numeroComprobante).padStart(8, "0")}`;
 }
 
 async function obtenerDatosEmpresaActual() {
@@ -330,13 +340,17 @@ window.calcularSaldoCtaCte = () => {
 function actualizarResumenCuotas() {
     const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
     const entrega = parseFloat(document.getElementById("pago-cuotas-entrega")?.value) || 0;
-    const saldoFinanciado = Math.max(total - entrega, 0);
     const cantidad = parseInt(document.getElementById("pago-cuotas-cantidad")?.value, 10) || 1;
     const diaVencimiento = parseInt(document.getElementById("pago-cuotas-dia-vencimiento")?.value, 10) || 1;
-    const monto = saldoFinanciado / cantidad;
+    const montoCuota = cantidad > 0 ? total / cantidad : 0;
+    const saldoPendiente = Math.max(total - entrega, 0);
+    const cuotasCubiertas = montoCuota > 0 ? Math.floor(entrega / montoCuota) : 0;
+    const entregaTexto = entrega > 0
+        ? ` Entrega $${entrega.toFixed(2)} imputada a ${cuotasCubiertas > 0 ? `${cuotasCubiertas} cuota${cuotasCubiertas > 1 ? 's' : ''}` : 'la primera cuota'}.`
+        : "";
     const resumen = document.getElementById("pago-cuotas-resumen");
     if (resumen) {
-        resumen.innerText = `Entrega $${entrega.toFixed(2)}. Saldo $${saldoFinanciado.toFixed(2)} en ${cantidad} cuotas de $${monto.toFixed(2)} con vencimiento el día ${diaVencimiento} de cada mes`;
+        resumen.innerText = `${cantidad} cuotas de $${montoCuota.toFixed(2)} con vencimiento el día ${diaVencimiento} de cada mes.${entregaTexto} Saldo pendiente $${saldoPendiente.toFixed(2)}.`;
     }
 }
 
@@ -435,6 +449,8 @@ window.procesarVentaFinal = async () => {
         if (respuesta.ok) {
             const ventaSimulada = {
                 id: resultado.ventaId,
+                numero: resultado.numero,
+                numero_plan_pagos: resultado.numeroPlanPagos,
                 fecha: new Date(),
                 cliente_id: idCliente,
                 total: totalVenta,
@@ -461,7 +477,10 @@ window.procesarVentaFinal = async () => {
                 const doc = esVentaEnCuotas
                     ? await generarPlanPagosPDF(ventaSimulada, detallesSimulados, cuotasGeneradas)
                     : await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
-                abrirPreviewPDF(doc, `${esVentaEnCuotas ? 'PlanPagos' : 'Factura'}_${ventaSimulada.id}.pdf`);
+                const numeroArchivo = esVentaEnCuotas
+                    ? (ventaSimulada.numero_plan_pagos || ventaSimulada.numero || ventaSimulada.id)
+                    : (ventaSimulada.numero || ventaSimulada.id);
+                abrirPreviewPDF(doc, `${esVentaEnCuotas ? 'PlanPagos' : 'Factura'}_${formatearNumeroDocumento(numeroArchivo)}.pdf`);
             }
 
             cerrarModalPago();
@@ -800,7 +819,8 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
                 ventaId: ventaIdPago,
                 montoPagado: montoParaVenta,
                 nuevoSaldo: data.nuevoSaldo,
-                reciboId: data.reciboId || null
+                reciboId: data.reciboId || null,
+                reciboNumero: data.reciboNumero || null
             });
             montoRestante -= montoParaVenta;
         }
@@ -827,15 +847,19 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
         if (imprimirRecibo) {
             for (const pago of pagosRealizados) {
                 const ventaActualizada = await fetchVentaPorId(pago.ventaId);
+                const comprobantesCanceladosNumeros = parseFloat(pago.nuevoSaldo) <= 0 && ventaActualizada
+                    ? [ventaActualizada.numero || ventaActualizada.id]
+                    : [];
                 const doc = await generarReciboPagoPDF(
                     ventaActualizada,
                     pago.montoPagado,
                     pago.nuevoSaldo,
-                    comprobantesCancelados,
+                    comprobantesCanceladosNumeros,
                     observaciones,
-                    metodo
+                    metodo,
+                    pago.reciboNumero
                 );
-                abrirPreviewPDF(doc, `ReciboPago_${ventaActualizada ? (ventaActualizada.numero || ventaActualizada.id) : 'sin-id'}.pdf`);
+                abrirPreviewPDF(doc, `ReciboPago_${pago.reciboNumero || (ventaActualizada ? (ventaActualizada.numero || ventaActualizada.id) : 'sin-id')}.pdf`);
             }
         }
         // 5. Si hay cliente de balance seleccionado, volver a esa pantalla y refrescar datos
@@ -952,7 +976,7 @@ async function fetchVentaPorId(ventaId) {
     return ventas.find(v => v.id == ventaId);
 }
 
-async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "", metodoPago = null) {
+async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "", metodoPago = null, reciboNumero = null) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -975,6 +999,8 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     y += 10;
 
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`Recibo N°: ${formatearNumeroDocumento(reciboNumero || venta?.recibo_numero || venta?.reciboId || 1)}`, pageWidth - margin, y, { align: "right" });
     y += 10;
 
     doc.setFont("helvetica", "bold");
@@ -1002,7 +1028,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.setFontSize(10);
     doc.text (`Recibi la suma de: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
     y += 7;
-    doc.text(`en concepto de pago por venta N° ${venta ? `0001 - ${String(venta.numero || venta.id).padStart(8, '0')}` : '---'}.`, margin, y);
+    doc.text(`en concepto de pago por venta N° ${venta ? formatearNumeroDocumento(venta.numero || venta.id) : '---'}.`, margin, y);
     y += 7;
     const metodoPagoTexto = metodoPago || venta?.metodo_pago || "No especificado";
     doc.text(`Método de pago: ${metodoPagoTexto}`, margin, y);
@@ -1011,7 +1037,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     y += 15;
 
     if (comprobantesCancelados.length > 0) {
-        const comprobantesFormateados = comprobantesCancelados.map(id => `0001 - ${String(id).padStart(8, '0')}`);
+        const comprobantesFormateados = comprobantesCancelados.map(numero => formatearNumeroDocumento(numero));
         doc.setFont("helvetica", "bold");
         doc.text("Comprobantes cancelados:", margin, y);
         y += 5;
@@ -1181,7 +1207,7 @@ async function obtenerDatosClienteDocumento(venta) {
 
 async function generarPlanPagosPDF(venta, detalles, cuotas) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF("landscape");
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
@@ -1195,14 +1221,16 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
         monto: parseFloat(cuota.monto || 0),
         saldo_pendiente: cuota.saldo_pendiente !== undefined ? parseFloat(cuota.saldo_pendiente || 0) : parseFloat(cuota.monto || 0),
         recibo_id: cuota.recibo_id || null,
+        recibo_numero: cuota.recibo_numero || null,
         estado: cuota.estado || 'Pendiente'
     }));
     const totalCuotas = cuotasNormalizadas.reduce((sum, cuota) => sum + cuota.monto, 0);
+    const saldoPendientePlan = cuotasNormalizadas.reduce((sum, cuota) => sum + cuota.saldo_pendiente, 0);
     const totalOperacion = parseFloat(venta.total || 0);
-    const totalFinanciado = totalCuotas || parseFloat(venta.saldo_pendiente || 0);
+    const totalPlan = totalCuotas || totalOperacion;
     const entregaInicial = venta.entrega_inicial !== undefined
         ? parseFloat(venta.entrega_inicial || 0)
-        : Math.max(totalOperacion - totalFinanciado, 0);
+        : Math.max(totalOperacion - saldoPendientePlan, 0);
 
     const nuevaPaginaSiHaceFalta = (altoNecesario = 20) => {
         if (y + altoNecesario <= pageHeight - margin) return;
@@ -1217,13 +1245,13 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Operación N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth / 2, y, { align: "center" });
+    doc.text(`Plan N°: ${formatearNumeroDocumento(venta.numero_plan_pagos || venta.numero || venta.id)}`, pageWidth / 2, y, { align: "center" });
     y += 12;
 
     // Mostrar la factura vinculada a la venta
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Factura N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth - margin, y - 12, { align: "right" });
+    doc.text(`Factura N°: ${formatearNumeroDocumento(venta.numero || venta.id)}`, pageWidth - margin, y - 12, { align: "right" });
 
     doc.setLineWidth(0.5);
     doc.line(margin, y, pageWidth - margin, y);
@@ -1255,10 +1283,10 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.text(`Cantidad de cuotas: ${cuotasNormalizadas.length}`, pageWidth - margin, y, { align: "right" });
     y += 5;
     doc.text(`Entrega inicial: $${entregaInicial.toFixed(2)}`, margin, y);
-    doc.text(`Total financiado: $${totalFinanciado.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    doc.text(`Total del plan: $${totalPlan.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
     y += 5;
     doc.text(`Método de pago: ${venta.metodo_pago || 'Cuotas'}`, margin, y);
-    doc.text(`Saldo pendiente: $${parseFloat(venta.saldo_pendiente ?? totalFinanciado).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    doc.text(`Saldo pendiente: $${parseFloat(venta.saldo_pendiente ?? saldoPendientePlan).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
     y += 10;
 
     nuevaPaginaSiHaceFalta(35);
@@ -1268,7 +1296,7 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.setFontSize(9);
     doc.text("Cant.", margin, y);
     doc.text("Descripción", margin + 20, y);
-    doc.text("P.Unit.", pageWidth - 60, y, { align: "right" });
+    doc.text("P.Unit.", pageWidth - 70, y, { align: "right" });
     doc.text("Subtotal", pageWidth - margin, y, { align: "right" });
     y += 4;
     doc.line(margin, y, pageWidth - margin, y);
@@ -1277,10 +1305,10 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
 
     detalles.forEach(item => {
         nuevaPaginaSiHaceFalta(14);
-        const descLines = doc.splitTextToSize(item.descripcion || item.desc || "-", 80);
+        const descLines = doc.splitTextToSize(item.descripcion || item.desc || "-", 150);
         doc.text(String(item.cantidad), margin, y);
         doc.text(descLines, margin + 20, y);
-        doc.text(`$${parseFloat(item.precio_unitario || item.precio || 0).toFixed(2)}`, pageWidth - 60, y, { align: "right" });
+        doc.text(`$${parseFloat(item.precio_unitario || item.precio || 0).toFixed(2)}`, pageWidth - 70, y, { align: "right" });
         doc.text(`$${(parseFloat(item.cantidad || 0) * parseFloat(item.precio_unitario || item.precio || 0)).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
         y += descLines.length * 5 + 2;
     });
@@ -1292,13 +1320,22 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.text("Cronograma de vencimientos", margin, y);
     y += 8;
     doc.setFontSize(9);
-    doc.text("Cuota", margin, y);
-    doc.text("Vencimiento", margin + 24, y);
-    doc.text("Pago", margin + 58, y);
-    doc.text("N° Recibo", pageWidth - 110, y, { align: "right" });
-    doc.text("Monto", pageWidth - 78, y, { align: "right" });
-    doc.text("Saldo", pageWidth - 45, y, { align: "right" });
-    doc.text("Estado", pageWidth - margin, y, { align: "right" });
+    const columnasCuotas = {
+        cuota: margin,
+        vencimiento: margin + 28,
+        pago: margin + 68,
+        recibo: margin + 108,
+        monto: pageWidth - 95,
+        saldo: pageWidth - 58,
+        estado: pageWidth - margin
+    };
+    doc.text("Cuota", columnasCuotas.cuota, y);
+    doc.text("Vencimiento", columnasCuotas.vencimiento, y);
+    doc.text("Pago", columnasCuotas.pago, y);
+    doc.text("N° Recibo", columnasCuotas.recibo, y);
+    doc.text("Monto", columnasCuotas.monto, y, { align: "right" });
+    doc.text("Saldo", columnasCuotas.saldo, y, { align: "right" });
+    doc.text("Estado", columnasCuotas.estado, y, { align: "right" });
     y += 4;
     doc.line(margin, y, pageWidth - margin, y);
     y += 6;
@@ -1306,21 +1343,21 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
 
     cuotasNormalizadas.forEach(cuota => {
         nuevaPaginaSiHaceFalta(10);
-        doc.text(String(cuota.numero), margin, y);
-        doc.text(formatearFechaDocumento(cuota.fecha_vencimiento), margin + 24, y);
-        doc.text(cuota.fecha_pago ? formatearFechaDocumento(cuota.fecha_pago) : "-", margin + 58, y);
-        const reciboTexto = cuota.recibo_id ? `R-${String(cuota.recibo_id).padStart(6, '0')}` : '-';
-        doc.text(reciboTexto, pageWidth - 110, y, { align: "right" });
-        doc.text(`$${cuota.monto.toFixed(2)}`, pageWidth - 78, y, { align: "right" });
-        doc.text(`$${cuota.saldo_pendiente.toFixed(2)}`, pageWidth - 45, y, { align: "right" });
-        doc.text(cuota.estado, pageWidth - margin, y, { align: "right" });
+        doc.text(String(cuota.numero), columnasCuotas.cuota, y);
+        doc.text(formatearFechaDocumento(cuota.fecha_vencimiento), columnasCuotas.vencimiento, y);
+        doc.text(cuota.fecha_pago ? formatearFechaDocumento(cuota.fecha_pago) : "-", columnasCuotas.pago, y);
+        const reciboTexto = cuota.recibo_numero ? formatearNumeroDocumento(cuota.recibo_numero) : '-';
+        doc.text(reciboTexto, columnasCuotas.recibo, y);
+        doc.text(`$${cuota.monto.toFixed(2)}`, columnasCuotas.monto, y, { align: "right" });
+        doc.text(`$${cuota.saldo_pendiente.toFixed(2)}`, columnasCuotas.saldo, y, { align: "right" });
+        doc.text(cuota.estado, columnasCuotas.estado, y, { align: "right" });
         y += 6;
     });
 
     y += 6;
     nuevaPaginaSiHaceFalta(25);
     doc.setFont("helvetica", "bold");
-    doc.text(`TOTAL PLAN: $${totalFinanciado.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+    doc.text(`TOTAL PLAN: $${totalPlan.toFixed(2)}`, pageWidth - margin, y, { align: "right" });
     y += 10;
 
     if (venta.observaciones) {
@@ -1346,15 +1383,21 @@ async function generarFacturaPDFExistente(venta, detalles) {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     let y = margin;
+    const tipoComprobante = "C";
+    const codigoComprobante = "011";
+    const numeroFactura = formatearNumeroDocumento(venta.numero || venta.id);
 
     // Encabezado principal
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("FACTURA", pageWidth / 2, y, { align: "center" });
+    doc.text(`FACTURA ${tipoComprobante}`, pageWidth / 2, y, { align: "center" });
     y += 10;
 
     doc.setFontSize(14);
-    doc.text("C", pageWidth / 2, y, { align: "center" }); // Tipo C para consumidor final
+    doc.text(tipoComprobante, pageWidth / 2, y, { align: "center" });
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`COD. ${codigoComprobante}`, pageWidth / 2, y + 5, { align: "center" });
     y += 15;
 
     // Línea separadora
@@ -1374,9 +1417,13 @@ async function generarFacturaPDFExistente(venta, detalles) {
     y += 10;
 
     // Número y fecha (derecha)
-    doc.text(`Fecha: ${new Date(venta.fecha).toLocaleDateString('es-AR')}`, pageWidth - margin, y, { align: "right" });
+    doc.text(`Fecha de emisión: ${new Date(venta.fecha).toLocaleDateString('es-AR')}`, pageWidth - margin, y, { align: "right" });
     y += 5;
-    doc.text(`Factura N°: 0001 - ${String(venta.numero || venta.id).padStart(8, '0')}`, pageWidth - margin, y, { align: "right" }); // Punto de venta 0001
+    doc.text(`Punto de Venta: ${PUNTO_VENTA_DEFAULT}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`Comp. Nro: ${numeroFactura.split("-")[1]}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`Factura N°: ${numeroFactura}`, pageWidth - margin, y, { align: "right" });
     y += 15;
 
     // Datos del cliente
@@ -1455,7 +1502,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
     // Pie de página
     y = pageHeight - 30;
     doc.setFontSize(8);
-    doc.text("Esta factura se emite conforme a la Resolución General N° 1415 de la AFIP.", pageWidth / 2, y, { align: "center" });
+    doc.text("Comprobante interno no autorizado electrónicamente por ARCA. No incluye CAE.", pageWidth / 2, y, { align: "center" });
 
     
     return doc;
@@ -1467,7 +1514,7 @@ window.imprimirFactura = async () => {
         return;
     }
     const doc = await generarFacturaPDFExistente(window.ventaActual, window.detallesActual);
-    abrirPreviewPDF(doc, `Factura_${window.ventaActual.numero || window.ventaActual.id}.pdf`);
+    abrirPreviewPDF(doc, `Factura_${formatearNumeroDocumento(window.ventaActual.numero || window.ventaActual.id)}.pdf`);
 };
 
 window.imprimirPlanPagosActual = async () => {
@@ -1478,7 +1525,7 @@ window.imprimirPlanPagosActual = async () => {
 
     const cuotas = window.cuotasActual?.length ? window.cuotasActual : await fetchCuotasVenta(window.ventaActual.id);
     const doc = await generarPlanPagosPDF(window.ventaActual, window.detallesActual || [], cuotas);
-    abrirPreviewPDF(doc, `PlanPagos_${window.ventaActual.numero || window.ventaActual.id}.pdf`);
+    abrirPreviewPDF(doc, `PlanPagos_${formatearNumeroDocumento(window.ventaActual.numero_plan_pagos || window.ventaActual.numero || window.ventaActual.id)}.pdf`);
 };
 
 window.imprimirVenta = async (id) => {

@@ -23,6 +23,39 @@ export const ocultarLoader = () => {
     loader.classList.remove("flex");
 };
 
+const LINKS_POR_SECCION = {
+    seccionDashboard: "linkDashboard",
+    seccionVentas: "linkVentas",
+    pantallaGenerarVenta: "linkVentas",
+    "pantalla-detalle-venta": "linkVentas",
+    "pantalla-balance-cliente": "linkVentas",
+    seccionClientes: "linkClientes",
+    pantallaCliente: "linkClientes",
+    seccionProductos: "linkProductos",
+    pantallaProducto: "linkProductos",
+    seccionProveedores: "linkProveedores",
+    seccionConfig: "linkConfig"
+};
+
+function actualizarNavegacionActiva(idSeccionDestino) {
+    const idLinkActivo = LINKS_POR_SECCION[idSeccionDestino];
+    const links = Object.values(LINKS_POR_SECCION);
+
+    [...new Set(links)].forEach(id => {
+        const link = document.getElementById(id);
+        if (!link) return;
+
+        const activo = id === idLinkActivo;
+        link.classList.toggle("sidebar-link-active", activo);
+
+        if (activo) {
+            link.setAttribute("aria-current", "page");
+        } else {
+            link.removeAttribute("aria-current");
+        }
+    });
+}
+
 
 export const cambiarSeccion = (idSeccionDestino) => {
 
@@ -50,6 +83,8 @@ export const cambiarSeccion = (idSeccionDestino) => {
     if (pantallaActiva) {
         pantallaActiva.classList.remove("hidden");
     }
+
+    actualizarNavegacionActiva(idSeccionDestino);
     
     window.scrollTo({
         top: 0,

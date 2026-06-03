@@ -67,6 +67,11 @@ async function addColumnIfMissing(table, column, definition) {
     await db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
+async function tableExists(table) {
+    const [rows] = await db.query('SHOW TABLES LIKE ?', [table]);
+    return rows.length > 0;
+}
+
 async function renameColumnIfNeeded(table, oldColumn, newColumn, definition) {
     const hasOld = await columnExists(table, oldColumn);
     const hasNew = await columnExists(table, newColumn);
@@ -126,8 +131,14 @@ async function asegurarColumnasMultiempresa() {
     await db.query('UPDATE ventas SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
     await db.query('UPDATE ventas SET estado = 1 WHERE estado IS NULL');
     await addColumnIfMissing('ventas', 'numero', 'INT NULL');
+    await addColumnIfMissing('ventas', 'numero_plan_pagos', 'INT NULL');
     try {
         await db.query('ALTER TABLE ventas ADD UNIQUE KEY unique_venta_numero_empresa (empresa_id, numero)');
+    } catch (e) {
+        // Si ya existe la llave única, ignorar el error
+    }
+    try {
+        await db.query('ALTER TABLE ventas ADD UNIQUE KEY unique_plan_pagos_numero_empresa (empresa_id, numero_plan_pagos)');
     } catch (e) {
         // Si ya existe la llave única, ignorar el error
     }
@@ -142,6 +153,7 @@ async function asegurarColumnasMultiempresa() {
     await db.query('UPDATE detalle_ventas SET empresa_id = ? WHERE empresa_id IS NULL', [empresaOperativaId]);
 
     await addColumnIfMissing('cuenta_corriente', 'empresa_id', 'INT NULL');
+    await addColumnIfMissing('cuenta_corriente', 'numero_recibo', 'INT NULL');
     await db.query(`
         UPDATE cuenta_corriente cc
         INNER JOIN clientes c ON c.id = cc.cliente_id
@@ -175,6 +187,46 @@ async function asegurarEsquemaCuotas() {
             UNIQUE KEY unique_cuota_venta (empresa_id, venta_id, numero_cuota)
         )
     `);
+
+    await addColumnIfMissing('venta_cuotas', 'recibo_id', 'INT NULL');
+    await addColumnIfMissing('venta_cuotas', 'fecha_pago', 'DATETIME NULL');
+    await addColumnIfMissing('venta_cuotas', 'observaciones', 'TEXT');
+    await addColumnIfMissing('venta_cuotas', 'recibo_numero', 'INT NULL');
+}
+
+async function asegurarContadoresDocumentos() {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS documentos_contadores (
+            empresa_id INT NOT NULL,
+            tipo ENUM('factura','recibo','plan_pagos') NOT NULL,
+            proximo_numero INT NOT NULL DEFAULT 1,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (empresa_id, tipo),
+            FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
+        )
+    `);
+
+    const seeds = [
+        ['factura', 'ventas', 'numero'],
+        ['plan_pagos', 'ventas', 'numero_plan_pagos'],
+        ['recibo', 'cuenta_corriente', 'numero_recibo']
+    ];
+
+    for (const [tipo, tabla, columna] of seeds) {
+        if (!(await tableExists(tabla)) || !(await columnExists(tabla, columna))) {
+            continue;
+        }
+
+        await db.query(`
+            INSERT INTO documentos_contadores (empresa_id, tipo, proximo_numero)
+            SELECT empresa_id, ?, IFNULL(MAX(${columna}), 0) + 1
+            FROM ${tabla}
+            WHERE empresa_id IS NOT NULL
+            GROUP BY empresa_id
+            ON DUPLICATE KEY UPDATE
+                proximo_numero = GREATEST(documentos_contadores.proximo_numero, VALUES(proximo_numero))
+        `, [tipo]);
+    }
 }
 
 // Esta función crea las tablas automáticamente si no existen
@@ -350,6 +402,7 @@ const configurarTablas = async () => {
             );
         `);
         await addColumnIfMissing('cuenta_corriente', 'estado', 'TINYINT DEFAULT 1');
+        await addColumnIfMissing('cuenta_corriente', 'numero_recibo', 'INT NULL');
         await db.query(`
             CREATE TABLE IF NOT EXISTS auditoria (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -366,6 +419,7 @@ const configurarTablas = async () => {
         `);
         await asegurarColumnasMultiempresa();
         await asegurarEsquemaCuotas();
+        await asegurarContadoresDocumentos();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
