@@ -85,15 +85,28 @@ exports.editarCliente = async (req, res) => {
 exports.eliminarCliente = async (req, res) => {
     const { id } = req.params;
     const empresaId = req.empresaId;
-    const sql = `UPDATE clientes SET estado = 0, deleted_at = ?, deleted_by = ? WHERE empresa_id=? AND id = ?`;
-    const fecha = formatearFechaHoraArgentina(ahoraArgentinaDate());
+    
+    // Usamos NOW() de MySQL para evitar errores de formato string vs datetime en Staging
+    const sql = `UPDATE clientes SET estado = 0, deleted_at = NOW(), deleted_by = ? WHERE empresa_id = ? AND id = ?`;
+    
     try {
-        const [result] = await db.query(sql, [fecha, req.usuarioId || null, empresaId, id]);
+        // Quitamos la variable 'fecha' de los parámetros ya que NOW() lo resuelve la base de datos
+        const [result] = await db.query(sql, [req.usuarioId || null, empresaId, id]);
+        
         if (result.affectedRows === 0) {
-            return res.status(404).json({ mensaje: "Cliente no encontrado" });
+            return res.status(404).json({ mensaje: "Cliente no encontrado o no pertenece a la empresa" });
         }
+        
         // Registrar auditoría
-        await logAction(db, { empresaId, usuarioId: req.usuarioId || null, accion: 'soft_delete', entidad: 'clientes', entidadId: id, descripcion: 'Cliente desactivado' });
+        await logAction(db, { 
+            empresaId, 
+            usuarioId: req.usuarioId || null, 
+            accion: 'soft_delete', 
+            entidad: 'clientes', 
+            entidadId: id, 
+            descripcion: 'Cliente desactivado' 
+        });
+        
         res.json({ 
             mensaje: "Cliente desactivado correctamente",
             id: id 
