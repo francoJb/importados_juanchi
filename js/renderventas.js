@@ -63,6 +63,10 @@ export function renderTablaVentas(ventas) {
 
     cuerpoTabla.innerHTML = "";
 
+    // 1. Detectamos si el checkbox existe en el DOM y si está activo actualmente
+    const checkboxOcultar = document.getElementById("toggleVentasFinalizadas");
+    const ocultarActivo = checkboxOcultar ? checkboxOcultar.checked : false;
+
     ventas.forEach(v => {
         const isEliminado = Number(v.estado) === 0;
         const fechaFormateada = new Date(v.fecha).toLocaleString();
@@ -80,8 +84,15 @@ export function renderTablaVentas(ventas) {
             <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
         `;
 
+        // 2. Evaluamos si la venta actual está finalizada (y no eliminada)
+        const esFinalizado = v.estado_pago === "Pagado" && !isEliminado;
+        
+        // 3. Si está finalizada y el checkbox está activo, le asignamos la clase 'hidden' de Tailwind
+        const claseOcultar = (esFinalizado && ocultarActivo) ? "hidden" : "";
+
+        // 4. Agregamos el atributo 'data-finalizado' y la 'claseOcultar' al elemento <tr>
         cuerpoTabla.innerHTML += `
-            <tr class="transition-colors ${isEliminado ? "bg-rose-50/80 text-slate-500 dark:bg-rose-950/20 dark:text-slate-400" : "hover:bg-gray-50 dark:hover:bg-slate-700/50"}">
+            <tr data-finalizado="${esFinalizado}" class="transition-colors ${claseOcultar} ${isEliminado ? "bg-rose-50/80 text-slate-500 dark:bg-rose-950/20 dark:text-slate-400" : "hover:bg-gray-50 dark:hover:bg-slate-700/50"}">
                 <td class="p-2 text-center font-mono ${isEliminado ? "line-through decoration-rose-400 decoration-2" : ""}">#${numeroVenta}</td>
                 <td class="p-2">${fechaFormateada}</td>
                 <td class="p-2 text-right">$${v.total}</td>

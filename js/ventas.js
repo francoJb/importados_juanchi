@@ -671,21 +671,33 @@ function renderVentasPendientesModal() {
         titulo.textContent = modoCobranzaCuotas ? "Cuotas pendientes" : "Ventas pendientes del cliente";
     }
 
-    tbody.innerHTML = ventasPendientesModal.map(v => `
-        <tr>
-            <td class="p-2">
-                <input 
-                    type="checkbox"
-                    class="modalPago-check-venta h-4 w-4"
-                    data-venta-id="${v.id}"
-                    ${ventasSeleccionadasModal.has(v.id) ? "checked" : ""}
-                >
-            </td>
-            <td class="p-2 font-semibold">${v.label || `#${v.id}`}</td>
-            <td class="p-2">${new Date(v.fecha || v.fecha_vencimiento).toLocaleDateString('es-AR')}</td>
-            <td class="p-2 text-right font-mono text-red-600">${formatearMoneda(v.saldo_pendiente)}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = ventasPendientesModal.map(v => {
+        // 1. Buscamos el número de factura real (v.numero o v.numero_venta)
+        // Si por alguna razón no existen en el objeto, usamos el v.id como respaldo
+        const nroFactura = v.numero || v.numero_venta || v.id;
+        
+        // 2. Si es una cuota (ej: "Cuota 1"), combinamos el texto para que diga "Cuota 1 (Factura #1005)"
+        // Si no es cuota, mostrará directamente "Factura #1005"
+        const textoMostrar = v.label && !v.label.includes('#') 
+            ? `${v.label} (Factura #${nroFactura})` 
+            : `Factura #${nroFactura}`;
+
+        return `
+            <tr>
+                <td class="p-2">
+                    <input 
+                        type="checkbox"
+                        class="modalPago-check-venta h-4 w-4"
+                        data-venta-id="${v.id}"
+                        ${ventasSeleccionadasModal.has(v.id) ? "checked" : ""}
+                    >
+                </td>
+                <td class="p-2 font-semibold">${textoMostrar}</td>
+                <td class="p-2">${new Date(v.fecha || v.fecha_vencimiento).toLocaleDateString('es-AR')}</td>
+                <td class="p-2 text-right font-mono text-red-600">${formatearMoneda(v.saldo_pendiente)}</td>
+            </tr>
+        `;
+    }).join('');
 
     document.querySelectorAll('.modalPago-check-venta').forEach(check => {
         check.addEventListener('change', (e) => {
@@ -743,7 +755,7 @@ window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente, ventas
             ventasSeleccionadasModal = new Set([ventaId]);
         }
     } catch (error) {
-        console.error("Error cargando cuotas pendientes:", error);
+        console.error("Error cargando :", error);
         modoCobranzaCuotas = false;
         ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
             ? ventasPendientes

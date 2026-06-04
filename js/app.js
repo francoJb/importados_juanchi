@@ -596,6 +596,31 @@ async function initApp() {
         listarVentas();
     });
 
+    // === INTERACTIVIDAD DEL SWITCH DE VENTAS FINALIZADAS ===
+    const checkboxOcultar = document.getElementById("toggleVentasFinalizadas");
+    if (checkboxOcultar) {
+        checkboxOcultar.addEventListener("change", (evento) => {
+            const cuerpoTabla = document.getElementById("cuerpo-tabla-ventas");
+            if (!cuerpoTabla) return; // Si la tabla no está en pantalla, no hace nada
+
+            const ocultarActivo = evento.target.checked;
+            const filas = cuerpoTabla.querySelectorAll("tr");
+
+            filas.forEach(fila => {
+                // Leemos el atributo que configuramos en renderventas.js
+                const esFinalizado = fila.getAttribute("data-finalizado") === "true";
+
+                if (esFinalizado) {
+                    if (ocultarActivo) {
+                        fila.classList.add("hidden"); // Oculta con Tailwind
+                    } else {
+                        fila.classList.remove("hidden"); // Muestra con Tailwind
+                    }
+                }
+            });
+        });
+    }
+
     // 4. Cuando hagan clic en Productos
     document.getElementById("linkProductos").addEventListener("click", (e) => {
         e.preventDefault();
