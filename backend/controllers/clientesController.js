@@ -140,20 +140,24 @@ exports.restaurarCliente = async (req, res) => {
 exports.obtenerCuentaCorriente = async (req, res) => {
     const { id } = req.params;
     try {
-        const empresaId =req.empresaId;
+        const empresaId = req.empresaId;
+        
+        // CONSULTA MEJORADA: Usamos alias 'cc' y 'v' para evitar conflictos de columnas duplicadas
         const [rows] = await db.query(`
             SELECT 
-                id, 
-                fecha, 
-                descripcion, 
-                venta_id, 
-                debe, 
-                haber, 
-                saldo_acumulado,
-                observaciones
-            FROM cuenta_corriente 
-            WHERE empresa_id=? AND cliente_id = ? AND estado = 1
-            ORDER BY fecha DESC`, 
+                cc.id, 
+                cc.fecha, 
+                cc.descripcion, 
+                cc.venta_id, 
+                cc.debe, 
+                cc.haber, 
+                cc.saldo_acumulado,
+                cc.observaciones,
+                v.numero AS factura_numero -- <--- Traemos el número real de la factura
+            FROM cuenta_corriente cc
+            LEFT JOIN ventas v ON v.id = cc.venta_id AND v.empresa_id = cc.empresa_id
+            WHERE cc.empresa_id = ? AND cc.cliente_id = ? AND cc.estado = 1
+            ORDER BY cc.fecha DESC`, 
         [empresaId, id]);
 
         // También traemos el saldo total actual para mostrarlo arriba
@@ -167,6 +171,7 @@ exports.obtenerCuentaCorriente = async (req, res) => {
             saldoTotal: saldoTotal[0].total
         });
     } catch (error) {
+        console.error("Error en obtenerCuentaCorriente:", error.message);
         res.status(500).json({ error: error.message });
     }
 };

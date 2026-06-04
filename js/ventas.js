@@ -665,6 +665,9 @@ function actualizarResumenPagoModal() {
 }
 
 function renderVentasPendientesModal() {
+    // DIAGNÓSTICO: Esta línea nos mostrará en la consola exactamente qué propiedades tiene cada fila
+    console.log("CONTENIDO DE VENTAS/CUOTAS EN MODAL:", ventasPendientesModal);
+
     const tbody = document.getElementById('modalPago-ventasPendientes');
     const titulo = document.getElementById('modalPago-listaTitulo');
     if (titulo) {
@@ -672,15 +675,14 @@ function renderVentasPendientesModal() {
     }
 
     tbody.innerHTML = ventasPendientesModal.map(v => {
-        // 1. Buscamos el número de factura real (v.numero o v.numero_venta)
-        // Si por alguna razón no existen en el objeto, usamos el v.id como respaldo
-        const nroFactura = v.numero || v.numero_venta || v.id;
+        let textoIdentificador = v.label || `#${v.id}`;
         
-        // 2. Si es una cuota (ej: "Cuota 1"), combinamos el texto para que diga "Cuota 1 (Factura #1005)"
-        // Si no es cuota, mostrará directamente "Factura #1005"
-        const textoMostrar = v.label && !v.label.includes('#') 
-            ? `${v.label} (Factura #${nroFactura})` 
-            : `Factura #${nroFactura}`;
+        // Simplificamos la condición: Si la propiedad existe en el objeto, la usamos directamente
+        if (v.factura_numero) {
+            textoIdentificador = `Factura #${v.factura_numero} (Cuota ${v.numero_cuota})`;
+        } else if (v.numero) {
+            textoIdentificador = `Factura #${v.numero}`;
+        }
 
         return `
             <tr>
@@ -692,7 +694,7 @@ function renderVentasPendientesModal() {
                         ${ventasSeleccionadasModal.has(v.id) ? "checked" : ""}
                     >
                 </td>
-                <td class="p-2 font-semibold">${textoMostrar}</td>
+                <td class="p-2 font-semibold">${textoIdentificador}</td>
                 <td class="p-2">${new Date(v.fecha || v.fecha_vencimiento).toLocaleDateString('es-AR')}</td>
                 <td class="p-2 text-right font-mono text-red-600">${formatearMoneda(v.saldo_pendiente)}</td>
             </tr>
@@ -743,7 +745,64 @@ window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente, ventas
             ventasPendientesModal = cuotas.map(c => ({
                 id: c.id,
                 venta_id: c.venta_id,
-                label: `Venta #${c.venta_id} - Cuota ${c.numero_cuota}`,
+                label: `Factura #${c.factura_numero || c.venta_id} - Cuota ${c.numero_cuota}`,
+                fecha: c.fecha_vencimiento,
+                saldo_pendiente: c.saldo_pendiente
+            }));
+            ventasSeleccionadasModal = new Set([ventasPendientesModal[0].id]);
+        } else {
+            ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
+                ? ventasPendientes
+                : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
+            ventasSeleccionadasModal = new Set([ventaId]);
+        }
+    } catch (error) {
+        console.error("Error cargando cuotas pendientes:", error);
+        modoCobranzaCuotas = false;
+        ventasPendientesModal = Array.isArray(ventasPendientes) && ventasPendientes.length > 0
+            ? ventasPendientes
+            : [{ id: ventaId, fecha: new Date().toISOString(), saldo_pendiente: saldoPendiente }];
+        ventasSeleccionadasModal = new Set([ventaId]);
+    }
+
+    renderVentasPendientesModal();
+    inputMonto.value = obtenerTotalSeleccionadoModal().toFixed(2);
+    inputObs.value = "";
+    metodoInput.value = "Efectivo";
+    actualizarResumenPagoModal();
+
+    inputMonto.oninput = () => actualizarResumenPagoModal();
+
+    // Mostramos el modal quitando la clase 'hidden' de Tailwind
+    modal.classList.remove('hidden');
+};
+
+// 2. Adaptación de la función para ABRIR el modal
+window.abrirPantallaCobranza = async (ventaId, clienteId, saldoPendiente, ventasPendientes = null) => {
+    // Guardamos los IDs para usarlos luego al presionar "Aceptar"
+    ventaIdActual = ventaId;
+    saldoActual = saldoPendiente;
+    clienteIdActualCobranza = clienteId;
+
+    // Referencias a los elementos del modal que me pasaste
+    const modal = document.getElementById('modalRegistroPago');
+    const inputMonto = document.getElementById('modalPago-monto');
+    const inputObs = document.getElementById('modalPago-observaciones');
+    const metodoInput = document.getElementById('modalPago-metodo');
+
+    const params = new URLSearchParams();
+    if (ventaId) params.set("ventaId", ventaId);
+    if (clienteId) params.set("clienteId", clienteId);
+
+    try {
+        const response = await apiFetch(`${URL_API}/cuotas-pendientes?${params.toString()}`);
+        const cuotas = response.ok ? await response.json() : [];
+        modoCobranzaCuotas = cuotas.length > 0;
+        if (modoCobranzaCuotas) {
+            ventasPendientesModal = cuotas.map(c => ({
+                id: c.id,
+                venta_id: c.venta_id,
+                label: `Factura #${c.factura_numero || c.venta_id} - Cuota ${c.numero_cuota}`,
                 fecha: c.fecha_vencimiento,
                 saldo_pendiente: c.saldo_pendiente
             }));
@@ -1063,7 +1122,7 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     doc.setFontSize(10);
     doc.text (`Recibi la suma de: $${parseFloat(montoPagado).toFixed(2)}.`, margin, y);
     y += 7;
-    doc.text(`en concepto de pago por venta N° ${venta ? formatearNumeroDocumento(venta.numero || venta.id) : '---'}.`, margin, y);
+    doc.text(`en concepto de pago de Factura N° ${venta ? formatearNumeroDocumento(venta.numero || venta.id) : '---'}.`, margin, y);
     y += 7;
     const metodoPagoTexto = metodoPago || venta?.metodo_pago || "No especificado";
     doc.text(`Método de pago: ${metodoPagoTexto}`, margin, y);

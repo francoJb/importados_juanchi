@@ -189,7 +189,7 @@ export async function cargarDatosBalance(clienteId) {
                 <td class="p-3 md:p-4">
                     <span class="font-bold dark:text-white">${m.descripcion}</span>
                     ${m.observaciones ? `<br><span class="text-[11px] text-slate-500 italic">${m.observaciones}</span>` : ''}
-                    ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Venta #${m.venta_id}</span>` : ''}
+                    ${m.venta_id ? `<br><span class="text-[10px] text-blue-500 font-mono italic">REF: Factura #${m.factura_numero || m.venta_id}</span>` : ''}
                 </td>
                 <td class="p-3 md:p-4 text-right font-mono text-red-500 whitespace-nowrap">${m.debe > 0 ? `+$${parseFloat(m.debe).toFixed(2)}` : '-'}</td>
                 <td class="p-3 md:p-4 text-right font-mono text-green-500 whitespace-nowrap">${m.haber > 0 ? `-$${parseFloat(m.haber).toFixed(2)}` : '-'}</td>

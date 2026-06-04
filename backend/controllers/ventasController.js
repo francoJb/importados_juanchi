@@ -439,6 +439,7 @@ exports.obtenerCuotasPendientes = async (req, res) => {
                 vc.recibo_id,
                 vc.recibo_numero,
                 vc.estado,
+                v.numero AS factura_numero,
                 v.fecha AS venta_fecha,
                 c.nombre AS cliente_nombre,
                 c.apellido AS cliente_apellido
@@ -712,7 +713,7 @@ exports.registrarPago = async (req, res) => {
 
         // 1) Buscar venta
         const [ventaRows] = await connection.query(
-            "SELECT cliente_id, total, saldo_pendiente, metodo_pago FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
+            "SELECT cliente_id, total, saldo_pendiente, metodo_pago, numero FROM ventas WHERE empresa_id = ? AND id = ? and estado = 1",
             [empresaId, ventaIdNum]
         );
 
@@ -802,7 +803,7 @@ exports.registrarPago = async (req, res) => {
         const [insertCcResult] = await connection.query(
             `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones, numero_recibo) 
             VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
-            [empresaId, idCliente, ventaIdNum, fechaCuentaPagoArg, `Pago Venta #${ventaIdNum}`, montoNum, nuevoSaldoAcumulado, observacionesPago, reciboNumero]
+            [empresaId, idCliente, ventaIdNum, fechaCuentaPagoArg, `Pago Factura #${venta.numero}`, montoNum, nuevoSaldoAcumulado, observacionesPago, reciboNumero]
         );
 
         // Obtener el id del recibo (insertId de la inserción anterior)
