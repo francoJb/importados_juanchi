@@ -1,7 +1,7 @@
 // ==========================================
 // 1. IMPORTACIONES Y CONFIGURACIÓN INICIAL
 // ==========================================
-
+import { configurarBuscadorVentas } from "./ventas.js";
 import { initClientes, fetchClientes } from "./clientes.js";
 import { initProductos, fetchProductos } from "./productos.js";
 import { initProveedores, listarProveedores } from "./proveedores.js";
@@ -592,6 +592,7 @@ async function initApp() {
         e.preventDefault();
         if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionVentas');
+        configurarBuscadorVentas();
         listarVentas();
     });
 

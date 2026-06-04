@@ -28,6 +28,28 @@ function obtenerDatosEmpresa() {
         cuit: config.cuit || DATOS_VENDEDOR.cuit
     };
 }
+// 5. BUSCADOR DE VENTAS (Seccion Ventas)
+export function configurarBuscadorVentas() {
+    const inputBusqueda = document.getElementById("buscarVentas");
+    if (inputBusqueda) {
+        inputBusqueda.oninput = async (e) => {
+            const termino = e.target.value.toLowerCase().trim();
+            
+            const filtrados = ventasCache.filter(v => {
+                const nombre = (v.cliente_nombre || "").toLowerCase();
+                const apellido = (v.cliente_apellido || "").toLowerCase();
+                const nombreCompleto = `${nombre} ${apellido}`;
+                const numeroVenta = String(v.numero || "").toLowerCase();
+
+                return nombreCompleto.includes(termino) || numeroVenta.includes(termino);
+            });
+
+            renderTablaVentas(filtrados);
+        };
+    }
+}
+
+
 
 function formatearNumeroDocumento(numero, puntoVenta = PUNTO_VENTA_DEFAULT) {
     const numeroNormalizado = Number(numero);
@@ -63,6 +85,7 @@ async function obtenerDatosEmpresaActual() {
 let carritoVenta = [];
 let productosVenta = [];
 let ventasEstado = 'todos';
+let ventasCache = [];
 
 export async function enviarVentaAlServidor(datos) {
     const response = await apiFetch(URL_API, {
@@ -1163,6 +1186,7 @@ export async function listarVentas(estado = 'todos') {
         const respuesta = await apiFetch(url);
         if (!respuesta.ok) throw new Error("Error al obtener ventas");
         const ventas = await respuesta.json();
+        ventasCache = ventas;
         renderTablaVentas(ventas);
     } catch (error) {
         console.error("Error al listar ventas:", error);
