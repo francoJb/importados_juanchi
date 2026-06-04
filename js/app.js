@@ -299,6 +299,24 @@ async function crearEmpresa(event) {
     resetEmpresaForm();
     cargarAdminData();
 }
+    const inputCategoria = document.getElementById('categoria');
+    const camposVehiculo = document.getElementById('camposVehiculo');
+
+    if (inputCategoria && camposVehiculo) {
+        inputCategoria.addEventListener('input', (e) => {
+            // Normalizamos el texto: quitamos espacios y lo pasamos a mayúsculas
+            const categoriaSeleccionada = e.target.value.trim().toUpperCase();
+
+            if (categoriaSeleccionada === 'VEHICULOS') {
+                // Quitamos la clase 'hidden' para que se muestre en pantalla
+                camposVehiculo.classList.remove('hidden');
+            } else {
+                // Volvemos a ocultar el bloque si eligen otra cosa
+                camposVehiculo.classList.add('hidden');
+            }
+        });
+    }
+
 
 async function crearUsuario(event) {
     event.preventDefault();
