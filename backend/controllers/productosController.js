@@ -70,8 +70,8 @@ exports.crearProducto = async (req, res) => {
         }
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
-        const sql = `INSERT INTO productos (empresa_id, sku, descripcion, marca, modelo, categoria_id, proveedor, proveedor_id, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`;
+        const sql = `INSERT INTO productos (empresa_id, sku, descripcion, marca, modelo, categoria_id, proveedor, proveedor_id, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado, vehiculo_tipo, vehiculo_anio, vehiculo_chasis, vehiculo_motor, vehiculo_color) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`;
         const params = [
             empresaId,
             p.sku.trim(),
@@ -86,7 +86,12 @@ exports.crearProducto = async (req, res) => {
             p.iva || 21,
             p.control_stock ? 1 : 0,
             p.stock || 0,
-            p.stock_minimo || 0
+            p.stock_minimo || 0,
+            p.vehiculo_tipo || null,
+            p.vehiculo_anio || null,
+            p.vehiculo_chasis || null,
+            p.vehiculo_motor || null,
+            p.vehiculo_color || null
         ];
 
         const [result] = await db.query(sql, params);
@@ -118,7 +123,7 @@ exports.editarProducto = async (req, res) => {
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
 
-        const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=? WHERE empresa_id=? AND id=? AND estado = 1`;
+        const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=?, vehiculo_tipo=?, vehiculo_anio=?, vehiculo_chasis=?, vehiculo_motor=?, vehiculo_color=? WHERE empresa_id=? AND id=? AND estado = 1`;
         
         const params = [   
             p.sku, 
@@ -134,6 +139,11 @@ exports.editarProducto = async (req, res) => {
             p.control_stock ? 1 : 0, 
             p.stock, 
             p.stock_minimo,
+            p.vehiculo_tipo || null,
+            p.vehiculo_anio || null,
+            p.vehiculo_chasis || null,
+            p.vehiculo_motor || null,
+            p.vehiculo_color || null,
             empresaId,
             id
         ];

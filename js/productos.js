@@ -117,9 +117,28 @@ export function configurarFormularioProducto() {
     const formProducto = document.getElementById("formProducto");
     if (!formProducto) return;
 
+    const inputCategoria = document.getElementById('categoria');
+    const camposVehiculo = document.getElementById('camposVehiculo');
+
+    if (inputCategoria && camposVehiculo) {
+        // Escuchamos el evento 'input' cuando el usuario escribe físicamente
+        inputCategoria.addEventListener('input', () => {
+            const categoriaSeleccionada = inputCategoria.value.trim().toUpperCase();
+            if (categoriaSeleccionada === 'VEHICULOS') {
+                camposVehiculo.classList.remove('hidden');
+            } else {
+                camposVehiculo.classList.add('hidden');
+            }
+        });
+    }
+
     formProducto.onsubmit = async (e) => {
         e.preventDefault();
-        const id = document.getElementById("formProductoId").value; // Ajustado según tu modal de edición
+        const id = document.getElementById("formProductoId").value;
+        
+        // CORRECCIÓN: Definimos y calculamos si es vehículo antes de crear el objeto
+        const categoriaInput = document.getElementById("categoria").value.trim().toUpperCase();
+        const esVehiculo = (categoriaInput === "VEHICULOS");
         
         const datos = {
             sku: document.getElementById("sku").value.trim(),
@@ -133,6 +152,13 @@ export function configurarFormularioProducto() {
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
+            
+            // Campos dinámicos validados de forma segura
+            vehiculo_tipo: esVehiculo ? document.getElementById('vehiculo_tipo').value : null,
+            vehiculo_anio: esVehiculo ? (parseInt(document.getElementById('vehiculo_anio').value) || null) : null,
+            vehiculo_chasis: esVehiculo ? document.getElementById('vehiculo_chasis').value.trim() : null,
+            vehiculo_motor: esVehiculo ? document.getElementById('vehiculo_motor').value.trim() : null,
+            vehiculo_color: esVehiculo ? document.getElementById('vehiculo_color').value.trim() : null
         };
 
         if (!datos.sku || !datos.descripcion) {
@@ -143,10 +169,18 @@ export function configurarFormularioProducto() {
         const exito = await guardarProductoAPI(datos, id || null);
         if (exito) {
             mostrarAlerta("Producto guardado correctamente", "¡Éxito!", "success");
+            
             formProducto.reset();
+            
+            // MEJORA: Volver a ocultar el bloque visual tras limpiar el formulario
+            const camposVehiculo = document.getElementById('camposVehiculo');
+            if (camposVehiculo) {
+                camposVehiculo.classList.add('hidden');
+            }
+
             await poblarSelectCategorias();
             await poblarSelectProveedores();
-            await listarProductos(productosEstado); // Recarga la tabla automáticamente
+            await listarProductos(productosEstado);
             cambiarSeccion('seccionProductos');
         }
     };
@@ -185,6 +219,35 @@ export async function prepararEdicionProducto(id) {
     document.getElementById("stock").value = p.stock;
     document.getElementById("stock_minimo").value = p.stock_minimo;
     document.getElementById("control_stock").checked = p.control_stock === 1;
+
+    const inputCategoria = document.getElementById('categoria');
+    if (inputCategoria) {
+        inputCategoria.dispatchEvent(new Event('input'));
+    }
+
+    // === CONTROL DINÁMICO DE LOS CAMPOS DE VEHÍCULO ===
+    const camposVehiculo = document.getElementById('camposVehiculo');
+    
+    if (p.categoria && p.categoria.trim().toUpperCase() === 'VEHICULOS') {
+        // Si el producto a editar es un vehículo, mostramos el contenedor celeste
+        if (camposVehiculo) camposVehiculo.classList.remove('hidden');
+        
+        // Asignamos los valores correspondientes (usando || '' para evitar que se vea la palabra "null")
+        document.getElementById('vehiculo_tipo').value = p.vehiculo_tipo || '';
+        document.getElementById('vehiculo_anio').value = p.vehiculo_anio || '';
+        document.getElementById('vehiculo_chasis').value = p.vehiculo_chasis || '';
+        document.getElementById('vehiculo_motor').value = p.vehiculo_motor || '';
+        document.getElementById('vehiculo_color').value = p.vehiculo_color || '';
+    } else {
+        // Si es cualquier otra categoría, aseguramos que el bloque permanezca oculto y vacío
+        if (camposVehiculo) camposVehiculo.classList.add('hidden');
+        
+        document.getElementById('vehiculo_tipo').value = '';
+        document.getElementById('vehiculo_anio').value = '';
+        document.getElementById('vehiculo_chasis').value = '';
+        document.getElementById('vehiculo_motor').value = '';
+        document.getElementById('vehiculo_color').value = '';
+    }
 
     document.getElementById("tituloModalProducto").innerText = "Editar Producto";
     cambiarSeccion('pantallaProducto');
