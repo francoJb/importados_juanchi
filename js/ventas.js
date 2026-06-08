@@ -1160,14 +1160,12 @@ window.imprimirVenta = (id) => {
 
 // Función para anular una venta de forma segura
 window.anularVenta = async (id) => {
-    // 1. Usamos tu función de confirmación estilizada de ui.js
-    const confirmar = await mostrarConfirmacion(
-        "¿Estás seguro de que deseas anular esta venta? Esta acción no se puede deshacer y revertirá los movimientos asociados.",
-        "Anular Venta",
-        "warning"
-    );
-
-    if (!confirmar) return;
+    const confirmacion = await mostrarConfirmacion({
+        title: "Anular venta",
+        message: `¿Estás seguro de que querés anular la venta? Esta acción no se puede deshacer y revertirá los movimientos asociados a stock y caja.`,
+        confirmText: "Anular"
+    });
+    if (!confirmacion) return;
 
     // 2. Solicitamos un motivo para la anulación (importante para auditorías)
     const motivo = prompt("Por favor, ingresa el motivo de la anulación:");
