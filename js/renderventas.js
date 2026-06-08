@@ -68,32 +68,38 @@ export function renderTablaVentas(ventas) {
     const ocultarActivo = checkboxOcultar ? checkboxOcultar.checked : false;
 
     ventas.forEach(v => {
-        const isEliminado = Number(v.estado) === 0;
+        // CORRECCIÓN: Validamos usando la columna real de tu Base de Datos 'anulada'
+        const isAnulada = Number(v.anulada) === 1; 
         const fechaFormateada = new Date(v.fecha).toLocaleString();
         const cliente = v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido || ""}` : "Consumidor Final";
-        const estadoEntrega = isEliminado
-            ? '<span class="inline-flex items-center rounded-full bg-rose-100 px-2 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200 dark:bg-rose-900/30 dark:text-rose-200 dark:ring-rose-500/30">Eliminada</span>'
+        
+        // Cambiamos la leyenda visual por "Anulada" usando el badge estilizado
+        const estadoEntrega = isAnulada
+            ? '<span class="inline-flex items-center rounded-full bg-rose-100 px-2 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200 dark:bg-rose-900/30 dark:text-rose-200 dark:ring-rose-500/30">Anulada</span>'
             : v.estado_pago === "Pagado"
                 ? '<span class="text-cyan-600 font-bold">Finalizado</span>'
                 : '<span class="text-orange-500 font-bold">Pendiente</span>';
+                
         const numeroVenta = v.numero || v.id;
-        const acciones = isEliminado ? "" : `
+        
+        // Si está anulada ocultamos las acciones de edición/anulación repetida
+        const acciones = isAnulada ? "" : `
             <button onclick="verDetalleVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Ver Detalle">👁️</button>
             <button onclick="imprimirVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Imprimir">🖨️</button>
             ${v.metodo_pago === "Cuotas" ? `<button onclick="imprimirPlanPagosVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Plan de pagos">📄</button>` : ""}
-            <button onclick="eliminarVenta(${v.id})" class="text-blue-500 hover:scale-150 transition-transform" title="Eliminar">🗑️</button>
+            <button onclick="anularVenta(${v.id})" class="text-rose-500 hover:scale-150 transition-transform" title="Anular Venta">🚫</button>
         `;
 
-        // 2. Evaluamos si la venta actual está finalizada (y no eliminada)
-        const esFinalizado = v.estado_pago === "Pagado" && !isEliminado;
+        // 2. Evaluamos si la venta actual está finalizada (y no anulada)
+        const esFinalizado = v.estado_pago === "Pagado" && !isAnulada;
         
         // 3. Si está finalizada y el checkbox está activo, le asignamos la clase 'hidden' de Tailwind
         const claseOcultar = (esFinalizado && ocultarActivo) ? "hidden" : "";
 
-        // 4. Agregamos el atributo 'data-finalizado' y la 'claseOcultar' al elemento <tr>
+        // 4. Agregamos el atributo 'data-finalizado' aplicando los estilos visuales de fila anulada (Fondo rosa suave y texto tachado)
         cuerpoTabla.innerHTML += `
-            <tr data-finalizado="${esFinalizado}" class="transition-colors ${claseOcultar} ${isEliminado ? "bg-rose-50/80 text-slate-500 dark:bg-rose-950/20 dark:text-slate-400" : "hover:bg-gray-50 dark:hover:bg-slate-700/50"}">
-                <td class="p-2 text-center font-mono ${isEliminado ? "line-through decoration-rose-400 decoration-2" : ""}">#${numeroVenta}</td>
+            <tr data-finalizado="${esFinalizado}" class="transition-colors ${claseOcultar} ${isAnulada ? "bg-rose-50/80 text-slate-500 dark:bg-rose-950/20 dark:text-slate-400" : "hover:bg-gray-50 dark:hover:bg-slate-700/50"}">
+                <td class="p-2 text-center font-mono ${isAnulada ? "line-through decoration-rose-400 decoration-2" : ""}">#${numeroVenta}</td>
                 <td class="p-2">${fechaFormateada}</td>
                 <td class="p-2 text-right">$${v.total}</td>
                 <td class="p-2 text-right">$${v.saldo_pendiente}</td>

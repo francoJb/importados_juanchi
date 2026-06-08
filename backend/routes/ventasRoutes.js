@@ -12,8 +12,6 @@ router.get('/:id', verificarToken, verificarTenant, ventasController.obtenerVent
 router.get('/:id/detalle', verificarToken, verificarTenant, ventasController.obtenerDetalleVenta);
 router.get('/:id/cuotas', verificarToken, verificarTenant, ventasController.obtenerCuotasVenta);
 router.post('/:ventaId/pago', verificarToken, verificarTenant, ventasController.registrarPago);
-router.put('/:id/restaurar', verificarToken, verificarTenant, ventasController.restaurarVenta);
-router.delete('/:id', verificarToken, verificarTenant, ventasController.eliminarVenta);
 // Anular venta (no borrar) — body: { motivo, revertStock?: boolean, revertCtaCte?: boolean }
 router.post('/:id/anular', verificarToken, verificarTenant, ventasController.anularVenta);
 

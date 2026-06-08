@@ -1,4 +1,5 @@
 const db = require('../database/database'); // Tu conexión a MySQL
+const { logAction } = require('../utils/audit');
 
 function redondear2(valor) {
     return Math.round(Number(valor) * 100) / 100;
@@ -328,31 +329,31 @@ exports.crearVenta = async (req, res) => {
 exports.obtenerVentas = async (req, res) => {
     try {
         const empresaId = req.empresaId;
-        const mostrarTodos = req.query.estado === 'todos';
-        const estado = req.query.estado === 'eliminados' ? 0 : 1;
-        const filtroEstado = mostrarTodos ? '' : 'AND v.estado = ?';
-        const params = mostrarTodos ? [empresaId, empresaId] : [empresaId, empresaId, estado];
-        const incluirAnuladas = req.query.anuladas === '1';
+        
+        // Eliminamos las restricciones de 'estado = 1' y 'anulada = 0' 
+        // para que la base de datos devuelva el historial completo al listado
         const [rows] = await db.query(`
             SELECT 
                 v.id,
                 v.numero,
                 v.numero_plan_pagos,
                 v.estado,
+                v.anulada,
                 v.cliente_id, 
                 v.fecha, 
                 v.total, 
                 v.metodo_pago,
                 v.saldo_pendiente, 
-                v.estado_pago, -- Usaremos esto para saber si está "Finalizado" o "Pendiente"
+                v.estado_pago, -- Usaremos esto para saber si está "Finalizado" o "Pendiente" o "Anulado"
                 c.nombre AS cliente_nombre, 
                 c.apellido AS cliente_apellido
             FROM ventas v
-            LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id=?
-            WHERE v.empresa_id=? ${filtroEstado} ${incluirAnuladas ? '' : 'AND v.anulada = 0'}
+            LEFT JOIN clientes c ON v.cliente_id = c.id AND c.empresa_id = ?
+            WHERE v.empresa_id = ?
             ORDER BY v.fecha DESC
-            `, params
+            `, [empresaId, empresaId] // Pasamos limpiamente los parámetros requeridos
         );
+        
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -571,127 +572,6 @@ exports.anularVenta = async (req, res) => {
     }
 };
 
-exports.eliminarVenta = async (req, res) => {
-    const { id } = req.params;
-    const ventaId = Number(id);
-
-    if (!Number.isInteger(ventaId) || ventaId <= 0) {
-        return res.status(400).json({ error: "ID de venta inválido" });
-    }
-
-    const connection = await db.getConnection();
-
-    try {
-        await connection.beginTransaction();
-
-        const [ventaRows] = await connection.query(
-            "SELECT id, estado FROM ventas WHERE id=? AND empresa_id=?",
-            [ventaId, req.empresaId]
-        );
-
-        if (ventaRows.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ error: "Venta no encontrada" });
-        }
-
-        if (Number(ventaRows[0].estado) === 0) {
-            await connection.rollback();
-            return res.status(400).json({ error: "La venta ya está eliminada" });
-        }
-
-        const [detalles] = await connection.query(
-            "SELECT producto_id, cantidad FROM detalle_ventas WHERE empresa_id = ? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        for (const detalle of detalles) {
-            await connection.query(
-                "UPDATE productos SET stock = stock + ? WHERE empresa_id=? AND id = ? AND control_stock = 1",
-                [detalle.cantidad, req.empresaId, detalle.producto_id]
-            );
-        }
-
-        await connection.query(
-            "UPDATE cuenta_corriente SET estado = 0 WHERE empresa_id=? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        await connection.query(
-            "UPDATE ventas SET estado = 0 WHERE id = ? AND empresa_id=?",
-            [ventaId, req.empresaId]
-        );
-
-        await connection.commit();
-        return res.json({ success: true, message: "Venta eliminada correctamente" });
-    } catch (error) {
-        await connection.rollback();
-        console.error("ERROR AL ELIMINAR VENTA:", error.message);
-        return res.status(500).json({ error: "Error interno al eliminar la venta" });
-    } finally {
-        connection.release();
-    }
-};
-
-exports.restaurarVenta = async (req, res) => {
-    const { id } = req.params;
-    const ventaId = Number(id);
-
-    if (!Number.isInteger(ventaId) || ventaId <= 0) {
-        return res.status(400).json({ error: "ID de venta inválido" });
-    }
-
-    const connection = await db.getConnection();
-
-    try {
-        await connection.beginTransaction();
-
-        const [ventaRows] = await connection.query(
-            "SELECT id, estado FROM ventas WHERE id=? AND empresa_id=?",
-            [ventaId, req.empresaId]
-        );
-
-        if (ventaRows.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ error: "Venta no encontrada" });
-        }
-
-        if (Number(ventaRows[0].estado) === 1) {
-            await connection.rollback();
-            return res.status(400).json({ error: "La venta ya está activa" });
-        }
-
-        const [detalles] = await connection.query(
-            "SELECT producto_id, cantidad FROM detalle_ventas WHERE empresa_id = ? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        for (const detalle of detalles) {
-            await connection.query(
-                "UPDATE productos SET stock = stock - ? WHERE empresa_id=? AND id = ? AND control_stock = 1",
-                [detalle.cantidad, req.empresaId, detalle.producto_id]
-            );
-        }
-
-        await connection.query(
-            "UPDATE cuenta_corriente SET estado = 1 WHERE empresa_id=? AND venta_id = ?",
-            [req.empresaId, ventaId]
-        );
-
-        await connection.query(
-            "UPDATE ventas SET estado = 1 WHERE id = ? AND empresa_id=?",
-            [ventaId, req.empresaId]
-        );
-
-        await connection.commit();
-        return res.json({ success: true, message: "Venta restaurada correctamente" });
-    } catch (error) {
-        await connection.rollback();
-        console.error("ERROR AL RESTAURAR VENTA:", error.message);
-        return res.status(500).json({ error: "Error interno al restaurar la venta" });
-    } finally {
-        connection.release();
-    }
-};
 exports.registrarPago = async (req, res) => {
     const { ventaId } = req.params;
     const { monto, observaciones, cuota_ids } = req.body;

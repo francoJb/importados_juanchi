@@ -1158,44 +1158,65 @@ window.imprimirVenta = (id) => {
     mostrarAlerta("Generando PDF para la venta " + id, "Generando PDF", "info");
 };
 
-window.eliminarVenta = async (id) => {
-    const confirmacion = await mostrarConfirmacion({
-        title: "Eliminar venta",
-        message: "¿Estás seguro de eliminar esta venta? Esto no devolverá el stock automáticamente.",
-        confirmText: "Eliminar"
-    });
-    if (!confirmacion) return;
+// Función para anular una venta de forma segura
+window.anularVenta = async (id) => {
+    // 1. Usamos tu función de confirmación estilizada de ui.js
+    const confirmar = await mostrarConfirmacion(
+        "¿Estás seguro de que deseas anular esta venta? Esta acción no se puede deshacer y revertirá los movimientos asociados.",
+        "Anular Venta",
+        "warning"
+    );
+
+    if (!confirmar) return;
+
+    // 2. Solicitamos un motivo para la anulación (importante para auditorías)
+    const motivo = prompt("Por favor, ingresa el motivo de la anulación:");
+    if (motivo === null) return; // Si cancela el prompt
+    if (!motivo.trim()) {
+        mostrarAlerta("Debes ingresar un motivo válido para anular la venta.", "Motivo requerido", "error");
+        return;
+    }
 
     try {
-        const response = await apiFetch(`${URL_API}/${id}`, { method: "DELETE" });
-        const data = await response.json();
+        // 3. Llamamos al endpoint de anulación que ya tienes en tu backend
+        const response = await apiFetch(`${API_BASE_URL}/api/ventas/${id}/anular`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                motivo: motivo.trim(),
+                revertStock: true,      // Revertimos automáticamente las existencias de productos
+                revertCtaCte: true       // Revertimos el balance de la cuenta corriente del cliente
+            })
+        });
 
-        if (!response.ok) {
-            throw new Error(data.error || "No se pudo eliminar la venta");
+        const resultado = await response.json();
+
+        if (response.ok && resultado.success) {
+        mostrarAlerta("La venta ha sido anulada correctamente.", "Venta Anulada", "success");
+        
+        // 4. Refrescamos y re-renderizamos la tabla automáticamente
+        if (typeof obtenerHistorialVentas === "function") {
+            // Almacenamos el array actualizado de ventas que devuelve tu función
+            const ventasActualizadas = await obtenerHistorialVentas(); 
+            
+            // Si la función devuelve las filas (o si están globales), forzamos el re-renderizado
+            if (ventasActualizadas && typeof renderTablaVentas === "function") {
+                renderTablaVentas(ventasActualizadas);
+            } else {
+                // Alternativa segura: Si tu función 'obtenerHistorialVentas' no retorna el array directamente
+                // simplemente recargamos la sección emulando el clic de forma automática:
+                const linkVentas = document.getElementById("linkVentas");
+                if (linkVentas) linkVentas.click();
+            }
         }
-
-        mostrarAlerta(data.message || "Venta eliminada correctamente", "¡Éxito!", "success");
-        await listarVentas(ventasEstado);
+        } else {
+                throw new Error(resultado.error || "No se pudo anular la venta.");
+            }
     } catch (error) {
-        console.error("Error al eliminar venta:", error);
-        mostrarAlerta(`No se pudo eliminar la venta: ${error.message}`, "Error", "error");
+        mostrarAlerta("Error al anular la venta: " + error.message, "Error", "error");
     }
 };
 
-export async function restaurarVenta(id) {
-    try {
-        const response = await apiFetch(`${URL_API}/${id}/restaurar`, { method: 'PUT' });
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.error || 'No se pudo restaurar la venta');
-        }
-        mostrarAlerta('Venta restaurada correctamente', '¡Éxito!', 'success');
-        await listarVentas(ventasEstado);
-    } catch (error) {
-        console.error('Error al restaurar venta:', error);
-        mostrarAlerta(`No se pudo restaurar la venta: ${error.message}`, 'Error', 'error');
-    }
-}
 
 export async function initVentas() {
     carritoVenta = [];
@@ -1244,7 +1265,6 @@ export async function initVentas() {
     addPagoEntregaListener();
     await cargarDatosParaVenta();
 
-    window.restaurarVenta = restaurarVenta;
 }
 
 export async function listarVentas(estado = 'todos') {
