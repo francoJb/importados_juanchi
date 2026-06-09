@@ -399,7 +399,13 @@ exports.obtenerDetalleVenta = async (req, res) => {
                 d.precio_unitario, 
                 (d.cantidad * d.precio_unitario) as subtotal,
                 p.descripcion, 
-                p.sku 
+                p.sku,
+                p.marca,
+                p.modelo,
+                p.vehiculo_chasis,
+                p.vehiculo_motor,
+                p.vehiculo_anio,
+                p.vehiculo_color
             FROM detalle_ventas d
             JOIN productos p ON d.producto_id = p.id AND p.empresa_id = d.empresa_id
             WHERE d.venta_id = ? AND d.empresa_id=?` , 
@@ -554,7 +560,17 @@ exports.anularVenta = async (req, res) => {
             const fechaCuentaArg = fechaArg;
 
             const [ins] = await connection.query(
-                `INSERT INTO cuenta_corriente (empresa_id, cliente_id, venta_id, fecha, descripcion, debe, haber, saldo_acumulado, observaciones)
+                `INSERT INTO cuenta_corriente (
+                    empresa_id,
+                    cliente_id,
+                    venta_id,
+                    fecha,
+                    descripcion,
+                    debe,
+                    haber,
+                    saldo_acumulado,
+                    observaciones
+                )
                  VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
                 [req.empresaId, venta.cliente_id, venta.id, fechaCuentaArg, descripcion, parseFloat(venta.total || 0), nuevoSaldo, 'Reversión por anulación']
             );

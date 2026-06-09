@@ -1416,13 +1416,52 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
     doc.setFont("helvetica", "normal");
 
     detalles.forEach(item => {
-        nuevaPaginaSiHaceFalta(14);
+        // Calculamos cuántas líneas va a ocupar el bloque para prever el salto de página exacto
+        let lineasAdicionalesVehiculo = 0;
+        let textoEspecificaciones = "";
+        // Verificamos si el ítem tiene cargadas las características técnicas del vehículo
+        if (item.marca || item.modelo || item.patente || item.vehiculo_chasis || item.vehiculo_motor) {
+            let datosInteres = [];
+            if (item.marca || item.modelo) datosInteres.push(`Marca/Mod: ${item.marca || ''} ${item.modelo || ''}`);
+            if (item.vehiculo_año)          datosInteres.push(`Año: ${item.vehiculo_año}`);
+            if (item.patente || item.dominio) datosInteres.push(`Patente: ${item.patente || item.dominio}`);
+            if (item.vehiculo_motor)        datosInteres.push(`Motor: ${item.vehiculo_motor}`);
+            if (item.vehiculo_chasis)       datosInteres.push(`Chasis: ${item.vehiculo_chasis}`);
+            
+            // Concatenamos las propiedades en una sola línea elegante separada por barras
+            textoEspecificaciones = `> ${datosInteres.join(" | ")}`;
+            lineasAdicionalesVehiculo = 1;
+        }
+        // Validación dinámica de salto de página considerando la descripción y el bloque técnico
         const descLines = doc.splitTextToSize(item.descripcion || item.desc || "-", 150);
+        const altoNecesario = (descLines.length * 5) + (lineasAdicionalesVehiculo * 4.5) + 4;
+        nuevaPaginaSiHaceFalta(altoNecesario);
+
+        // Imprimimos los datos principales del producto
         doc.text(String(item.cantidad), margin, y);
         doc.text(descLines, margin + 20, y);
         doc.text(`$${parseFloat(item.precio_unitario || item.precio || 0).toFixed(2)}`, pageWidth - 70, y, { align: "right" });
         doc.text(`$${(parseFloat(item.cantidad || 0) * parseFloat(item.precio_unitario || item.precio || 0)).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
-        y += descLines.length * 5 + 2;
+        
+        // Desplazamos la coordenada 'y' según las líneas del nombre del producto
+        y += descLines.length * 5 + 1;
+
+        // Si es un vehículo, imprimimos la línea secundaria de especificaciones
+        if (lineasAdicionalesVehiculo > 0) {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            
+            // Le damos una sangría horizontal (margin + 23) para que quede ordenado debajo del título
+            doc.text(textoEspecificaciones, margin + 23, y);
+            
+            y += 4.5; // Espacio que consume la línea técnica
+
+            // Restablecemos la tipografía original para el siguiente producto de la lista
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+        }
+
+        y += 2; // Margen de separación extra para el siguiente ítem
     });
 
     y += 6;
@@ -1580,14 +1619,52 @@ async function generarFacturaPDFExistente(venta, detalles) {
     // Items
     doc.setFont("helvetica", "normal");
     detalles.forEach(item => {
+        if (y > pageHeight - 50) {
+            doc.addPage();
+            y = margin + 10;
+        }
         doc.text(item.cantidad.toString(), margin, y);
         const descLines = doc.splitTextToSize(item.descripcion, 80);
         doc.text(descLines, margin + 20, y);
         doc.text(`$${parseFloat(item.precio_unitario).toFixed(2)}`, pageWidth - 60, y, { align: "right" });
         doc.text(`$${(item.cantidad * item.precio_unitario).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
         y += descLines.length * 5 + 2;
-    });
 
+        if (item.marca || item.modelo || item.patente || item.vehiculo_chasis || item.vehiculo_motor) {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+            doc.text("> Características del Vehículo:", margin + 20, y);
+            y += 4.5;
+            
+            // Construimos las líneas de texto técnico según las columnas que traiga tu BD
+            let lineasVehiculo = [];
+            if (item.marca || item.modelo)lineasVehiculo.push(`Marca/Mod: ${item.marca || ''} ${item.modelo || ''}`);
+            if (item.vehiculo_anio) lineasVehiculo.push(`Año: ${item.vehiculo_anio}`);
+            if (item.patente || item.dominio) lineasVehiculo.push(`Dominio/Patente: ${item.patente || item.dominio}`);
+            if (item.vehiculo_motor) lineasVehiculo.push(`Motor N°: ${item.vehiculo_motor}`);
+            if (item.vehiculo_chasis || item.vehiculo_vin) lineasVehiculo.push(`Chasis N°: ${item.vehiculo_chasis || item.vehiculo_vin}`);
+            if (item.vehiculo_color) lineasVehiculo.push(`Color: ${item.vehiculo_color}`);
+            if (item.vehiculo_anio) lineasVehiculo.push(`Año: ${item.vehiculo_anio}`);
+
+            lineasVehiculo.forEach(linea => {
+                // Control preventivo por si las filas hacen que se pase de página
+                if (y > pageHeight - 35) {
+                    doc.addPage();
+                    y = margin + 10;
+                }
+                doc.text(linea, margin + 25, y);
+                y += 4.5;
+                });
+            // Reestablecemos el tamaño de fuente original para el próximo ítem
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+        }
+    });
+    // Control preventivo de salto de página antes del Total y las Observaciones
+    if (y > pageHeight - 60) {
+        doc.addPage();
+        y = margin + 10;
+    }
     // Línea final de tabla
     doc.line(margin, y, pageWidth - margin, y);
     y += 10;

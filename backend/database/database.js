@@ -193,6 +193,26 @@ async function asegurarEsquemaCuotas() {
     await addColumnIfMissing('venta_cuotas', 'observaciones', 'TEXT');
     await addColumnIfMissing('venta_cuotas', 'recibo_numero', 'INT NULL');
 }
+// Función para sembrar los datos por defecto del sistema
+async function asegurarClientesPorDefecto() {
+    try {
+        // Consultamos si ya existe un cliente con ID 1 o que actúe como Consumidor Final
+        const [rows] = await db.query("SELECT id FROM clientes WHERE id = 1 LIMIT 1");
+        
+        if (rows.length === 0) {
+            console.log("🌱 Sembrando cliente 'Consumidor Final' por defecto...");
+            
+            // Insertamos el registro forzando el ID 1 para la empresa principal (empresa_id = 1)
+            await db.query(`
+                INSERT INTO clientes (id, empresa_id, nombre, apellido, telefono, direccion, dni, cuit, habilitar_cc, estado)
+                VALUES (1, 1, 'Consumidor', 'Final', '', 'Domicilio Conocido', '22222222', '20-22222222-3', 0, 1)
+            `);
+            console.log("✅ Cliente 'Consumidor Final' creado con éxito.");
+        }
+    } catch (error) {
+        console.error("⚠️ Error al sembrar el cliente por defecto:", error.message);
+    }
+}
 
 async function asegurarContadoresDocumentos() {
     await db.query(`
