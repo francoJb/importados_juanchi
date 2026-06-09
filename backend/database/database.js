@@ -440,6 +440,7 @@ const configurarTablas = async () => {
         await asegurarColumnasMultiempresa();
         await asegurarEsquemaCuotas();
         await asegurarContadoresDocumentos();
+        await asegurarClientesPorDefecto();
         console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
