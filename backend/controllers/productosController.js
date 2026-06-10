@@ -55,108 +55,105 @@ exports.obtenerCategorias = async (req, res) => {
 };
 
 exports.crearProducto = async (req, res) => {
-    const p = req.body;
-    const empresaId = req.empresaId; // Del middleware
-    
-    if (!p.sku?.trim() || !p.descripcion?.trim()) {
-        return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
-    }
-    
-    // Obtenemos una conexión del pool para garantizar que si falla la unidad hija, no se cree el producto base
     const connection = await db.getConnection();
+    const empresaId = req.empresaId;
 
     try {
         await connection.beginTransaction();
 
-        const checkSql = "SELECT id FROM productos WHERE empresa_id = ? AND sku = ? AND estado = 1";
-        const [existing] = await connection.query(checkSql, [empresaId, p.sku.trim()]);
-        
-        if (existing.length > 0) {
-            await connection.rollback();
-            connection.release();
-            return res.status(400).json({ error: `El SKU "${p.sku}" ya esta registrado en otro producto` });
+        // 1. Extraemos los campos del Frontend
+        const {
+            sku, descripcion, costo, precio_neto, stock, stock_minimo,
+            control_stock, categoria_nombre, proveedor_nombre,
+            vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio, vehiculo_patente
+        } = req.body;
+
+        if (!sku || !descripcion || costo === undefined || precio_neto === undefined) {
+            return res.status(400).json({ error: "Faltan campos requeridos" });
         }
 
-        // Validaciones preventivas de unicidad de Motor/Chasis si se están enviando directamente en la carga inicial
-        const tieneMotor = p.vehiculo_motor && p.vehiculo_motor.trim() !== "";
-        const tieneChasis = p.vehiculo_chasis && p.vehiculo_chasis.trim() !== "";
-
-        if (tieneMotor || tieneChasis) {
-            // Verificar si ese chasis o motor ya existen en las unidades disponibles del sistema
-            const [checkUnidad] = await connection.query(
-                "SELECT id FROM vehiculos_unidades WHERE empresa_id = ? AND (chasis = ? OR motor = ?) AND estado_venta != 'Vendido' AND estado = 1",
-                [empresaId, p.vehiculo_chasis?.trim() || '---', p.vehiculo_motor?.trim() || '---']
-            );
-            if (checkUnidad.length > 0) {
-                await connection.rollback();
-                connection.release();
-                return res.status(400).json({ error: "El número de chasis o motor ingresado ya pertenece a un vehículo activo en stock." });
+        // Obtener o crear categoría y proveedor usando la conexión de la transacción
+        let categoriaId = null;
+        if (categoria_nombre?.trim()) {
+            const nombreNormalizado = categoria_nombre.trim().toUpperCase();
+            const [existingCat] = await connection.query("SELECT id FROM categorias WHERE empresa_id = ? AND nombre = ? AND estado = 1", [empresaId, nombreNormalizado]);
+            if (existingCat.length > 0) {
+                categoriaId = existingCat[0].id;
+            } else {
+                const [resultCat] = await connection.query("INSERT INTO categorias (empresa_id, nombre, estado) VALUES (?, ?, 1)", [empresaId, nombreNormalizado]);
+                categoriaId = resultCat.insertId;
             }
         }
 
-        const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
-        const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
+        let proveedorId = null;
+        if (proveedor_nombre?.trim()) {
+            const nombreNormalizado = proveedor_nombre.trim().toUpperCase();
+            const [existingProv] = await connection.query("SELECT id FROM proveedores WHERE empresa_id = ? AND nombre = ? AND estado = 1", [empresaId, nombreNormalizado]);
+            if (existingProv.length > 0) {
+                proveedorId = existingProv[0].id;
+            } else {
+                const [resultProv] = await connection.query("INSERT INTO proveedores (empresa_id, nombre, estado) VALUES (?, ?, 1)", [empresaId, nombreNormalizado]);
+                proveedorId = resultProv.insertId;
+            }
+        }
 
-        // Mantenemos la estructura de tu INSERT para no alterar las columnas existentes de tu tabla
-        const sql = `INSERT INTO productos (empresa_id, sku, descripcion, marca, modelo, categoria_id, proveedor, proveedor_id, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado, vehiculo_tipo, vehiculo_anio, vehiculo_chasis, vehiculo_motor, vehiculo_color) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`;
-        
-        const params = [
-            empresaId,
-            p.sku.trim(),
-            p.descripcion,
-            p.marca,
-            p.modelo,
-            categoriaId,
-            p.proveedor,
-            p.proveedor_id || proveedorId,
-            p.costo || 0,
-            p.precio_neto || 0,
-            p.iva || 21,
-            p.control_stock ? 1 : 0,
-            p.stock || 0,
-            p.stock_minimo || 0,
-            p.vehiculo_tipo || null,
-            p.vehiculo_anio || null,
-            p.vehiculo_chasis || null,
-            p.vehiculo_motor || null,
-            p.vehiculo_color || null
-        ];
+        // 2. CORRECCIÓN AQUÍ: Quitamos 'vehiculo_patente' de la consulta de productos para evitar el error
+        const [result] = await connection.query(
+            `INSERT INTO productos (
+                empresa_id, sku, descripcion, costo, precio_neto, stock, stock_minimo, 
+                control_stock, categoria_id, proveedor_id, estado,
+                vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+            [
+                empresaId, sku, descripcion, costo, precio_neto, stock || 0, stock_minimo || 0,
+                control_stock ? 1 : 0, categoriaId, proveedorId,
+                vehiculo_chasis || null, vehiculo_motor || null, vehiculo_color || null, 
+                vehiculo_anio || null
+            ]
+        );
 
-        const [result] = await connection.query(sql, params);
-        const productoId = result.insertId;
+        const nuevoProductoId = result.insertId;
 
-        // SEEDING DE UNIDAD ÚNICA: Si tiene motor o chasis, creamos su registro en la tabla de unidades tracking
-        if (tieneMotor || tieneChasis) {
+        // 3. Si los campos indican que es un vehículo, registramos su stock real (¡Acá SÍ va la patente!)
+        const esVehiculo = (vehiculo_chasis && vehiculo_chasis.trim() !== "") || 
+                           (vehiculo_motor && vehiculo_motor.trim() !== "");
+
+        if (esVehiculo) {
             await connection.query(
-                `INSERT INTO vehiculos_unidades (empresa_id, producto_id, chasis, motor, color, anio, estado_venta)
-                 VALUES (?, ?, ?, ?, ?, ?, 'Disponible')`,
+                `INSERT INTO vehiculos_unidades 
+                    (empresa_id, producto_id, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'Disponible', 1, NOW())`,
                 [
                     empresaId,
-                    productoId,
-                    p.vehiculo_chasis?.trim() || '',
-                    p.vehiculo_motor?.trim() || '',
-                    p.vehiculo_color || p.color || null,
-                    p.vehiculo_anio || null
+                    nuevoProductoId,
+                    vehiculo_chasis,
+                    vehiculo_motor,
+                    vehiculo_color || 'S/C',
+                    vehiculo_anio || null,
+                    vehiculo_patente || null // Se guarda de forma impecable en la tabla de unidades
                 ]
             );
         }
 
-        await connection.commit();
-        connection.release();
-
-        res.status(201).json({ 
-            id: productoId, 
-            ...p, 
-            categoria_id: categoriaId,
-            control_stock: p.control_stock ? 1 : 0 
+        // Registrar la acción en la auditoría
+        await logAction(connection, { 
+            empresaId, 
+            usuarioId: req.usuarioId || null, 
+            accion: 'create', 
+            entidad: 'productos', 
+            entidadId: nuevoProductoId, 
+            descripcion: `Producto creado: ${descripcion} (ID: ${nuevoProductoId})` 
         });
+
+        await connection.commit();
+        res.status(201).json({ mensaje: "Producto creado correctamente", id: nuevoProductoId });
 
     } catch (err) {
         await connection.rollback();
-        connection.release();
         console.error("Error al crear producto:", err.message);
         res.status(500).json({ error: err.message });
+    } finally {
+        connection.release();
     }
 };
 
