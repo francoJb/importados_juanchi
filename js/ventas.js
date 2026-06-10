@@ -229,7 +229,7 @@ window.agregarProductosSeleccionados = async () => {
                 carritoVenta.push({
                     id: p.id,
                     sku: p.sku,
-                    desc: p.descripcion,
+                    descripcion: p.descripcion,
                     precio: parseFloat(p.precio_neto),
                     cantidad: 1,
                     subtotal: parseFloat(p.precio_neto),
@@ -420,6 +420,13 @@ window.procesarVentaFinal = async () => {
         return;
     }
 
+    // Validar si el vehículo tiene su chasis/motor seleccionado antes de enviar
+    const vehiculoSinUnidad = carritoVenta.find(item => item.esVehiculo && !item.unidadSeleccionadaId);
+    if (vehiculoSinUnidad) {
+        mostrarAlerta(`Por favor, seleccioná el Chasis/Motor para el vehículo: "${vehiculoSinUnidad.desc}".`, "Falta seleccionar unidad", "warning");
+        return;
+    }
+
     // Validar que el cliente tenga crédito habilitado para cuenta corriente
     if (metodoPago === "Cuenta Corriente" && !esConsumidorFinal && window.clienteSeleccionadoVenta) {
         try {
@@ -458,7 +465,8 @@ window.procesarVentaFinal = async () => {
         items: carritoVenta.map(item => ({
             id: item.id,
             cantidad: item.cantidad,
-            precio: item.precio
+            precio: item.precio,
+            unidadSeleccionadaId: item.unidadSeleccionadaId || null // <-- NUEVO: Enviamos el ID técnico elegido
         }))
     };
 
@@ -484,7 +492,9 @@ window.procesarVentaFinal = async () => {
                 entrega_inicial: entregaInicial,
                 observaciones: observaciones
             };
-            const detallesSimulados = carritoVenta.map(item => ({ sku: item.sku, descripcion: item.desc, precio_unitario: item.precio, cantidad: item.cantidad }));
+
+            // CORRECCIÓN HISTÓRICA: Usamos los detalles oficiales devueltos por el backend con los datos del vehículo ya cargados
+            const detallesReales = resultado.detalles || []; 
             const cuotasGeneradas = Array.isArray(resultado.cuotas) ? resultado.cuotas : [];
             const esVentaEnCuotas = metodoPago === "Cuotas";
 
@@ -499,9 +509,10 @@ window.procesarVentaFinal = async () => {
             });
 
             if (imprimirComprobante) {
+                // Al pasarle 'detallesReales', el generador de PDF tendrá acceso directo a chasis, motor, marca y modelo
                 const doc = esVentaEnCuotas
-                    ? await generarPlanPagosPDF(ventaSimulada, detallesSimulados, cuotasGeneradas)
-                    : await generarFacturaPDFExistente(ventaSimulada, detallesSimulados);
+                    ? await generarPlanPagosPDF(ventaSimulada, detallesReales, cuotasGeneradas)
+                    : await generarFacturaPDFExistente(ventaSimulada, detallesReales);
                 const numeroArchivo = esVentaEnCuotas
                     ? (ventaSimulada.numero_plan_pagos || ventaSimulada.numero || ventaSimulada.id)
                     : (ventaSimulada.numero || ventaSimulada.id);
@@ -516,7 +527,7 @@ window.procesarVentaFinal = async () => {
             window.clienteSeleccionadoVenta = null;
             actualizarTablaVenta(carritoVenta);
             cambiarSeccion('pantallaGenerarVenta');
-            // Esperar más tiempo para que la pantalla sea visible antes de enfocar
+            
             setTimeout(() => {
                 setSkuFocus();
                 setTimeout(() => setSkuFocus(), 300);

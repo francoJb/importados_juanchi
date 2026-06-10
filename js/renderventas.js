@@ -1,6 +1,7 @@
 // AGREGA ESTAS LÍNEAS AL PRINCIPIO DE TU ARCHIVO renderventas.js (junto a los otros imports que ya tengas)
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
+
 export function actualizarTablaVenta(carritoVenta) {
     const body = document.getElementById("v-items-body");
     const labelTotal = document.getElementById("v-total-pantalla");
@@ -35,7 +36,7 @@ export function actualizarTablaVenta(carritoVenta) {
             <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
                 <td class="p-4 text-gray-500 dark:text-gray-400 font-mono">${item.sku}</td>
                 <td class="p-4 font-medium text-gray-900 dark:text-white">
-                    <div>${item.desc}</div>
+                    <div>${item.descripcion}</div>
                     ${selectorVehiculoHtml}
                 </td>
                 <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>

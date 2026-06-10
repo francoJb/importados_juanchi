@@ -343,6 +343,27 @@ exports.crearVenta = async (req, res) => {
                 }
             }
         }
+        //Recuperamos los detalles reales y completos con los datos del vehículo ensamblados
+        const [detallesFinales] = await connection.query(`
+            SELECT 
+                dv.cantidad,
+                dv.precio_unitario as precio,
+                p.descripcion,
+                p.sku,
+                -- Traemos las especificaciones del vehículo si es que fue enlazado en la venta
+                vu.chasis as vehiculo_chasis,
+                vu.motor as vehiculo_motor,
+                vu.color,
+                vu.anio as vehiculo_anio,
+                vu.patente,
+                p.marca,
+                p.modelo
+            FROM detalle_ventas dv
+            JOIN productos p ON dv.producto_id = p.id
+            -- Hacemos un LEFT JOIN dinámico cruzando por venta y producto para enganchar la unidad física vendida
+            LEFT JOIN vehiculos_unidades vu ON vu.venta_id = dv.venta_id AND vu.producto_id = p.id
+            WHERE dv.empresa_id = ? AND dv.venta_id = ?
+        `, [empresaId, ventaId]);
         await connection.commit();
         res.json({
             success: true,
@@ -350,7 +371,8 @@ exports.crearVenta = async (req, res) => {
             ventaId,
             numero: nuevoNumero,
             numeroPlanPagos: nuevoNumeroPlanPagos,
-            cuotas: planCuotas
+            cuotas: planCuotas,
+            detalles: detallesFinales
         });
 
 
