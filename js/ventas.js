@@ -1420,13 +1420,13 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
         let lineasAdicionalesVehiculo = 0;
         let textoEspecificaciones = "";
         // Verificamos si el ítem tiene cargadas las características técnicas del vehículo
-        if (item.marca || item.modelo || item.patente || item.vehiculo_chasis || item.vehiculo_motor) {
+        if (item.vehiculo_chasis || item.vehiculo_motor) {
             let datosInteres = [];
             if (item.marca || item.modelo) datosInteres.push(`Marca/Mod: ${item.marca || ''} ${item.modelo || ''}`);
-            if (item.vehiculo_año)          datosInteres.push(`Año: ${item.vehiculo_año}`);
+            if (item.vehiculo_año) datosInteres.push(`Año: ${item.vehiculo_año}`);
             if (item.patente || item.dominio) datosInteres.push(`Patente: ${item.patente || item.dominio}`);
-            if (item.vehiculo_motor)        datosInteres.push(`Motor: ${item.vehiculo_motor}`);
-            if (item.vehiculo_chasis)       datosInteres.push(`Chasis: ${item.vehiculo_chasis}`);
+            if (item.vehiculo_motor) datosInteres.push(`Motor: ${item.vehiculo_motor}`);
+            if (item.vehiculo_chasis) datosInteres.push(`Chasis: ${item.vehiculo_chasis}`);
             
             // Concatenamos las propiedades en una sola línea elegante separada por barras
             textoEspecificaciones = `> ${datosInteres.join(" | ")}`;
@@ -1630,7 +1630,7 @@ async function generarFacturaPDFExistente(venta, detalles) {
         doc.text(`$${(item.cantidad * item.precio_unitario).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
         y += descLines.length * 5 + 2;
 
-        if (item.marca || item.modelo || item.patente || item.vehiculo_chasis || item.vehiculo_motor) {
+        if (item.vehiculo_chasis || item.vehiculo_motor) {
             doc.setFont("helvetica", "italic");
             doc.setFontSize(8.5);
             doc.text("> Características del Vehículo:", margin + 20, y);
