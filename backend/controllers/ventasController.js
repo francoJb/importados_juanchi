@@ -205,35 +205,72 @@ exports.crearVenta = async (req, res) => {
         );
         const ventaId = ventaRes.insertId;
 
-        // 2. Procesar cada Producto (Detalle + Stock)
         // Localizá este bucle dentro de exports.crearVenta
+        // 2. Procesar cada Producto (Detalle + Stock) - ADAPTADO PARA UNIDADES ÚNICAS
         for (const item of items) {
-            // A. CONSULTA DE SEGURIDAD: Traemos el stock actual, el nombre del producto y si controla stock
+            // A. CONSULTA DE SEGURIDAD: Traemos los datos base del producto
             const [productoRows] = await connection.query(
                 "SELECT stock, descripcion, control_stock FROM productos WHERE empresa_id=? AND id=?",
                 [empresaId, item.id]
             );
             const producto = productoRows[0];
-            // B. VALIDACIÓN: Si no hay fila (raro) o si controla stock y el stock es menor a lo pedido
+            
             if (!producto) {
                 throw new Error(`Producto con ID ${item.id} no encontrado`);
             }
-            if (producto.control_stock && producto.stock < item.cantidad) {
-                // Solo validar stock si el producto tiene control de stock activado
-                throw new Error(`Stock insuficiente para "${producto.descripcion}". disponible: ${producto.stock}`);
+
+            // B. LOGICA SI ES UN VEHÍCULO INDIVIDUALIZADO
+            if (item.unidadSeleccionadaId) {
+                // Verificamos que la unidad específica esté disponible para la venta
+                const [unidadRows] = await connection.query(
+                    "SELECT id, estado_venta FROM vehiculos_unidades WHERE empresa_id=? AND id=? AND producto_id=?",
+                    [empresaId, item.unidadSeleccionadaId, item.id]
+                );
+                const unidad = unidadRows[0];
+
+                if (!unidad) {
+                    throw new Error(`La unidad física seleccionada para "${producto.descripcion}" no existe.`);
+                }
+                if (unidad.estado_venta !== 'Disponible') {
+                    throw new Error(`La unidad seleccionada para "${producto.descripcion}" ya no está disponible (Estado: ${unidad.estado_venta}).`);
+                }
+
+                // Cambiamos el estado de la unidad física a Vendido y la enlazamos a esta venta
+                await connection.query(
+                    "UPDATE vehiculos_unidades SET estado_venta = 'Vendido', venta_id = ? WHERE id = ?",
+                    [ventaId, item.unidadSeleccionadaId]
+                );
+
+                // Opcional: También restamos 1 en el stock general del catálogo de productos para mantener sincronía
+                if (producto.control_stock) {
+                    await connection.query(
+                        "UPDATE productos SET stock = GREATEST(stock - 1, 0) WHERE empresa_id=? AND id=?",
+                        [empresaId, item.id]
+                    );
+                }
+
+            } else {
+                // C. LÓGICA TRADICIONAL PARA PRODUCTOS COMUNES (Repuestos, servicios, aceites)
+                if (producto.control_stock && producto.stock < item.cantidad) {
+                    throw new Error(`Stock insuficiente para "${producto.descripcion}". Disponible: ${producto.stock}`);
+                }
+
+                // Descuento de stock numérico estándar
+                if (producto.control_stock) {
+                    await connection.query(
+                        "UPDATE productos SET stock = stock - ? WHERE empresa_id=? AND id=?",
+                        [item.cantidad, empresaId, item.id]
+                    );
+                }
             }
-            // C. REGISTRO DEL DETALLE (Solo si pasó la validación de arriba)
+
+            // D. REGISTRO DEL DETALLE DE LA VENTA
+            // Guardamos el detalle tradicional. Si quieres guardar qué chasis se fue en el detalle, 
+            // tu tabla detalle_ventas podría admitir opcionalmente la columna vehiculo_unidad_id en un futuro.
             await connection.query(
                 "INSERT INTO detalle_ventas (empresa_id, venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?)",
                 [empresaId, ventaId, item.id, item.cantidad, item.precio]
             );
-            // D. DESCUENTO DE STOCK (Solo si el producto controla stock)
-            if (producto.control_stock) {
-                await connection.query(
-                    "UPDATE productos SET stock = stock - ? WHERE empresa_id=? AND id=?",
-                    [item.cantidad, empresaId, item.id]
-                );
-            }
         }
 
         // 3. LÓGICA DE CUENTA CORRIENTE / CUOTAS (Si aplica)

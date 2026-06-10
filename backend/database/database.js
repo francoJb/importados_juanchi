@@ -315,6 +315,27 @@ const configurarTablas = async () => {
                 FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
             );
         `);
+        //TABLA VEHICULOS_UNIDADES
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS vehiculos_unidades (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
+                producto_id INT NOT NULL, -- Apunta al modelo en la tabla 'productos'
+                chasis VARCHAR(100) NOT NULL,
+                motor VARCHAR(100) NOT NULL,
+                color VARCHAR(50) NULL,
+                anio INT NULL,
+                patente VARCHAR(50) NULL,
+                estado_venta ENUM('Disponible', 'Reservado', 'Vendido') DEFAULT 'Disponible',
+                venta_id INT NULL, -- Registra en qué venta se fue este vehículo
+                fecha_ingreso DATETIME DEFAULT CURRENT_TIMESTAMP,
+                estado TINYINT DEFAULT 1, -- Para borrado lógico de la unidad si fuera necesario
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+                FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+                UNIQUE KEY idx_empresa_chasis (empresa_id, chasis), -- Evita duplicar chasis en la misma empresa
+                UNIQUE KEY idx_empresa_motor (empresa_id, motor)    -- Evita duplicar motor en la misma empresa
+            );
+        `);
 
         // 5. TABLA DE CLIENTES
         await db.query(`

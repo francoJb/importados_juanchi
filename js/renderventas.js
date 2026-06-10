@@ -1,3 +1,6 @@
+// AGREGA ESTAS LÍNEAS AL PRINCIPIO DE TU ARCHIVO renderventas.js (junto a los otros imports que ya tengas)
+import { API_BASE_URL } from "./config.js";
+import { apiFetch } from "./apiClient.js";
 export function actualizarTablaVenta(carritoVenta) {
     const body = document.getElementById("v-items-body");
     const labelTotal = document.getElementById("v-total-pantalla");
@@ -12,22 +15,79 @@ export function actualizarTablaVenta(carritoVenta) {
         return;
     }
 
-    body.innerHTML = carritoVenta.map((item, index) => `
-        <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
-            <td class="p-4 text-gray-500 dark:text-gray-400 font-mono">${item.sku}</td>
-            <td class="p-4 font-medium text-gray-900 dark:text-white">${item.desc}</td>
-            <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>
-            <td class="p-4 text-center">
-                <input type="number" value="${item.cantidad}" min="1"
-                    class="input-cantidad w-16 p-1 text-center border rounded bg-transparent"
-                    data-index="${index}">
-            </td>
-            <td class="p-4 text-right font-black text-gray-900 dark:text-white font-mono">$${item.subtotal.toFixed(2)}</td>
-            <td class="p-4 text-center">
-                <button class="btn-quitar text-red-500 hover:text-red-700 text-xs" data-index="${index}" title="Quitar">Eliminar</button>
-            </td>
-        </tr>
-    `).join("");
+    body.innerHTML = carritoVenta.map((item, index) => {
+        // Si el ítem es vehículo, deshabilitamos el campo numérico de cantidad para mantenerlo estrictamente en 1
+        const inputCantidadHtml = item.esVehiculo 
+            ? `<input type="number" value="1" disabled class="w-16 p-1 text-center border rounded bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed">`
+            : `<input type="number" value="${item.cantidad}" min="1" class="input-cantidad w-16 p-1 text-center border rounded bg-transparent" data-index="${index}">`;
+
+        // Contenedor del selector para vehículos individuales
+        const selectorVehiculoHtml = item.esVehiculo
+            ? `<div class="mt-2 text-xs">
+                <label class="block text-slate-500 font-bold mb-1">Seleccionar Unidad (Motor/Chasis):</label>
+                <select class="select-unidad-vehiculo w-full max-w-md p-1 border rounded bg-white dark:bg-slate-800" data-index="${index}" id="select-unidad-${index}">
+                    <option value="">-- Buscando unidades disponibles... --</option>
+                </select>
+               </div>`
+            : "";
+
+        return `
+            <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                <td class="p-4 text-gray-500 dark:text-gray-400 font-mono">${item.sku}</td>
+                <td class="p-4 font-medium text-gray-900 dark:text-white">
+                    <div>${item.desc}</div>
+                    ${selectorVehiculoHtml}
+                </td>
+                <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>
+                <td class="p-4 text-center">
+                    ${inputCantidadHtml}
+                </td>
+                <td class="p-4 text-right font-black text-gray-900 dark:text-white font-mono">$${item.subtotal.toFixed(2)}</td>
+                <td class="p-4 text-center">
+                    <button class="btn-quitar text-red-500 hover:text-red-700 text-xs" data-index="${index}" title="Quitar">Eliminar</button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    // --- CARGA DINÁMICA DE LOS SELECTORES DE VEHÍCULOS (CON APIFETCH OFICIAL) ---
+    carritoVenta.forEach((item, index) => {
+        if (item.esVehiculo) {
+            const combo = document.getElementById(`select-unidad-${index}`);
+            if (combo) {
+                // Usamos tu constante global API_BASE_URL y tu función apiFetch para que inyecte los headers del Tenant automáticamente
+                const urlUnidades = `${API_BASE_URL}/api/productos/${item.id}/unidades-disponibles`;
+                
+                apiFetch(urlUnidades)
+                .then(res => {
+                    if (!res.ok) throw new Error("Error en la respuesta del servidor");
+                    return res.json();
+                })
+                .then(unidades => {
+                    if (unidades.length === 0) {
+                        combo.innerHTML = `<option value="">⚠️ SIN UNIDADES DISPONIBLES EN STOCK</option>`;
+                        return;
+                    }
+                    
+                    let options = `<option value="">-- Seleccioná el Chasis / Motor --</option>`;
+                    unidades.forEach(u => {
+                        const seleccionado = item.unidadSeleccionadaId == u.id ? 'selected' : '';
+                        options += `<option value="${u.id}" ${seleccionado}>Chasis: ${u.chasis || 'S/N'} | Motor: ${u.motor || 'S/N'} (${u.color || 'S/C'})</option>`;
+                    });
+                    combo.innerHTML = options;
+                })
+                .catch(err => {
+                    console.error("Error exacto del fetch de unidades:", err);
+                    combo.innerHTML = `<option value="">Error al cargar unidades</option>`;
+                });
+
+                // Registrar el evento change para actualizar el carrito en vivo
+                combo.addEventListener("change", (e) => {
+                    carritoVenta[index].unidadSeleccionadaId = e.target.value ? parseInt(e.target.value, 10) : null;
+                });
+            }
+        }
+    });
 
     const total = carritoVenta.reduce((sum, i) => sum + i.subtotal, 0);
     const cantItems = carritoVenta.reduce((sum, i) => sum + i.cantidad, 0);
@@ -35,6 +95,7 @@ export function actualizarTablaVenta(carritoVenta) {
     if (labelTotal) labelTotal.innerText = `$${total.toFixed(2)}`;
     if (headerCantidad) headerCantidad.innerText = `Cantidad (${cantItems})`;
 
+    // Listeners habituales para productos estándar
     document.querySelectorAll(".input-cantidad").forEach(input => {
         input.addEventListener("change", (e) => {
             const index = e.target.dataset.index;

@@ -12,6 +12,7 @@ router.post('/', verificarToken, verificarTenant, productosController.crearProdu
 router.put('/:id', verificarToken, verificarTenant, productosController.editarProducto);
 router.put('/:id/restaurar', verificarToken, verificarTenant, productosController.restaurarProducto);
 router.delete('/:id', verificarToken, verificarTenant, productosController.eliminarProducto);
+router.get('/:productoId/unidades-disponibles', verificarToken, verificarTenant, productosController.obtenerUnidadesDisponibles);
 
 
 module.exports = router;

@@ -8,13 +8,7 @@ import { apiFetch } from "./apiClient.js";
 
 const URL_API = `${API_BASE_URL}/api/ventas`;
 const PUNTO_VENTA_DEFAULT = "0001";
-// Datos del vendedor por defecto
-const DATOS_VENDEDOR = {
-    razonSocial: "JR Import S.A.",
-    nombreFantasia: "JR Import",
-    domicilio: "Calle Ficticia 123, Ciudad Autónoma de Buenos Aires",
-    cuit: "30-12345678-9"
-};
+
 
 function obtenerDatosEmpresa() {
     const config = load("empresaConfig");
@@ -221,24 +215,32 @@ window.agregarProductosSeleccionados = async () => {
         const p = productos.find(item => item.sku === sku);
 
         if (p) {
+            const esVehiculo = (p.vehiculo_motor && p.vehiculo_motor.trim() !== "") || 
+                               (p.vehiculo_chasis && p.vehiculo_chasis.trim() !== "");
+            
             const existing = carritoVenta.find(item => item.sku === sku);
-            if (existing) {
+            
+            if (existing && !esVehiculo) {
+                // Si es un producto común, acumulamos cantidad de forma habitual
                 existing.cantidad += 1;
                 existing.subtotal = existing.precio * existing.cantidad;
             } else {
+                // Si es un vehículo o un ítem nuevo, insertamos una unidad individualizada
                 carritoVenta.push({
                     id: p.id,
                     sku: p.sku,
                     desc: p.descripcion,
                     precio: parseFloat(p.precio_neto),
                     cantidad: 1,
-                    subtotal: parseFloat(p.precio_neto)
+                    subtotal: parseFloat(p.precio_neto),
+                    esVehiculo: esVehiculo,
+                    unidadSeleccionadaId: null // Se definirá dinámicamente en el select
                 });
             }
         }
     });
 
-    actualizarTablaVenta(carritoVenta);
+    actualizarTablaVenta(carritoVenta); // Asegurar renderizado al cerrar/agregar
     cerrarBuscadorProductos();
 };
 

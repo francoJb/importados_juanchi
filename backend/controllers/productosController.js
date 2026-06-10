@@ -61,17 +61,46 @@ exports.crearProducto = async (req, res) => {
     if (!p.sku?.trim() || !p.descripcion?.trim()) {
         return res.status(400).json({ error: "SKU y Descripcion son obligatorios" });
     }
+    
+    // Obtenemos una conexión del pool para garantizar que si falla la unidad hija, no se cree el producto base
+    const connection = await db.getConnection();
+
     try {
+        await connection.beginTransaction();
+
         const checkSql = "SELECT id FROM productos WHERE empresa_id = ? AND sku = ? AND estado = 1";
-        const [existing] = await db.query(checkSql, [empresaId, p.sku.trim()]);
+        const [existing] = await connection.query(checkSql, [empresaId, p.sku.trim()]);
         
         if (existing.length > 0) {
+            await connection.rollback();
+            connection.release();
             return res.status(400).json({ error: `El SKU "${p.sku}" ya esta registrado en otro producto` });
         }
+
+        // Validaciones preventivas de unicidad de Motor/Chasis si se están enviando directamente en la carga inicial
+        const tieneMotor = p.vehiculo_motor && p.vehiculo_motor.trim() !== "";
+        const tieneChasis = p.vehiculo_chasis && p.vehiculo_chasis.trim() !== "";
+
+        if (tieneMotor || tieneChasis) {
+            // Verificar si ese chasis o motor ya existen en las unidades disponibles del sistema
+            const [checkUnidad] = await connection.query(
+                "SELECT id FROM vehiculos_unidades WHERE empresa_id = ? AND (chasis = ? OR motor = ?) AND estado_venta != 'Vendido' AND estado = 1",
+                [empresaId, p.vehiculo_chasis?.trim() || '---', p.vehiculo_motor?.trim() || '---']
+            );
+            if (checkUnidad.length > 0) {
+                await connection.rollback();
+                connection.release();
+                return res.status(400).json({ error: "El número de chasis o motor ingresado ya pertenece a un vehículo activo en stock." });
+            }
+        }
+
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
+
+        // Mantenemos la estructura de tu INSERT para no alterar las columnas existentes de tu tabla
         const sql = `INSERT INTO productos (empresa_id, sku, descripcion, marca, modelo, categoria_id, proveedor, proveedor_id, costo, precio_neto, iva, control_stock, stock, stock_minimo, estado, vehiculo_tipo, vehiculo_anio, vehiculo_chasis, vehiculo_motor, vehiculo_color) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`;
+        
         const params = [
             empresaId,
             p.sku.trim(),
@@ -80,7 +109,7 @@ exports.crearProducto = async (req, res) => {
             p.modelo,
             categoriaId,
             p.proveedor,
-            proveedorId,
+            p.proveedor_id || proveedorId,
             p.costo || 0,
             p.precio_neto || 0,
             p.iva || 21,
@@ -94,16 +123,38 @@ exports.crearProducto = async (req, res) => {
             p.vehiculo_color || null
         ];
 
-        const [result] = await db.query(sql, params);
-        
+        const [result] = await connection.query(sql, params);
+        const productoId = result.insertId;
+
+        // SEEDING DE UNIDAD ÚNICA: Si tiene motor o chasis, creamos su registro en la tabla de unidades tracking
+        if (tieneMotor || tieneChasis) {
+            await connection.query(
+                `INSERT INTO vehiculos_unidades (empresa_id, producto_id, chasis, motor, color, anio, estado_venta)
+                 VALUES (?, ?, ?, ?, ?, ?, 'Disponible')`,
+                [
+                    empresaId,
+                    productoId,
+                    p.vehiculo_chasis?.trim() || '',
+                    p.vehiculo_motor?.trim() || '',
+                    p.vehiculo_color || p.color || null,
+                    p.vehiculo_anio || null
+                ]
+            );
+        }
+
+        await connection.commit();
+        connection.release();
+
         res.status(201).json({ 
-            id: result.insertId, 
+            id: productoId, 
             ...p, 
             categoria_id: categoriaId,
             control_stock: p.control_stock ? 1 : 0 
         });
 
     } catch (err) {
+        await connection.rollback();
+        connection.release();
         console.error("Error al crear producto:", err.message);
         res.status(500).json({ error: err.message });
     }
@@ -195,6 +246,26 @@ exports.restaurarProducto = async (req, res) => {
         res.json({ mensaje: "Producto restaurado correctamente", id });
     } catch (err) {
         console.error("Error al restaurar producto:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
+// Obtener las unidades específicas de un vehículo que estén en stock disponible
+exports.obtenerUnidadesDisponibles = async (req, res) => {
+    try {
+        const empresaId = req.empresaId;
+        const { productoId } = req.params;
+
+        const [unidades] = await db.query(
+            `SELECT id, chasis, motor, color, anio, patente 
+             FROM vehiculos_unidades 
+             WHERE empresa_id = ? AND producto_id = ? AND estado_venta = 'Disponible' AND estado = 1
+             ORDER BY fecha_ingreso ASC`,
+            [empresaId, productoId]
+        );
+
+        res.json(unidades);
+    } catch (err) {
+        console.error("Error al obtener unidades disponibles:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
