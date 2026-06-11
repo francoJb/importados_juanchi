@@ -77,9 +77,22 @@ exports.crearProducto = async (req, res) => {
 
         // 1. Extraemos los campos del Frontend
         const {
-            sku, descripcion, costo, precio_neto, stock, stock_minimo,
-            control_stock, categoria_nombre, proveedor_nombre,
-            vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio, vehiculo_patente
+            sku,
+            marca,
+            modelo,
+            descripcion,
+            costo,
+            precio_neto,
+            stock,
+            stock_minimo,
+            control_stock,
+            categoria_nombre,
+            proveedor_nombre,
+            vehiculo_chasis,
+            vehiculo_motor,
+            vehiculo_color,
+            vehiculo_anio,
+            vehiculo_patente
         } = req.body;
 
         if (!sku || !descripcion || costo === undefined || precio_neto === undefined) {
@@ -111,17 +124,43 @@ exports.crearProducto = async (req, res) => {
             }
         }
 
-        // 2. CORRECCIÓN AQUÍ: Quitamos 'vehiculo_patente' de la consulta de productos para evitar el error
         const [result] = await connection.query(
             `INSERT INTO productos (
-                empresa_id, sku, descripcion, costo, precio_neto, stock, stock_minimo, 
-                control_stock, categoria_id, proveedor_id, estado,
-                vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+                empresa_id,
+                sku,
+                marca,
+                modelo,
+                descripcion,
+                costo,
+                precio_neto,
+                stock,
+                stock_minimo, 
+                control_stock,
+                categoria_id,
+                proveedor_id,
+                estado,
+                vehiculo_chasis,
+                vehiculo_motor,
+                vehiculo_color,
+                vehiculo_anio
+            ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
             [
-                empresaId, sku, descripcion, costo, precio_neto, stock || 0, stock_minimo || 0,
-                control_stock ? 1 : 0, categoriaId, proveedorId,
-                vehiculo_chasis || null, vehiculo_motor || null, vehiculo_color || null, 
+                empresaId,
+                sku,
+                marca,
+                modelo,
+                descripcion,
+                costo,
+                precio_neto,
+                stock || 0,
+                stock_minimo || 0,
+                control_stock ? 1 : 0,
+                categoriaId,
+                proveedorId,
+                vehiculo_chasis || null,
+                vehiculo_motor || null,
+                vehiculo_color || null,
                 vehiculo_anio || null
             ]
         );
@@ -185,7 +224,28 @@ exports.editarProducto = async (req, res) => {
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
 
-        const sql = `UPDATE productos SET sku=?, descripcion=?, marca=?, modelo=?, categoria_id=?, proveedor=?, proveedor_id=?, costo=?, precio_neto=?, iva=?, control_stock=?, stock=?, stock_minimo=?, vehiculo_tipo=?, vehiculo_anio=?, vehiculo_chasis=?, vehiculo_motor=?, vehiculo_color=? WHERE empresa_id=? AND id=? AND estado = 1`;
+        const sql = `
+            UPDATE productos SET
+                sku=?,
+                descripcion=?,
+                marca=?,
+                modelo=?,
+                categoria_id=?,
+                proveedor=?,
+                proveedor_id=?,
+                costo=?,
+                precio_neto=?,
+                iva=?,
+                control_stock=?,
+                stock=?,
+                stock_minimo=?,
+                vehiculo_tipo=?,
+                vehiculo_anio=?,
+                vehiculo_chasis=?,
+                vehiculo_motor=?,
+                vehiculo_color=?
+            WHERE empresa_id=? AND id=? AND estado = 1
+        `;
         
         const params = [   
             p.sku, 
