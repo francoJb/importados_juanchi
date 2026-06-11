@@ -313,16 +313,65 @@ export async function initProductos() {
 
     window.restaurarProducto = restaurarProducto;
 }
-// Asegurate de declararlas como propiedad de window en tu archivo .js
+
+// ==========================================
+// CONTROL DEL MODAL DE UNIDADES ADICIONALES
+// ==========================================
+
+// Abrir el modal flotante pasando los datos del producto padre
 window.abrirModalUnidad = function(id, descripcion) {
     document.getElementById('unidadProductoId').value = id;
     document.getElementById('txtNombreProductoUnidad').innerText = descripcion;
+    
+    // Reseteamos el formulario para que no queden datos de la carga anterior
     document.getElementById('formNuevaUnidad').reset();
+    
+    // Quitamos la clase 'hidden' para mostrar el modal
     document.getElementById('modalAgregarUnidad').classList.remove('hidden');
 }
 
+// Cerrar el modal flotante
 window.cerrarModalUnidad = function() {
     document.getElementById('modalAgregarUnidad').classList.add('hidden');
+}
+
+// Escuchar el envío del formulario de la nueva unidad física
+const formNuevaUnidad = document.getElementById('formNuevaUnidad');
+if (formNuevaUnidad) {
+    formNuevaUnidad.onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const data = {
+            productoId: document.getElementById('unidadProductoId').value,
+            chasis: document.getElementById('addChasis').value,
+            motor: document.getElementById('addMotor').value,
+            color: document.getElementById('addColor').value,
+            anio: document.getElementById('addAnio').value,
+            patente: document.getElementById('addPatente').value
+        };
+
+        try {
+            // Usamos tu cliente de API (apiClient / apiFetch) para enviar los datos al backend
+            const response = await apiFetch('/productos/agregar-unidad', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+
+            alert("¡Unidad física añadida al stock con éxito!");
+            window.cerrarModalUnidad();
+            
+            // Volvemos a llamar a la función que pide los productos al servidor 
+            // para que la grilla se actualice y muestre el stock con el (+1)
+            if (typeof obtenerProductos === 'function') {
+                obtenerProductos(); 
+            } else if (typeof inicializarProductos === 'function') {
+                inicializarProductos();
+            }
+            
+        } catch (err) {
+            alert("Error al guardar la unidad: " + err.message);
+        }
+    };
 }
 
 // EXPOSICIÓN GLOBAL PARA HTML
