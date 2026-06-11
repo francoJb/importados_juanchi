@@ -30,14 +30,28 @@ exports.obtenerProductos = async (req, res) => {
     try {
         const empresaId = req.empresaId; // Del middleware
         const estado = req.query.estado === 'eliminados' ? 0 : 1;
+
+        // Modificamos el SELECT para calcular dinámicamente el stock real de unidades físicas disponibles
         const [rows] = await db.query(`
-            SELECT p.*, c.nombre as categoria, COALESCE(pr.nombre, p.proveedor) as proveedor
+            SELECT 
+                p.*, 
+                c.nombre as categoria, 
+                COALESCE(pr.nombre, p.proveedor) as proveedor,
+                -- Si tiene chasis/motor calculamos el stock sumando las unidades 'Disponible' reales, sino usa su stock tradicional
+                CASE 
+                    WHEN (p.vehiculo_chasis IS NOT NULL AND TRIM(p.vehiculo_chasis) != '') 
+                         OR (p.vehiculo_motor IS NOT NULL AND TRIM(p.vehiculo_motor) != '') THEN
+                        (SELECT COUNT(*) FROM vehiculos_unidades vu WHERE vu.producto_id = p.id AND vu.empresa_id = ? AND vu.estado_venta = 'Disponible' AND vu.estado = 1)
+                    ELSE 
+                        p.stock 
+                END as stock
             FROM productos p
             LEFT JOIN categorias c ON p.categoria_id = c.id AND c.empresa_id = ?
             LEFT JOIN proveedores pr ON p.proveedor_id = pr.id AND pr.empresa_id = ?
             WHERE p.empresa_id = ? AND p.estado = ?
             ORDER BY p.descripcion
-        `, [empresaId, empresaId, empresaId, estado]);
+        `, [empresaId, empresaId, empresaId, empresaId, estado]);
+
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -263,6 +277,40 @@ exports.obtenerUnidadesDisponibles = async (req, res) => {
         res.json(unidades);
     } catch (err) {
         console.error("Error al obtener unidades disponibles:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
+// Agregar una unidad física adicional a un vehículo existente
+exports.agregarUnidadVehiculo = async (req, res) => {
+    try {
+        const empresaId = req.empresaId;
+        const { productoId, chasis, motor, color, anio, patente } = req.body;
+
+        if (!productoId || !chasis?.trim() || !motor?.trim()) {
+            return res.status(400).json({ error: "Producto, Chasis y Motor son obligatorios" });
+        }
+
+        const sql = `
+            INSERT INTO vehiculos_unidades 
+                (empresa_id, producto_id, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Disponible', 1, NOW())
+        `;
+
+        const params = [
+            empresaId,
+            productoId,
+            chasis.trim(),
+            motor.trim(),
+            color || 'S/C',
+            anio || null,
+            patente || null
+        ];
+
+        const [result] = await db.query(sql, params);
+        
+        res.status(201).json({ mensaje: "Unidad agregada correctamente", id: result.insertId });
+    } catch (err) {
+        console.error("Error al agregar unidad:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

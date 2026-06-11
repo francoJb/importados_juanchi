@@ -7,6 +7,10 @@ export function dibujarProductos(productos) {
     tabla.innerHTML = "";
     productos.forEach(p => {
         const isEliminado = p.estado === 0;
+        
+        // Identificamos si es un vehículo evaluando la categoría en mayúsculas
+        const esVehiculo = p.categoria && p.categoria.toUpperCase() === "VEHICULO";
+
         tabla.innerHTML += `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${isEliminado ? 'bg-red-50 dark:bg-red-900/10 opacity-90' : ''}">
                 <td class="p-3 text-center font-mono text-xs">${p.sku || '---'}</td>
@@ -22,6 +26,10 @@ export function dibujarProductos(productos) {
                     ${isEliminado ? `
                         <button onclick="restaurarProducto(${p.id})" class="text-green-600 hover:scale-150 transition-transform" title="Restaurar">♻️</button>
                     ` : `
+                        ${esVehiculo ? `
+                            <button onclick="abrirModalUnidad(${p.id}, '${p.descripcion || p.sku}')" class="text-blue-600 hover:scale-125 transition-transform font-bold mr-2" title="Agregar Unidad Física / Chasis">➕ Unidad</button>
+                        ` : ''}
+                        
                         <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>
                         <button onclick="eliminarProducto(${p.id}, '${p.descripcion || p.sku}')" class="btn-eliminar hover:scale-150 transition-transform" title="Eliminar"> 🗑️</button>
                     `}

@@ -313,6 +313,17 @@ export async function initProductos() {
 
     window.restaurarProducto = restaurarProducto;
 }
+// Asegurate de declararlas como propiedad de window en tu archivo .js
+window.abrirModalUnidad = function(id, descripcion) {
+    document.getElementById('unidadProductoId').value = id;
+    document.getElementById('txtNombreProductoUnidad').innerText = descripcion;
+    document.getElementById('formNuevaUnidad').reset();
+    document.getElementById('modalAgregarUnidad').classList.remove('hidden');
+}
+
+window.cerrarModalUnidad = function() {
+    document.getElementById('modalAgregarUnidad').classList.add('hidden');
+}
 
 // EXPOSICIÓN GLOBAL PARA HTML
 window.prepararEdicionProducto = prepararEdicionProducto;
