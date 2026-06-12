@@ -121,10 +121,10 @@ export function configurarFormularioProducto() {
     const camposVehiculo = document.getElementById('camposVehiculo');
 
     if (inputCategoria && camposVehiculo) {
-        // Escuchamos el evento 'input' cuando el usuario escribe físicamente
         inputCategoria.addEventListener('input', () => {
             const categoriaSeleccionada = inputCategoria.value.trim().toUpperCase();
-            if (categoriaSeleccionada === 'VEHICULOS') {
+            // CORRECCIÓN: Robusto contra VEHICULO o VEHICULOS
+            if (categoriaSeleccionada.startsWith('VEHICULO')) {
                 camposVehiculo.classList.remove('hidden');
             } else {
                 camposVehiculo.classList.add('hidden');
@@ -136,24 +136,26 @@ export function configurarFormularioProducto() {
         e.preventDefault();
         const id = document.getElementById("formProductoId").value;
         
-        // CORRECCIÓN: Definimos y calculamos si es vehículo antes de crear el objeto
         const categoriaInput = document.getElementById("categoria").value.trim().toUpperCase();
-        const esVehiculo = (categoriaInput === "VEHICULOS");
+        const esVehiculo = categoriaInput.startsWith("VEHICULO");
         
         const datos = {
             sku: document.getElementById("sku").value.trim(),
             descripcion: document.getElementById("descripcion").value,
             marca: document.getElementById("marca").value,
             modelo: document.getElementById("modelo").value,   
-            categoria: document.getElementById("categoria").value,
-            proveedor: document.getElementById("proveedor").value,
             costo: Number(document.getElementById("costo").value),
             precio_neto: Number(document.getElementById("precio_neto").value),
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
             
-            // Campos dinámicos validados de forma segura
+            // CORRECCIÓN PUNTO 1: Enviamos las propiedades exactas que mapea el Backend
+            categoria_nombre: document.getElementById("categoria").value.trim(),
+            proveedor_nombre: document.getElementById("proveedor").value.trim(),
+            categoria: document.getElementById("categoria").value.trim(),
+            proveedor: document.getElementById("proveedor").value.trim(),
+            
             vehiculo_tipo: esVehiculo ? document.getElementById('vehiculo_tipo').value : null,
             vehiculo_anio: esVehiculo ? (parseInt(document.getElementById('vehiculo_anio').value) || null) : null,
             vehiculo_chasis: esVehiculo ? document.getElementById('vehiculo_chasis').value.trim() : null,
@@ -169,11 +171,8 @@ export function configurarFormularioProducto() {
         const exito = await guardarProductoAPI(datos, id || null);
         if (exito) {
             mostrarAlerta("Producto guardado correctamente", "¡Éxito!", "success");
-            
             formProducto.reset();
             
-            // MEJORA: Volver a ocultar el bloque visual tras limpiar el formulario
-            const camposVehiculo = document.getElementById('camposVehiculo');
             if (camposVehiculo) {
                 camposVehiculo.classList.add('hidden');
             }
@@ -212,8 +211,8 @@ export async function prepararEdicionProducto(id) {
     document.getElementById("descripcion").value = p.descripcion;
     document.getElementById("marca").value = p.marca;
     document.getElementById("modelo").value = p.modelo;
-    document.getElementById("categoria").value = p.categoria;
-    document.getElementById("proveedor").value = p.proveedor;
+    document.getElementById("categoria").value = p.categoria || '';
+    document.getElementById("proveedor").value = p.proveedor || '';
     document.getElementById("costo").value = p.costo;
     document.getElementById("precio_neto").value = p.precio_neto;
     document.getElementById("stock").value = p.stock;
@@ -225,21 +224,18 @@ export async function prepararEdicionProducto(id) {
         inputCategoria.dispatchEvent(new Event('input'));
     }
 
-    // === CONTROL DINÁMICO DE LOS CAMPOS DE VEHÍCULO ===
     const camposVehiculo = document.getElementById('camposVehiculo');
     
-    if (p.categoria && p.categoria.trim().toUpperCase() === 'VEHICULOS') {
-        // Si el producto a editar es un vehículo, mostramos el contenedor celeste
+    // CORRECCIÓN PUNTO 4: Comprobación segura de la categoría que ahora sí vendrá poblada
+    if (p.categoria && p.categoria.trim().toUpperCase().startsWith('VEHICULO')) {
         if (camposVehiculo) camposVehiculo.classList.remove('hidden');
         
-        // Asignamos los valores correspondientes (usando || '' para evitar que se vea la palabra "null")
         document.getElementById('vehiculo_tipo').value = p.vehiculo_tipo || '';
         document.getElementById('vehiculo_anio').value = p.vehiculo_anio || '';
         document.getElementById('vehiculo_chasis').value = p.vehiculo_chasis || '';
         document.getElementById('vehiculo_motor').value = p.vehiculo_motor || '';
         document.getElementById('vehiculo_color').value = p.vehiculo_color || '';
     } else {
-        // Si es cualquier otra categoría, aseguramos que el bloque permanezca oculto y vacío
         if (camposVehiculo) camposVehiculo.classList.add('hidden');
         
         document.getElementById('vehiculo_tipo').value = '';
@@ -343,33 +339,37 @@ if (formNuevaUnidad) {
         
         const data = {
             productoId: document.getElementById('unidadProductoId').value,
-            chasis: document.getElementById('addChasis').value,
-            motor: document.getElementById('addMotor').value,
-            color: document.getElementById('addColor').value,
-            anio: document.getElementById('addAnio').value,
-            patente: document.getElementById('addPatente').value
+            chasis: document.getElementById('addChasis').value.trim(),
+            motor: document.getElementById('addMotor').value.trim(),
+            color: document.getElementById('addColor').value.trim(),
+            anio: document.getElementById('addAnio').value ? parseInt(document.getElementById('addAnio').value) : null,
+            patente: document.getElementById('addPatente').value.trim()
         };
 
         try {
-            // Usamos tu cliente de API (apiClient / apiFetch) para enviar los datos al backend
-            const response = await apiFetch('/productos/agregar-unidad', {
+            // CORRECCIÓN 1 Y 2: Usamos la constante API_URL correcta y agregamos las cabeceras JSON
+            const response = await apiFetch(`${API_URL}/agregar-unidad`, {
                 method: 'POST',
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
             });
 
-            alert("¡Unidad física añadida al stock con éxito!");
+            // CORRECCIÓN 3: Validamos si el servidor realmente procesó la solicitud
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Error desconocido en el servidor");
+            }
+
+            // Usamos tu función nativa de alertas estéticas en vez del alert nativo
+            mostrarAlerta("¡Unidad física añadida al stock con éxito!", "¡Éxito!", "success");
             window.cerrarModalUnidad();
             
-            // Volvemos a llamar a la función que pide los productos al servidor 
-            // para que la grilla se actualice y muestre el stock con el (+1)
-            if (typeof obtenerProductos === 'function') {
-                obtenerProductos(); 
-            } else if (typeof inicializarProductos === 'function') {
-                inicializarProductos();
-            }
+            // Refrescamos la grilla para ver reflejado el nuevo stock en tiempo real
+            await listarProductos(productosEstado);
             
         } catch (err) {
-            alert("Error al guardar la unidad: " + err.message);
+            console.error("Error al guardar la unidad:", err);
+            mostrarAlerta("Error al guardar la unidad: " + err.message, "Error", "error");
         }
     };
 }

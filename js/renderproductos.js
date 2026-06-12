@@ -9,7 +9,7 @@ export function dibujarProductos(productos) {
         const isEliminado = p.estado === 0;
         
         // Identificamos si es un vehículo evaluando la categoría en mayúsculas
-        const esVehiculo = p.categoria && p.categoria.toUpperCase() === "VEHICULO";
+        const esVehiculo = p.categoria && p.categoria.toUpperCase() === "VEHICULOS";
 
         tabla.innerHTML += `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${isEliminado ? 'bg-red-50 dark:bg-red-900/10 opacity-90' : ''}">

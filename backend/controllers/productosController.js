@@ -28,19 +28,17 @@ async function obtenerOCrearProveedor(nombreProveedor, empresaId) {
 
 exports.obtenerProductos = async (req, res) => {
     try {
-        const empresaId = req.empresaId; // Del middleware
+        const empresaId = req.empresaId; 
         const estado = req.query.estado === 'eliminados' ? 0 : 1;
 
-        // Modificamos el SELECT para calcular dinámicamente el stock real de unidades físicas disponibles
+        // CORRECCIÓN PUNTO 2: El CASE WHEN ahora evalúa si el NOMBRE de la categoría es VEHICULO/VEHICULOS
         const [rows] = await db.query(`
             SELECT 
                 p.*, 
                 c.nombre as categoria, 
                 COALESCE(pr.nombre, p.proveedor) as proveedor,
-                -- Si tiene chasis/motor calculamos el stock sumando las unidades 'Disponible' reales, sino usa su stock tradicional
                 CASE 
-                    WHEN (p.vehiculo_chasis IS NOT NULL AND TRIM(p.vehiculo_chasis) != '') 
-                         OR (p.vehiculo_motor IS NOT NULL AND TRIM(p.vehiculo_motor) != '') THEN
+                    WHEN c.nombre IS NOT NULL AND c.nombre LIKE 'VEHICULO%' THEN
                         (SELECT COUNT(*) FROM vehiculos_unidades vu WHERE vu.producto_id = p.id AND vu.empresa_id = ? AND vu.estado_venta = 'Disponible' AND vu.estado = 1)
                     ELSE 
                         p.stock 
@@ -75,7 +73,6 @@ exports.crearProducto = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Extraemos los campos del Frontend
         const {
             sku,
             marca,
@@ -99,7 +96,6 @@ exports.crearProducto = async (req, res) => {
             return res.status(400).json({ error: "Faltan campos requeridos" });
         }
 
-        // Obtener o crear categoría y proveedor usando la conexión de la transacción
         let categoriaId = null;
         if (categoria_nombre?.trim()) {
             const nombreNormalizado = categoria_nombre.trim().toUpperCase();
@@ -124,27 +120,13 @@ exports.crearProducto = async (req, res) => {
             }
         }
 
+        // SOLUCIÓN INCONSISTENCIA: Forzamos NULL en los campos específicos de unidad de la tabla productos
         const [result] = await connection.query(
             `INSERT INTO productos (
-                empresa_id,
-                sku,
-                marca,
-                modelo,
-                descripcion,
-                costo,
-                precio_neto,
-                stock,
-                stock_minimo, 
-                control_stock,
-                categoria_id,
-                proveedor_id,
-                estado,
-                vehiculo_chasis,
-                vehiculo_motor,
-                vehiculo_color,
-                vehiculo_anio
-            ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+                empresa_id, sku, marca, modelo, descripcion, costo, precio_neto, 
+                stock, stock_minimo, control_stock, categoria_id, proveedor_id, estado,
+                vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1, NULL, NULL, NULL, NULL)`, 
             [
                 empresaId,
                 sku,
@@ -153,25 +135,21 @@ exports.crearProducto = async (req, res) => {
                 descripcion,
                 costo,
                 precio_neto,
-                stock || 0,
                 stock_minimo || 0,
                 control_stock ? 1 : 0,
                 categoriaId,
-                proveedorId,
-                vehiculo_chasis || null,
-                vehiculo_motor || null,
-                vehiculo_color || null,
-                vehiculo_anio || null
+                proveedorId
             ]
         );
 
         const nuevoProductoId = result.insertId;
 
-        // 3. Si los campos indican que es un vehículo, registramos su stock real (¡Acá SÍ va la patente!)
-        const esVehiculo = (vehiculo_chasis && vehiculo_chasis.trim() !== "") || 
-                           (vehiculo_motor && vehiculo_motor.trim() !== "");
+        // Evaluamos de forma segura si la categoría es de tipo Vehículo
+        const esVehiculo = categoria_nombre?.trim().toUpperCase().startsWith("VEHICULO");
+        const tieneUnidadInicial = (vehiculo_chasis && vehiculo_chasis.trim() !== "") || (vehiculo_motor && vehiculo_motor.trim() !== "");
 
-        if (esVehiculo) {
+        // Si es un vehículo y se rellenaron los campos, la unidad va DIRECTAMENTE a su tabla correspondiente
+        if (esVehiculo && tieneUnidadInicial) {
             await connection.query(
                 `INSERT INTO vehiculos_unidades 
                     (empresa_id, producto_id, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
@@ -179,16 +157,15 @@ exports.crearProducto = async (req, res) => {
                 [
                     empresaId,
                     nuevoProductoId,
-                    vehiculo_chasis,
-                    vehiculo_motor,
+                    vehiculo_chasis.trim(),
+                    vehiculo_motor.trim(),
                     vehiculo_color || 'S/C',
                     vehiculo_anio || null,
-                    vehiculo_patente || null // Se guarda de forma impecable en la tabla de unidades
+                    vehiculo_patente || null
                 ]
             );
         }
 
-        // Registrar la acción en la auditoría
         await logAction(connection, { 
             empresaId, 
             usuarioId: req.usuarioId || null, 
