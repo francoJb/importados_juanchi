@@ -1,0 +1,49 @@
+al generar una venta:
+	en el carrito de venta solo figura la descripción del producto, no asi el nro de motor, chasis, etc todos los campos de un VEHICULO. lo mismo en la factura de venta (solo se muestra "Moto 110" y en precio unitario "$NaN" en subtotal "$NaN") 
+	Agregar MARCA y MODELO a la factura cuando se trate de la venta de un VEHICULO.
+No se descuenta del stock de vehículos.
+	SOLUCION: crear un modal de edición para los VEHICULOS, donde permita seleccionar el VEHICULO de una lista de vehículos cargados con sus respectivos nro de chasis , etc.
+		Agregar una lista desplegable al carrito de ventas, donde se muestren los chasis cargados.
+
+-------------------------------------------------------------
+ EDITAR PRODUCTO NO FUNCIONA.
+	al querer GUARDAR la edición de un producto,  se muesrta el siguiente error "❌ Unknown column 'vehiculo_anio' in 'field list'". ARREGLAR
+
+-------------------------------------------------------------
+
+AGREGAR CARTEL DE ALERTA DE PRODUCTO SIN STOCK al momento de querer agregarlo al carrito de ventas, hoy la alerta ocurre cuando se presiona el boton CREAR, tarde para la dinámica de carga de productos.
+
+
+------------------------------------------------------------
+ERROR GRAVISIMO:
+	Al crear una venta con método de pago CUOTAS, las cuotas se calculan mal. por ejemplo:
+		para una venta de 3600 a pagar en 3 cuotas y una entrega inicial de 600, las cuotas deberían ser de 1000, sin embargo son de 1200 cada una.
+	Osea, se calcula bien, pero la información se muestra confusa. consultar connn IA.
+
+
+-------------------------------------------------------------
+
+el mismo cartel de alerta que me avisa que tengo productos cargados en el carrito cuando presiono ESC:
+⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver? (cambiar ese ALERT por un modal)
+quiero que aparezca también cuando hago click en alguna sección, que salga de la pantalla de ventas.
+
+--------------------------------------------------------------
+
+
+Al generar el recibo de pago, cuando cancelo 3 cuotas juntas, me genera un recibo ppor cada cuota, eso debe corregirse para que un recibo muestre el el detalle de las cuotas pagadas.
+
+
+--------------------------------------------------------------
+
+REPARAR IMPORTACION DESDE EXCEL
+
+
+
+
+
+
+
+
+
+
+
