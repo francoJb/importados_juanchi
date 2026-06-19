@@ -249,6 +249,68 @@ export async function prepararEdicionProducto(id) {
     cambiarSeccion('pantallaProducto');
 }
 
+// 1. FUNCIÓN PARA ABRIR EL MODAL Y CARGAR LOS DATOS ACTUALES
+window.abrirModalEditarUnidad = function(id, chasis, motor, color, anio, patente) {
+    // Asignamos los valores actuales del vehículo a los inputs del modal
+    document.getElementById('editUnidadId').value = id;
+    document.getElementById('editChasis').value = chasis || '';
+    document.getElementById('editMotor').value = motor || '';
+    document.getElementById('editColor').value = color || '';
+    document.getElementById('editAnio').value = anio || '';
+    document.getElementById('editPatente').value = patente || '';
+    
+    // Mostramos el modal quitando la clase 'hidden' de Tailwind
+    document.getElementById('modalEditarUnidad').classList.remove('hidden');
+};
+
+// 2. FUNCIÓN PARA CERRAR EL MODAL
+window.cerrarModalEditarUnidad = function() {
+    // Ocultamos el modal agregando la clase 'hidden'
+    document.getElementById('modalEditarUnidad').classList.add('hidden');
+    // Limpiamos el formulario para la próxima vez
+    document.getElementById('formEditarUnidad').reset();
+};
+
+// 3. FUNCIÓN PARA GUARDAR LOS CAMBIOS EN EL SERVIDOR (INTEGRADO CON APIFETCH)
+window.guardarCambiosUnidad = async function(event) {
+    event.preventDefault(); // Evitamos que la página se recargue por el formulario
+
+    // Recuperamos el ID oculto y los nuevos valores escritos por el usuario
+    const id = document.getElementById('editUnidadId').value;
+    const datosModificados = {
+        chasis: document.getElementById('editChasis').value.trim(),
+        motor: document.getElementById('editMotor').value.trim(),
+        color: document.getElementById('editColor').value.trim(),
+        anio: document.getElementById('editAnio').value ? parseInt(document.getElementById('editAnio').value) : null,
+        patente: document.getElementById('editPatente').value.trim()
+    };
+
+    try {
+        // Usamos tu 'apiFetch' apuntando a la subruta de vehículos de tu controlador de productos
+        const response = await apiFetch(`${API_URL}/vehiculos/unidades/${id}`, {
+            method: 'PUT',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datosModificados)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'No se pudieron guardar los cambios');
+        }
+
+        // Usamos tus alertas estéticas del sistema
+        mostrarAlerta('¡Datos del vehículo corregidos con éxito!', '¡Éxito!', 'success');
+        window.cerrarModalEditarUnidad();
+        
+        // Refrescamos tu grilla automáticamente usando tu función nativa
+        await listarProductos(productosEstado);
+
+    } catch (error) {
+        console.error('Error al actualizar:', error);
+        mostrarAlerta(error.message, 'Error', 'error');
+    }
+};
+
 // 7. ELIMINAR PRODUCTO (Soft Delete)
 export async function eliminarProducto(id, descripcion) {
     const confirmacion = await mostrarConfirmacion({
@@ -373,6 +435,65 @@ if (formNuevaUnidad) {
         }
     };
 }
+// 1. FUNCIÓN GLOBAL PARA ABRIR EL MODAL Y CARGAR LAS UNIDADES DESDE EL BACKEND
+window.verUnidadesVehiculo = async function(productoId, descripcionProducto) {
+    // Seteamos el nombre del producto en el título del modal
+    document.getElementById('nombreProductoModal').innerText = descripcionProducto;
+    
+    const tbody = document.getElementById('tablaUnidadesFisicasBody');
+    const mensajeVacio = document.getElementById('sinUnidadesMensaje');
+    tbody.innerHTML = ''; // Limpiamos la tabla anterior
+    
+    try {
+        // Consultamos a tu controlador mediante apiFetch
+        // IMPORTANTE: Asegúrate de que en tu archivo de rutas backend del servidor tengas declarado:
+        // router.get('/:productoId/unidades', productosController.obtenerUnidadesDisponibles);
+        const response = await apiFetch(`${API_URL}/${productoId}/unidades`);
+        
+        if (!response.ok) throw new Error("No se pudo obtener el listado de unidades.");
+        
+        const unidades = await response.json();
+        
+        if (unidades.length === 0) {
+            mensajeVacio.classList.remove('hidden');
+        } else {
+            mensajeVacio.classList.add('hidden');
+            
+            // Recorremos cada unidad física y creamos su fila en la tabla
+            unidades.forEach(unidad => {
+                const fila = document.createElement('tr');
+                fila.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                
+                fila.innerHTML = `
+                    <td class="px-4 py-3 font-mono font-semibold">${unidad.chasis}</td>
+                    <td class="px-4 py-3 font-mono">${unidad.motor}</td>
+                    <td class="px-4 py-3">${unidad.color || 'S/C'}</td>
+                    <td class="px-4 py-3">${unidad.anio || '-'}</td>
+                    <td class="px-4 py-3"><span class="bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">${unidad.patente || 'S/P'}</span></td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="window.abrirModalEditarUnidad(${unidad.id}, '${unidad.chasis}', '${unidad.motor}', '${unidad.color}', '${unidad.anio}', '${unidad.patente}')" 
+                                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30">
+                            ✏️ Editar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+        
+        // Abrimos el modal quitando la clase hidden
+        document.getElementById('modalVerUnidades').classList.remove('hidden');
+        
+    } catch (error) {
+        console.error("Error cargando unidades:", error);
+        mostrarAlerta(error.message, "Error", "error");
+    }
+};
+
+// 2. FUNCIÓN PARA CERRAR EL MODAL
+window.cerrarModalVerUnidades = function() {
+    document.getElementById('modalVerUnidades').classList.add('hidden');
+};
 
 // EXPOSICIÓN GLOBAL PARA HTML
 window.prepararEdicionProducto = prepararEdicionProducto;

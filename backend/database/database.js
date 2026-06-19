@@ -250,10 +250,14 @@ async function asegurarContadoresDocumentos() {
 }
 
 // Esta función crea las tablas automáticamente si no existen
+// Esta función crea las tablas automáticamente si no existen
 const configurarTablas = async () => {
     try {
         console.log("⏳ Verificando tablas en MySQL...");
         
+        // OPTIMIZACIÓN: Verificamos si el sistema ya fue migrado previamente
+        const yaInicializado = await tableExists('venta_cuotas') && await tableExists('documentos_contadores');
+
         // 1. TABLA DE EMPRESAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS empresas (
@@ -315,25 +319,26 @@ const configurarTablas = async () => {
                 FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
             );
         `);
-        //TABLA VEHICULOS_UNIDADES
+        
+        // TABLA VEHICULOS_UNIDADES
         await db.query(`
             CREATE TABLE IF NOT EXISTS vehiculos_unidades (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
-                producto_id INT NOT NULL, -- Apunta al modelo en la tabla 'productos'
+                producto_id INT NOT NULL,
                 chasis VARCHAR(100) NOT NULL,
                 motor VARCHAR(100) NOT NULL,
                 color VARCHAR(50) NULL,
                 anio INT NULL,
                 patente VARCHAR(50) NULL,
                 estado_venta ENUM('Disponible', 'Reservado', 'Vendido') DEFAULT 'Disponible',
-                venta_id INT NULL, -- Registra en qué venta se fue este vehículo
+                venta_id INT NULL,
                 fecha_ingreso DATETIME DEFAULT CURRENT_TIMESTAMP,
-                estado TINYINT DEFAULT 1, -- Para borrado lógico de la unidad si fuera necesario
+                estado TINYINT DEFAULT 1,
                 FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
                 FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
-                UNIQUE KEY idx_empresa_chasis (empresa_id, chasis), -- Evita duplicar chasis en la misma empresa
-                UNIQUE KEY idx_empresa_motor (empresa_id, motor)    -- Evita duplicar motor en la misma empresa
+                UNIQUE KEY idx_empresa_chasis (empresa_id, chasis),
+                UNIQUE KEY idx_empresa_motor (empresa_id, motor)
             );
         `);
 
@@ -395,20 +400,21 @@ const configurarTablas = async () => {
         // 7. TABLA DE VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS ventas (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            empresa_id INT NOT NULL,
-            cliente_id INT NULL,
-            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-            total DECIMAL(12, 2) NOT NULL,
-            metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente', 'Cuotas') NOT NULL,
-            estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
-            saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
-            observaciones TEXT,
-            estado TINYINT(1) DEFAULT 1,
-            FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
-            FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-        );
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                empresa_id INT NOT NULL,
+                cliente_id INT NULL,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                total DECIMAL(12, 2) NOT NULL,
+                metodo_pago ENUM('Efectivo', 'Transferencia', 'Tarjeta', 'QR', 'Cuenta Corriente', 'Cuotas') NOT NULL,
+                estado_pago ENUM('Pagado', 'Pendiente', 'Parcial') DEFAULT 'Pagado',
+                saldo_pendiente DECIMAL(12, 2) DEFAULT 0.00,
+                observaciones TEXT,
+                estado TINYINT(1) DEFAULT 1,
+                FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+                FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+            );
         `);
+        
         // 8. TABLA DE DETALLE_VENTAS
         await db.query(`
             CREATE TABLE IF NOT EXISTS detalle_ventas (
@@ -423,9 +429,10 @@ const configurarTablas = async () => {
                 FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE           
             )
         `);
+        
         // 9. TABLA DE CUENTA_CORRIENTE
         await db.query(`
-            CREATE TABLE IF NOT EXISTS cuenta_corriente  (
+            CREATE TABLE IF NOT EXISTS cuenta_corriente (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 empresa_id INT NOT NULL,
                 cliente_id INT NOT NULL,
@@ -442,8 +449,10 @@ const configurarTablas = async () => {
                 FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE SET NULL
             );
         `);
+
         await addColumnIfMissing('cuenta_corriente', 'estado', 'TINYINT DEFAULT 1');
         await addColumnIfMissing('cuenta_corriente', 'numero_recibo', 'INT NULL');
+        
         await db.query(`
             CREATE TABLE IF NOT EXISTS auditoria (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -458,11 +467,19 @@ const configurarTablas = async () => {
                 INDEX idx_auditoria_entidad (entidad, entidad_id)
             );
         `);
-        await asegurarColumnasMultiempresa();
-        await asegurarEsquemaCuotas();
-        await asegurarContadoresDocumentos();
-        await asegurarClientesPorDefecto();
-        console.log("✅ MySQL está listo y con TODAS las tablas (Ventas y Cta Cte incluidas).");
+
+        // Si ya está inicializado, evitamos hacer docenas de consultas pesadas de columnas
+        if (!yaInicializado) {
+            console.log("⚙️ Ejecutando escaneo estructural detallado de columnas...");
+            await asegurarColumnasMultiempresa();
+            await asegurarEsquemaCuotas();
+            await asegurarContadoresDocumentos();
+            await asegurarClientesPorDefecto();
+        } else {
+            console.log("⚡ Esquema verificado previamente. (Inicio ultra rápido)");
+        }
+
+        console.log("✅ MySQL está listo y optimizado.");
     } catch (error) {
         console.error("❌ Error al conectar o crear tablas:", error.message);
     }

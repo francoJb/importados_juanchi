@@ -8,8 +8,8 @@ export function dibujarProductos(productos) {
     productos.forEach(p => {
         const isEliminado = p.estado === 0;
         
-        // Identificamos si es un vehículo evaluando la categoría en mayúsculas
-        const esVehiculo = p.categoria && p.categoria.toUpperCase() === "VEHICULOS";
+        // OPTIMIZACIÓN: Evaluamos si empieza con "VEHICULO" para que coincida perfectamente con el Backend (sea singular o plural)
+        const esVehiculo = p.categoria && p.categoria.toUpperCase().startsWith("VEHICULO");
 
         tabla.innerHTML += `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${isEliminado ? 'bg-red-50 dark:bg-red-900/10 opacity-90' : ''}">
@@ -27,6 +27,12 @@ export function dibujarProductos(productos) {
                         <button onclick="restaurarProducto(${p.id})" class="text-green-600 hover:scale-150 transition-transform" title="Restaurar">♻️</button>
                     ` : `
                         ${esVehiculo ? `
+                            <button onclick="window.verUnidadesVehiculo(${p.id}, '${p.descripcion || p.sku}')" 
+                                    class="text-indigo-600 dark:text-indigo-400 hover:scale-125 transition-transform font-bold mr-3" 
+                                    title="Ver Unidades en Stock (Chasis/Motor)">
+                                🔍 Ver Stock
+                            </button>
+                            
                             <button onclick="abrirModalUnidad(${p.id}, '${p.descripcion || p.sku}')" class="text-blue-600 hover:scale-125 transition-transform font-bold mr-2" title="Agregar Unidad Física / Chasis">➕ Unidad</button>
                         ` : ''}
                         

@@ -449,30 +449,50 @@ exports.obtenerVenta = async (req, res) => {
     }
 };
 
-exports.obtenerDetalleVenta = async (req, res) => {
-    const { id } = req.params; // El ID de la venta que viene en la URL
+exports.obtenerTopProductosMasVendidos = async (req, res) => {
     try {
-        const [rows] = await db.query(`
-            SELECT 
-                d.cantidad, 
-                d.precio_unitario, 
-                (d.cantidad * d.precio_unitario) as subtotal,
-                p.descripcion, 
-                p.sku,
-                p.marca,
-                p.modelo,
-                p.vehiculo_chasis,
-                p.vehiculo_motor,
-                p.vehiculo_anio,
-                p.vehiculo_color
-            FROM detalle_ventas d
-            JOIN productos p ON d.producto_id = p.id AND p.empresa_id = d.empresa_id
-            WHERE d.venta_id = ? AND d.empresa_id=?` , 
-        [id, req.empresaId]);
+        const empresaId = req.empresaId; // Control multiempresa
 
+        const query = `
+            SELECT 
+                p.id AS producto_id,
+                p.descripcion AS nombre,
+                SUM(dv.cantidad) AS cantidad_vendida,
+                SUM(dv.cantidad * dv.precio_unitario) AS total_recaudado
+            FROM detalle_ventas dv
+            JOIN productos p ON dv.producto_id = p.id
+            WHERE dv.empresa_id = ?
+            GROUP BY p.id, p.descripcion
+            ORDER BY cantidad_vendida DESC
+            LIMIT 5
+        `;
+
+        const [rows] = await db.query(query, [empresaId]);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("❌ Error al calcular el top de productos:", error.message);
+        res.status(500).json({ error: "No se pudo obtener las estadísticas de productos." });
+    }
+};
+
+// En tu controlador de ventas para el detalle individual de una venta
+exports.obtenerDetalleVenta = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const empresaId = req.empresaId;
+
+        const query = `
+            SELECT dv.*, p.descripcion, p.sku 
+            FROM detalle_ventas dv
+            JOIN productos p ON dv.producto_id = p.id
+            WHERE dv.venta_id = ? AND dv.empresa_id = ?
+        `;
+        
+        const [rows] = await db.query(query, [id, empresaId]);
+        res.json(rows);
+    } catch (error) {
+        console.error("❌ Error al obtener detalle de la venta:", error.message);
+        res.status(500).json({ error: "Error interno al obtener el detalle." });
     }
 };
 

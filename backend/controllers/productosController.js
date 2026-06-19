@@ -80,7 +80,6 @@ exports.crearProducto = async (req, res) => {
             descripcion,
             costo,
             precio_neto,
-            stock,
             stock_minimo,
             control_stock,
             categoria_nombre,
@@ -120,13 +119,12 @@ exports.crearProducto = async (req, res) => {
             }
         }
 
-        // SOLUCIÓN INCONSISTENCIA: Forzamos NULL en los campos específicos de unidad de la tabla productos
+        // CORRECCIÓN AQUÍ: Quitamos por completo las columnas vehiculo_* de este INSERT
         const [result] = await connection.query(
             `INSERT INTO productos (
                 empresa_id, sku, marca, modelo, descripcion, costo, precio_neto, 
-                stock, stock_minimo, control_stock, categoria_id, proveedor_id, estado,
-                vehiculo_chasis, vehiculo_motor, vehiculo_color, vehiculo_anio
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1, NULL, NULL, NULL, NULL)`, 
+                stock, stock_minimo, control_stock, categoria_id, proveedor_id, estado
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1)`, 
             [
                 empresaId,
                 sku,
@@ -148,7 +146,7 @@ exports.crearProducto = async (req, res) => {
         const esVehiculo = categoria_nombre?.trim().toUpperCase().startsWith("VEHICULO");
         const tieneUnidadInicial = (vehiculo_chasis && vehiculo_chasis.trim() !== "") || (vehiculo_motor && vehiculo_motor.trim() !== "");
 
-        // Si es un vehículo y se rellenaron los campos, la unidad va DIRECTAMENTE a su tabla correspondiente
+        // Si es un vehículo, la unidad se guarda de forma limpia en su tabla correspondiente
         if (esVehiculo && tieneUnidadInicial) {
             await connection.query(
                 `INSERT INTO vehiculos_unidades 

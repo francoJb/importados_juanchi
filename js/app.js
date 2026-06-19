@@ -367,28 +367,22 @@ function fechaValida(fecha) {
 // ==========================================
 // FUNCIONES DEL DASHBOARD
 // ==========================================
-async function obtenerTopProductosMasVendidos(ventas) {
-    const ventasRecientes = ventas.slice(0, 20);
-    const acumulado = {};
-
-    const detalles = await Promise.all(ventasRecientes.map(async (venta) => {
-        const res = await apiFetch(`${URL_API_VENTAS}/${venta.id}/detalle`);
-        if (!res.ok) return [];
-        return await res.json();
-    }));
-
-    detalles.flat().forEach(item => {
-        const key = `${item.sku}|${item.descripcion}`;
-        acumulado[key] = (acumulado[key] || 0) + Number(item.cantidad || 0);
-    });
-
-    return Object.entries(acumulado)
-        .map(([key, cantidad]) => {
-            const [sku, descripcion] = key.split("|");
-            return { sku, descripcion, cantidad };
-        })
-        .sort((a, b) => b.cantidad - a.cantidad)
-        .slice(0, 5);
+async function obtenerTopProductosMasVendidos() {
+    try {
+        // Hacemos UNA SOLA petición al nuevo endpoint optimizado
+        const response = await apiFetch(`${API_BASE_URL}/api/ventas/top-productos`);
+        if (!response.ok) throw new Error("Error en la respuesta del servidor");
+        
+        const topProductos = await response.json();
+        
+        // Aquí mandas los datos directamente a tu función que dibuja el gráfico del Dashboard
+        // Ej: actualizarGraficoProductos(topProductos);
+        
+        return topProductos;
+    } catch (error) {
+        console.error("❌ Error al cargar el top de productos para el dashboard:", error);
+        return [];
+    }
 }
 
 function generarListaStockBajo(productos) {
