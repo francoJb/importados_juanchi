@@ -215,12 +215,7 @@ exports.editarProducto = async (req, res) => {
                 iva=?,
                 control_stock=?,
                 stock=?,
-                stock_minimo=?,
-                vehiculo_tipo=?,
-                vehiculo_anio=?,
-                vehiculo_chasis=?,
-                vehiculo_motor=?,
-                vehiculo_color=?
+                stock_minimo=?
             WHERE empresa_id=? AND id=? AND estado = 1
         `;
         
@@ -238,11 +233,6 @@ exports.editarProducto = async (req, res) => {
             p.control_stock ? 1 : 0, 
             p.stock, 
             p.stock_minimo,
-            p.vehiculo_tipo || null,
-            p.vehiculo_anio || null,
-            p.vehiculo_chasis || null,
-            p.vehiculo_motor || null,
-            p.vehiculo_color || null,
             empresaId,
             id
         ];
@@ -253,6 +243,50 @@ exports.editarProducto = async (req, res) => {
         }
         res.json({ mensaje: "Actualizado", cambios: result.affectedRows });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Actualizar los datos específicos de una unidad de vehículo (Chasis, Motor, etc.)
+exports.editarUnidadVehiculo = async (req, res) => {
+    try {
+        const empresaId = req.empresaId;
+        const { id } = req.params; // ID de la unidad en vehiculos_unidades
+        const { chasis, motor, color, anio, patente } = req.body;
+
+        if (!chasis?.trim() || !motor?.trim()) {
+            return res.status(400).json({ error: "Chasis y Motor son obligatorios" });
+        }
+
+        const sql = `
+            UPDATE vehiculos_unidades SET
+                chasis = ?,
+                motor = ?,
+                color = ?,
+                anio = ?,
+                patente = ?
+            WHERE id = ? AND empresa_id = ? AND estado = 1
+        `;
+
+        const params = [
+            chasis.trim(),
+            motor.trim(),
+            color || 'S/C',
+            anio || null,
+            patente || null,
+            id,
+            empresaId
+        ];
+
+        const [result] = await db.query(sql, params);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "La unidad no fue encontrada o no pertenece a esta empresa" });
+        }
+        
+        res.json({ success: true, mensaje: "Unidad de vehículo modificada correctamente" });
+    } catch (err) {
+        console.error("Error al editar unidad de vehículo:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

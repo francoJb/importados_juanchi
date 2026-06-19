@@ -14,5 +14,6 @@ router.put('/:id/restaurar', verificarToken, verificarTenant, productosControlle
 router.delete('/:id', verificarToken, verificarTenant, productosController.eliminarProducto);
 router.get('/:productoId/unidades-disponibles', verificarToken, verificarTenant, productosController.obtenerUnidadesDisponibles);
 router.post('/agregar-unidad', verificarToken, verificarTenant, productosController.agregarUnidadVehiculo);
+router.put('/vehiculos/unidades/:id', verificarToken, verificarTenant, productosController.editarUnidadVehiculo);
 
 module.exports = router;
