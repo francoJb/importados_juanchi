@@ -31,7 +31,6 @@ exports.obtenerProductos = async (req, res) => {
         const empresaId = req.empresaId; 
         const estado = req.query.estado === 'eliminados' ? 0 : 1;
 
-        // CORRECCIÓN PUNTO 2: El CASE WHEN ahora evalúa si el NOMBRE de la categoría es VEHICULO/VEHICULOS
         const [rows] = await db.query(`
             SELECT 
                 p.*, 
@@ -83,12 +82,7 @@ exports.crearProducto = async (req, res) => {
             stock_minimo,
             control_stock,
             categoria_nombre,
-            proveedor_nombre,
-            vehiculo_chasis,
-            vehiculo_motor,
-            vehiculo_color,
-            vehiculo_anio,
-            vehiculo_patente
+            proveedor_nombre
         } = req.body;
 
         if (!sku || !descripcion || costo === undefined || precio_neto === undefined) {
@@ -119,11 +113,21 @@ exports.crearProducto = async (req, res) => {
             }
         }
 
-        // CORRECCIÓN AQUÍ: Quitamos por completo las columnas vehiculo_* de este INSERT
         const [result] = await connection.query(
             `INSERT INTO productos (
-                empresa_id, sku, marca, modelo, descripcion, costo, precio_neto, 
-                stock, stock_minimo, control_stock, categoria_id, proveedor_id, estado
+                empresa_id,
+                sku,
+                marca,
+                modelo,
+                descripcion,
+                costo,
+                precio_neto, 
+                stock,
+                stock_minimo,
+                control_stock,
+                categoria_id,
+                proveedor_id,
+                estado
             ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1)`, 
             [
                 empresaId,
@@ -141,28 +145,6 @@ exports.crearProducto = async (req, res) => {
         );
 
         const nuevoProductoId = result.insertId;
-
-        // Evaluamos de forma segura si la categoría es de tipo Vehículo
-        const esVehiculo = categoria_nombre?.trim().toUpperCase().startsWith("VEHICULO");
-        const tieneUnidadInicial = (vehiculo_chasis && vehiculo_chasis.trim() !== "") || (vehiculo_motor && vehiculo_motor.trim() !== "");
-
-        // Si es un vehículo, la unidad se guarda de forma limpia en su tabla correspondiente
-        if (esVehiculo && tieneUnidadInicial) {
-            await connection.query(
-                `INSERT INTO vehiculos_unidades 
-                    (empresa_id, producto_id, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'Disponible', 1, NOW())`,
-                [
-                    empresaId,
-                    nuevoProductoId,
-                    vehiculo_chasis.trim(),
-                    vehiculo_motor.trim(),
-                    vehiculo_color || 'S/C',
-                    vehiculo_anio || null,
-                    vehiculo_patente || null
-                ]
-            );
-        }
 
         await logAction(connection, { 
             empresaId, 
@@ -195,7 +177,6 @@ exports.editarProducto = async (req, res) => {
     }
 
     try {
-        // Obtener o crear categoría
         const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
         const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
 
@@ -245,50 +226,6 @@ exports.editarProducto = async (req, res) => {
     }
 };
 
-// Actualizar los datos específicos de una unidad de vehículo (Chasis, Motor, etc.)
-exports.editarUnidadVehiculo = async (req, res) => {
-    try {
-        const empresaId = req.empresaId;
-        const { id } = req.params; // ID de la unidad en vehiculos_unidades
-        const { chasis, motor, color, anio, patente } = req.body;
-
-        if (!chasis?.trim() || !motor?.trim()) {
-            return res.status(400).json({ error: "Chasis y Motor son obligatorios" });
-        }
-
-        const sql = `
-            UPDATE vehiculos_unidades SET
-                chasis = ?,
-                motor = ?,
-                color = ?,
-                anio = ?,
-                patente = ?
-            WHERE id = ? AND empresa_id = ? AND estado = 1
-        `;
-
-        const params = [
-            chasis.trim(),
-            motor.trim(),
-            color || 'S/C',
-            anio || null,
-            patente || null,
-            id,
-            empresaId
-        ];
-
-        const [result] = await db.query(sql, params);
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "La unidad no fue encontrada o no pertenece a esta empresa" });
-        }
-        
-        res.json({ success: true, mensaje: "Unidad de vehículo modificada correctamente" });
-    } catch (err) {
-        console.error("Error al editar unidad de vehículo:", err.message);
-        res.status(500).json({ error: err.message });
-    }
-};
-
 exports.eliminarProducto = async (req, res) => {
     const { id } = req.params;
     const empresaId = req.empresaId;
@@ -329,7 +266,7 @@ exports.restaurarProducto = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-// Obtener las unidades específicas de un vehículo que estén en stock disponible
+
 exports.obtenerUnidadesDisponibles = async (req, res) => {
     try {
         const empresaId = req.empresaId;
@@ -349,7 +286,7 @@ exports.obtenerUnidadesDisponibles = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-// Agregar una unidad física adicional a un vehículo existente
+
 exports.agregarUnidadVehiculo = async (req, res) => {
     try {
         const empresaId = req.empresaId;
@@ -380,6 +317,48 @@ exports.agregarUnidadVehiculo = async (req, res) => {
         res.status(201).json({ mensaje: "Unidad agregada correctamente", id: result.insertId });
     } catch (err) {
         console.error("Error al agregar unidad:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+
+exports.editarUnidadVehiculo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const empresaId = req.empresaId;
+        const { chasis, motor, color, anio, patente } = req.body;
+
+        if (!chasis?.trim() || !motor?.trim()) {
+            return res.status(400).json({ error: "Chasis y Motor son obligatorios" });
+        }
+
+        const sql = `
+            UPDATE vehiculos_unidades SET
+                chasis = ?,
+                motor = ?,
+                color = ?,
+                anio = ?,
+                patente = ?
+            WHERE empresa_id = ? AND id = ? AND estado = 1
+        `;
+
+        const [result] = await db.query(sql, [
+            chasis.trim(),
+            motor.trim(),
+            color || 'S/C',
+            anio || null,
+            patente || null,
+            empresaId,
+            id
+        ]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Unidad física no encontrada o dada de baja" });
+        }
+
+        res.json({ mensaje: "Unidad física actualizada correctamente" });
+    } catch (err) {
+        console.error("Error al editar la unidad de vehículo:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

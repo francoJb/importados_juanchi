@@ -30,10 +30,10 @@ export function dibujarProductos(productos) {
                             <button onclick="window.verUnidadesVehiculo(${p.id}, '${p.descripcion || p.sku}')" 
                                     class="text-indigo-600 dark:text-indigo-400 hover:scale-125 transition-transform font-bold mr-3" 
                                     title="Ver Unidades en Stock (Chasis/Motor)">
-                                🔍 Ver Stock
+                                    🔍
                             </button>
                             
-                            <button onclick="abrirModalUnidad(${p.id}, '${p.descripcion || p.sku}')" class="text-blue-600 hover:scale-125 transition-transform font-bold mr-2" title="Agregar Unidad Física / Chasis">➕ Unidad</button>
+                            <button onclick="abrirModalUnidad(${p.id}, '${p.descripcion || p.sku}')" class="text-blue-600 hover:scale-125 transition-transform font-bold mr-2" title="Agregar Unidad Física / Chasis">➕</button>
                         ` : ''}
                         
                         <button onclick="prepararEdicionProducto(${p.id})" class="hover:scale-150 transition-transform" title="Editar">✏️</button>
