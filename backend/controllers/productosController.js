@@ -288,23 +288,27 @@ exports.obtenerUnidadesDisponibles = async (req, res) => {
 };
 
 exports.agregarUnidadVehiculo = async (req, res) => {
+    const connection = await db.getConnection();
+
     try {
         const empresaId = req.empresaId;
-        const { productoId, chasis, motor, color, anio, patente } = req.body;
+        const { productoId, chasis, motor, color, anio, patente, tipo } = req.body;
 
         if (!productoId || !chasis?.trim() || !motor?.trim()) {
             return res.status(400).json({ error: "Producto, Chasis y Motor son obligatorios" });
         }
-
+        
+        await connection.beginTransaction();
         const sql = `
             INSERT INTO vehiculos_unidades 
-                (empresa_id, producto_id, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'Disponible', 1, NOW())
+                (empresa_id, producto_id, tipo, chasis, motor, color, anio, patente, estado_venta, estado, fecha_ingreso) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Disponible', 1, NOW())
         `;
 
         const params = [
             empresaId,
             productoId,
+            tipo || null,
             chasis.trim(),
             motor.trim(),
             color || 'S/C',
@@ -312,28 +316,35 @@ exports.agregarUnidadVehiculo = async (req, res) => {
             patente || null
         ];
 
-        const [result] = await db.query(sql, params);
-        
+        const [result] = await connection.query(sql, params);
+        await connection.commit();
         res.status(201).json({ mensaje: "Unidad agregada correctamente", id: result.insertId });
     } catch (err) {
+        await connection.rollback();
         console.error("Error al agregar unidad:", err.message);
         res.status(500).json({ error: err.message });
+    } finally {
+        await connection.release();
     }
 };
 
 
 exports.editarUnidadVehiculo = async (req, res) => {
+    const connection = await db.getConnection();
+
     try {
         const { id } = req.params;
         const empresaId = req.empresaId;
-        const { chasis, motor, color, anio, patente } = req.body;
+        const { tipo, chasis, motor, color, anio, patente } = req.body;
 
         if (!chasis?.trim() || !motor?.trim()) {
             return res.status(400).json({ error: "Chasis y Motor son obligatorios" });
         }
 
+        await connection.beginTransaction();
         const sql = `
             UPDATE vehiculos_unidades SET
+                tipo = ?,
                 chasis = ?,
                 motor = ?,
                 color = ?,
@@ -342,7 +353,8 @@ exports.editarUnidadVehiculo = async (req, res) => {
             WHERE empresa_id = ? AND id = ? AND estado = 1
         `;
 
-        const [result] = await db.query(sql, [
+        const [result] = await connection.query(sql, [
+            tipo || null,
             chasis.trim(),
             motor.trim(),
             color || 'S/C',
@@ -353,12 +365,17 @@ exports.editarUnidadVehiculo = async (req, res) => {
         ]);
 
         if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(404).json({ error: "Unidad física no encontrada o dada de baja" });
         }
 
+        await connection.commit();
         res.json({ mensaje: "Unidad física actualizada correctamente" });
     } catch (err) {
+        await connection.rollback();
         console.error("Error al editar la unidad de vehículo:", err.message);
         res.status(500).json({ error: err.message });
+    } finally {
+        await connection.release();
     }
 };

@@ -1,4 +1,3 @@
-// AGREGA ESTAS LÍNEAS AL PRINCIPIO DE TU ARCHIVO renderventas.js (junto a los otros imports que ya tengas)
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
