@@ -15,5 +15,5 @@ router.delete('/:id', verificarToken, verificarTenant, productosController.elimi
 router.get('/:productoId/unidades-disponibles', verificarToken, verificarTenant, productosController.obtenerUnidadesDisponibles);
 router.post('/agregar-unidad', verificarToken, verificarTenant, productosController.agregarUnidadVehiculo);
 router.put('/vehiculos/unidades/:id', verificarToken, verificarTenant, productosController.editarUnidadVehiculo);
-
+router.post('/categorias/nueva', verificarToken, verificarTenant, productosController.crearCategoria);
 module.exports = router;

@@ -2,29 +2,45 @@ const db = require('../database/database');
 const { formatearFechaHoraArgentina, ahoraArgentinaDate } = require('../utils/time');
 const { logAction } = require('../utils/audit');
 
-// Función auxiliar para obtener o crear categoría
-async function obtenerOCrearCategoria(nombreCategoria, empresaId) {
-    if (!nombreCategoria?.trim()) return null;
-    const nombreNormalizado = nombreCategoria.trim().toUpperCase();
-    const [existing] = await db.query("SELECT id FROM categorias WHERE empresa_id = ? AND nombre = ? AND estado = 1", [empresaId, nombreNormalizado]);
-    if (existing.length > 0) {
-        return existing[0].id;
-    }
-    const [result] = await db.query("INSERT INTO categorias (empresa_id, nombre, estado) VALUES (?, ?, 1)", [empresaId, nombreNormalizado]);
-    return result.insertId;
-}
+exports.crearCategoria = async (req, res) => {
+    try {
+        const empresaId = req.empresaId; // Identificamos la empresa del usuario
+        const { nombre } = req.body; // Recibimos el nombre que el usuario escribió en el modal
 
-// Función auxiliar para obtener o crear proveedor
-async function obtenerOCrearProveedor(nombreProveedor, empresaId) {
-    if (!nombreProveedor?.trim()) return null;
-    const nombreNormalizado = nombreProveedor.trim().toUpperCase();
-    const [existing] = await db.query("SELECT id FROM proveedores WHERE empresa_id = ? AND nombre = ? AND estado = 1", [empresaId, nombreNormalizado]);
-    if (existing.length > 0) {
-        return existing[0].id;
+        if (!nombre?.trim()) {
+            return res.status(400).json({ error: "El nombre de la categoría es obligatorio" });
+        }
+
+        const nombreNormalizado = nombre.trim().toUpperCase();
+
+        // 1. Verificamos si ya existe una categoría activa con ese mismo nombre para esta empresa
+        const [existing] = await db.query(
+            "SELECT id FROM categorias WHERE empresa_id = ? AND nombre = ? AND estado = 1", 
+            [empresaId, nombreNormalizado]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ error: "Esta categoría ya existe en tu sistema" });
+        }
+
+        // 2. Si no existe, la insertamos en la base de datos
+        const [result] = await db.query(
+            "INSERT INTO categorias (empresa_id, nombre, estado) VALUES (?, ?, 1)", 
+            [empresaId, nombreNormalizado]
+        );
+
+        // Respondemos con éxito y devolvemos el ID de la nueva categoría
+        res.status(201).json({ 
+            mensaje: "Categoría creada correctamente", 
+            id: result.insertId 
+        });
+
+    } catch (err) {
+        console.error("Error al crear categoría:", err.message);
+        res.status(500).json({ error: err.message });
     }
-    const [result] = await db.query(`INSERT INTO proveedores (empresa_id, nombre, estado) VALUES (?, ?, 1)`, [empresaId, nombreNormalizado]);
-    return result.insertId;
-}
+};
+
 
 exports.obtenerProductos = async (req, res) => {
     try {
@@ -81,7 +97,7 @@ exports.crearProducto = async (req, res) => {
             precio_neto,
             stock_minimo,
             control_stock,
-            categoria_nombre,
+            categoria_id,
             proveedor_nombre
         } = req.body;
 
@@ -89,17 +105,7 @@ exports.crearProducto = async (req, res) => {
             return res.status(400).json({ error: "Faltan campos requeridos" });
         }
 
-        let categoriaId = null;
-        if (categoria_nombre?.trim()) {
-            const nombreNormalizado = categoria_nombre.trim().toUpperCase();
-            const [existingCat] = await connection.query("SELECT id FROM categorias WHERE empresa_id = ? AND nombre = ? AND estado = 1", [empresaId, nombreNormalizado]);
-            if (existingCat.length > 0) {
-                categoriaId = existingCat[0].id;
-            } else {
-                const [resultCat] = await connection.query("INSERT INTO categorias (empresa_id, nombre, estado) VALUES (?, ?, 1)", [empresaId, nombreNormalizado]);
-                categoriaId = resultCat.insertId;
-            }
-        }
+        
 
         let proveedorId = null;
         if (proveedor_nombre?.trim()) {
@@ -139,7 +145,7 @@ exports.crearProducto = async (req, res) => {
                 precio_neto,
                 stock_minimo || 0,
                 control_stock ? 1 : 0,
-                categoriaId,
+                categoria_id || null,
                 proveedorId
             ]
         );

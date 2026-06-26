@@ -44,14 +44,19 @@ export async function fetchProveedores() {
 
 export async function poblarSelectCategorias() {
     const categorias = await fetchCategorias();
-    const datalist = document.getElementById("categoriasDatalist");
-    if (!datalist) return;
+    const select = document.getElementById("categoria"); // Buscamos el nuevo select
+    if (!select) return;
 
-    datalist.innerHTML = '';
+    // Limpiamos las opciones viejas, dejando solo la primera por defecto
+    select.innerHTML = '<option value="">Seleccione una categoría...</option>';
+    
+    // Recorremos las categorías y las agregamos como etiquetas <option>
     categorias.forEach(cat => {
         const option = document.createElement("option");
-        option.value = cat.nombre;
-        datalist.appendChild(option);
+        // IMPORTANTE: Ahora guardamos el ID en el value, no el nombre
+        option.value = cat.id; 
+        option.innerText = cat.nombre;
+        select.appendChild(option);
     });
 }
 
@@ -132,10 +137,9 @@ export function configurarFormularioProducto() {
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
+            categoria_id: document.getElementById("categoria").value,v,
             
-            categoria_nombre: document.getElementById("categoria").value.trim(),
             proveedor_nombre: document.getElementById("proveedor").value.trim(),
-            categoria: document.getElementById("categoria").value.trim(),
             proveedor: document.getElementById("proveedor").value.trim()
         };
 
@@ -183,7 +187,7 @@ export async function prepararEdicionProducto(id) {
     document.getElementById("descripcion").value = p.descripcion;
     document.getElementById("marca").value = p.marca;
     document.getElementById("modelo").value = p.modelo;
-    document.getElementById("categoria").value = p.categoria || '';
+    document.getElementById("categoria").value = p.categoria_id || '';
     document.getElementById("proveedor").value = p.proveedor || '';
     document.getElementById("costo").value = p.costo;
     document.getElementById("precio_neto").value = p.precio_neto;
@@ -312,6 +316,68 @@ export async function initProductos() {
     }
 
     window.restaurarProducto = restaurarProducto;
+
+    // === CONTROL DEL MODAL DE NUEVA CATEGORÍA ===
+    const modalCat = document.getElementById("modalAgregarCategoria");
+    const btnAbrirCat = document.getElementById("btnAbrirModalCategoria");
+    const btnCerrarCatX = document.getElementById("btnCerrarModalCategoriaX");
+    const btnCancelarCat = document.getElementById("btnCancelarCategoria");
+    const formNuevaCat = document.getElementById("formNuevaCategoria");
+
+    // Abrir el modal al presionar '+'
+    if (btnAbrirCat && modalCat) {
+        btnAbrirCat.onclick = () => {
+            if (formNuevaCat) formNuevaCat.reset();
+            modalCat.classList.remove("hidden");
+        };
+    }
+
+    // Función auxiliar para cerrar el modal
+    const cerrarMiModalCat = () => {
+        if (modalCat) modalCat.classList.add("hidden");
+    };
+
+    if (btnCerrarCatX) btnCerrarCatX.onclick = cerrarMiModalCat;
+    if (btnCancelarCat) btnCancelarCat.onclick = cerrarMiModalCat;
+
+    // Escuchar el envío del formulario del modal (Guardar Categoría)
+    if (formNuevaCat) {
+        formNuevaCat.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const nombreInput = document.getElementById("nuevoNombreCategoria");
+            if (!nombreInput) return;
+
+            const datos = {
+                nombre: nombreInput.value.trim().toUpperCase()
+            };
+
+            try {
+                // Hacemos un POST a un nuevo endpoint en el backend que crearemos luego
+                const response = await apiFetch(`${API_URL}/categorias/nueva`, {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Error al guardar la categoría");
+                }
+
+                mostrarAlerta("Categoría añadida con éxito", "¡Éxito!", "success");
+                cerrarMiModalCat();
+                
+                // Volvemos a cargar las categorías para que aparezca la nueva en el select
+                await poblarSelectCategorias();
+                
+            } catch (err) {
+                console.error("Error al guardar la categoría:", err);
+                mostrarAlerta(err.message, "Error", "error");
+            }
+        };
+    }
+
 }
 
 // ==========================================

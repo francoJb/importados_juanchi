@@ -600,10 +600,22 @@
                                         <input type="text" id="modelo" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-bold mb-1">Proveedor</label>
-                                    <input id="proveedor" list="proveedoresDatalist" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="Ingrese o seleccione un proveedor">
-                                    <datalist id="proveedoresDatalist"></datalist>
+                                <div class="mb-4">
+                                    <label for="proveedor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Proveedor
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <select id="proveedor" name="proveedor" 
+                                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">Seleccione un proveedor...</option>
+                                            </select>
+                                        
+                                        <button type="button" id="btnAbrirModalProveedor" 
+                                                class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold text-lg flex items-center justify-center transition-colors h-[42px] w-[42px]"
+                                                title="Agregar un nuevo proveedor">
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Imagen (URL)</label>
@@ -612,10 +624,22 @@
                             </div>
                             <!-- Columna Derecha -->
                             <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-bold mb-1">Categoría</label>
-                                    <input id="categoria" list="categoriasDatalist" class="w-full border p-2 rounded-lg dark:bg-slate-700" placeholder="Ingrese o seleccione una categoría">
-                                    <datalist id="categoriasDatalist"></datalist>
+                                <div class="mb-4">
+                                    <label for="categoria" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Categoría
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <select id="categoria" name="categoria" 
+                                                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">Seleccione una categoría...</option>
+                                            </select>
+                                        
+                                        <button type="button" id="btnAbrirModalCategoria" 
+                                                class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold text-lg flex items-center justify-center transition-colors h-[42px] w-[42px]"
+                                                title="Agregar nueva categoría">
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                     <div>
@@ -1435,6 +1459,74 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div id="modalAgregarCategoria" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 mx-4">
+                
+                <div class="flex justify-between items-center border-b pb-3 border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Nueva Categoría</h3>
+                    <button type="button" id="btnCerrarModalCategoriaX" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-xl">
+                        &times;
+                    </button>
+                </div>
+
+                <form id="formNuevaCategoria" class="mt-4">
+                    <div class="mb-4">
+                        <label for="nuevoNombreCategoria" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Nombre de la Categoría
+                        </label>
+                        <input type="text" id="nuevoNombreCategoria" placeholder="Ej: REPUESTOS, MOTOS" required
+                            class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" id="btnCancelarCategoria" 
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <div id="modalAgregarProveedor" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 mx-4">
+                
+                <div class="flex justify-between items-center border-b pb-3 border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Nuevo Proveedor</h3>
+                    <button type="button" id="btnCerrarModalProveedorX" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-xl">
+                        &times;
+                    </button>
+                </div>
+
+                <form id="formNuevoProveedor" class="mt-4">
+                    <div class="mb-4">
+                        <label for="nuevoNombreProveedor" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Nombre del proveedor
+                        </label>
+                        <input type="text" id="nuevoNombreProveedor" required
+                            class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" id="btnCancelarProveeror" 
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+
             </div>
         </div>
 
