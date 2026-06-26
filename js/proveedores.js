@@ -58,6 +58,24 @@ export async function actualizarProveedor(id, proveedor) {
     }
 }
 
+// En tu archivo de proveedores:
+export async function poblarSelectProveedores() {
+    const proveedores = await fetchProveedores(); // Tu función que trae los proveedores de la base de datos
+    const select = document.getElementById("proveedor"); // El ID del select en tu HTML
+    if (!select) return;
+
+    // Limpiamos las opciones viejas
+    select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
+    
+    // Llenamos el select con los nuevos datos
+    proveedores.forEach(prov => {
+        const option = document.createElement("option");
+        option.value = prov.id; // IMPORTANTE: Guardamos el ID
+        option.innerText = prov.nombre; // Mostramos el nombre
+        select.appendChild(option);
+    });
+}
+
 // 4. ELIMINAR PROVEEDOR
 export async function eliminarProveedor(id, nombre) {
     if (!confirm(`¿Estás seguro de eliminar el proveedor "${nombre}"?`)) return;

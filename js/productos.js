@@ -2,6 +2,7 @@ import { dibujarProductos } from "./renderproductos.js";
 import { cambiarSeccion, mostrarAlerta, mostrarConfirmacion } from "./ui.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
+import { poblarSelectProveedores } from "./proveedores.js";
 
 const API_URL = `${API_BASE_URL}/api/productos`;
 let productosEstado = 'activos';
@@ -57,19 +58,6 @@ export async function poblarSelectCategorias() {
         option.value = cat.id; 
         option.innerText = cat.nombre;
         select.appendChild(option);
-    });
-}
-
-export async function poblarSelectProveedores() {
-    const proveedores = await fetchProveedores();
-    const datalist = document.getElementById("proveedoresDatalist");
-    if (!datalist) return;
-
-    datalist.innerHTML = '';
-    proveedores.forEach(prov => {
-        const option = document.createElement("option");
-        option.value = prov.nombre;
-        datalist.appendChild(option);
     });
 }
 
