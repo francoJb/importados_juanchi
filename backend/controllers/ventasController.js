@@ -358,7 +358,7 @@ exports.crearVenta = async (req, res) => {
         const [detallesFinales] = await connection.query(`
             SELECT 
                 dv.cantidad,
-                dv.precio_unitario as precio,
+                dv.precio_unitario,
                 p.descripcion,
                 p.sku,
                 -- Traemos las especificaciones del vehículo si es que fue enlazado en la venta
@@ -493,9 +493,22 @@ exports.obtenerDetalleVenta = async (req, res) => {
         const empresaId = req.empresaId;
 
         const query = `
-            SELECT dv.*, p.descripcion, p.sku 
+            SELECT 
+                dv.*,
+                p.descripcion,
+                p.sku,
+                vu.chasis as vehiculo_chasis,
+                vu.motor as vehiculo_motor,
+                vu.color as vehiculo_color,
+                vu.anio as vehiculo_anio,
+                vu.patente,
+                p.marca,
+                p.modelo
             FROM detalle_ventas dv
             JOIN productos p ON dv.producto_id = p.id
+            LEFT JOIN vehiculos_unidades vu 
+                ON vu.venta_id = dv.venta_id 
+                AND vu.producto_id = p.id
             WHERE dv.venta_id = ? AND dv.empresa_id = ?
         `;
         

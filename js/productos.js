@@ -125,7 +125,7 @@ export function configurarFormularioProducto() {
             stock: Number(document.getElementById("stock").value),
             stock_minimo: Number(document.getElementById("stock_minimo").value),
             control_stock: document.getElementById("control_stock").checked ? 1 : 0,
-            categoria_id: document.getElementById("categoria").value,v,
+            categoria_id: document.getElementById("categoria").value,
             
             proveedor_nombre: document.getElementById("proveedor").value.trim(),
             proveedor: document.getElementById("proveedor").value.trim()
@@ -464,6 +464,7 @@ if (formNuevaUnidad) {
         
         const data = {
             productoId: document.getElementById('unidadProductoId').value,
+            tipo:document.getElementById('addTipo').value.trim(),
             chasis: document.getElementById('addChasis').value.trim(),
             motor: document.getElementById('addMotor').value.trim(),
             color: document.getElementById('addColor').value.trim(),

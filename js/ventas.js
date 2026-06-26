@@ -1650,8 +1650,11 @@ async function generarFacturaPDFExistente(venta, detalles) {
         doc.text(item.cantidad.toString(), margin, y);
         const descLines = doc.splitTextToSize(item.descripcion, 80);
         doc.text(descLines, margin + 20, y);
-        doc.text(`$${parseFloat(item.precio_unitario).toFixed(2)}`, pageWidth - 60, y, { align: "right" });
-        doc.text(`$${(item.cantidad * item.precio_unitario).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
+        const precioUnitario = parseFloat(item.precio_unitario || item.precio || 0);
+        const cantidad = parseFloat(item.cantidad || 0);
+
+        doc.text(`$${precioUnitario.toFixed(2)}`, pageWidth - 60, y, { align: "right" });
+        doc.text(`$${(cantidad * precioUnitario).toFixed(2)}`, pageWidth - margin, y, { align: "right" });
         y += descLines.length * 5 + 2;
 
         if (item.vehiculo_chasis || item.vehiculo_motor) {
