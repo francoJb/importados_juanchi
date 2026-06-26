@@ -38,7 +38,16 @@ export function actualizarTablaVenta(carritoVenta) {
                     <div>${item.descripcion}</div>
                     ${selectorVehiculoHtml}
                 </td>
-                <td class="p-4 text-right font-mono">$${item.precio.toFixed(2)}</td>
+                <td class="p-4 text-right font-mono">
+                    <input 
+                        type="number" 
+                        value="${item.precio}" 
+                        min="0" 
+                        step="0.01" 
+                        class="input-precio w-24 p-1 text-right border rounded bg-transparent" 
+                        data-index="${index}"
+                    >
+                </td>
                 <td class="p-4 text-center">
                     ${inputCantidadHtml}
                 </td>
@@ -83,7 +92,26 @@ export function actualizarTablaVenta(carritoVenta) {
 
                 // Registrar el evento change para actualizar el carrito en vivo
                 combo.addEventListener("change", (e) => {
-                    carritoVenta[index].unidadSeleccionadaId = e.target.value ? parseInt(e.target.value, 10) : null;
+                    const unidadElegidaId = e.target.value ? parseInt(e.target.value, 10) : null;
+
+                    if (!unidadElegidaId) {
+                        carritoVenta[index].unidadSeleccionadaId = null;
+                        return;
+                    }
+
+                    const unidadYaElegida = carritoVenta.some((item, i) => {
+                        return i !== index && item.unidadSeleccionadaId === unidadElegidaId;
+                    });
+
+                    if (unidadYaElegida) {
+                        alert("Ese chasis ya fue seleccionado en el carrito.");
+
+                        carritoVenta[index].unidadSeleccionadaId = null;
+                        e.target.value = "";
+                        return;
+                    }
+
+                    carritoVenta[index].unidadSeleccionadaId = unidadElegidaId;
                 });
             }
         }
@@ -105,6 +133,21 @@ export function actualizarTablaVenta(carritoVenta) {
                 carritoVenta[index].cantidad = nuevaCantidad;
                 carritoVenta[index].subtotal = nuevaCantidad * carritoVenta[index].precio;
                 actualizarTablaVenta(carritoVenta);
+            }
+        });
+    });
+    document.querySelectorAll(".input-precio").forEach(input => {
+        input.addEventListener("change", (e) => {
+            const index = e.target.dataset.index;
+            const nuevoPrecio = parseFloat(e.target.value);
+
+            if (Number.isFinite(nuevoPrecio) && nuevoPrecio >= 0) {
+                carritoVenta[index].precio = nuevoPrecio;
+                carritoVenta[index].subtotal = carritoVenta[index].cantidad * nuevoPrecio;
+                actualizarTablaVenta(carritoVenta);
+            } else {
+                alert("El precio ingresado no es válido.");
+                e.target.value = carritoVenta[index].precio;
             }
         });
     });

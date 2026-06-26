@@ -153,6 +153,17 @@ exports.crearVenta = async (req, res) => {
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "La venta debe tener al menos un ítem." });
     }
+    const unidadesSeleccionadas = items
+        .map(item => item.unidadSeleccionadaId)
+        .filter(id => id !== null && id !== undefined && id !== "");
+
+    const unidadesUnicas = new Set(unidadesSeleccionadas);
+
+    if (unidadesSeleccionadas.length !== unidadesUnicas.size) {
+        return res.status(400).json({
+            error: "No se puede vender dos veces el mismo chasis/unidad en la misma venta."
+        });
+    }
 
     if (!Number.isFinite(totalVenta) || totalVenta <= 0) {
         return res.status(400).json({ error: "El total de la venta debe ser mayor a 0." });

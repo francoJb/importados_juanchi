@@ -151,6 +151,15 @@ window.volverALista = () => {
 
 window.cargarDatosParaVenta = cargarDatosParaVenta;
 
+function esProductoVehiculo(p) {
+    return (
+        (p.categoria && p.categoria.toUpperCase().startsWith("VEHICULO")) ||
+        (p.vehiculo_tipo && p.vehiculo_tipo.trim() !== "") ||
+        (p.vehiculo_motor && p.vehiculo_motor.trim() !== "") ||
+        (p.vehiculo_chasis && p.vehiculo_chasis.trim() !== "")
+    );
+}
+
 window.checkEnterVenta = async (e) => {
     if (e.key === 'Enter' || e.keyCode === 13) {
         const skuIngresado = e.target.value.trim().toUpperCase();
@@ -158,15 +167,18 @@ window.checkEnterVenta = async (e) => {
 
         const productos = await fetchProductos();
         const p = productos.find(item => item.sku.toUpperCase() === skuIngresado);
-
+        
+        const esVehiculo = esProductoVehiculo(p);
         if (p) {
             const nuevoItem = {
                 id: p.id,
                 sku: p.sku,
-                desc: p.descripcion,
+                descripcion: p.descripcion,
                 precio: parseFloat(p.precio_neto),
                 cantidad: 1,
-                subtotal: parseFloat(p.precio_neto)
+                subtotal: parseFloat(p.precio_neto),
+                esVehiculo: esVehiculo,
+                unidadSeleccionadaId: null
             };
 
             carritoVenta.push(nuevoItem);
@@ -215,8 +227,7 @@ window.agregarProductosSeleccionados = async () => {
         const p = productos.find(item => item.sku === sku);
 
         if (p) {
-            const esVehiculo = (p.vehiculo_motor && p.vehiculo_motor.trim() !== "") || 
-                               (p.vehiculo_chasis && p.vehiculo_chasis.trim() !== "");
+            const esVehiculo = esProductoVehiculo(p);
             
             const existing = carritoVenta.find(item => item.sku === sku);
             
@@ -273,7 +284,7 @@ window.agregarItemVenta = () => {
     const item = {
         id: select.value,
         sku: opt.dataset.sku,
-        desc: opt.dataset.desc,
+        desc: opt.dataset.descripcion,
         precio: parseFloat(opt.dataset.precio),
         cantidad: 1,
     };
@@ -423,7 +434,7 @@ window.procesarVentaFinal = async () => {
     // Validar si el vehículo tiene su chasis/motor seleccionado antes de enviar
     const vehiculoSinUnidad = carritoVenta.find(item => item.esVehiculo && !item.unidadSeleccionadaId);
     if (vehiculoSinUnidad) {
-        mostrarAlerta(`Por favor, seleccioná el Chasis/Motor para el vehículo: "${vehiculoSinUnidad.desc}".`, "Falta seleccionar unidad", "warning");
+        mostrarAlerta(`Por favor, seleccioná el Chasis/Motor para el vehículo: "${vehiculoSinUnidad.descripcion}".`, "Falta seleccionar unidad", "warning");
         return;
     }
 
@@ -1446,7 +1457,7 @@ async function generarPlanPagosPDF(venta, detalles, cuotas) {
             lineasAdicionalesVehiculo = 1;
         }
         // Validación dinámica de salto de página considerando la descripción y el bloque técnico
-        const descLines = doc.splitTextToSize(item.descripcion || item.desc || "-", 150);
+        const descLines = doc.splitTextToSize(item.descripcion || item.descripcion || "-", 150);
         const altoNecesario = (descLines.length * 5) + (lineasAdicionalesVehiculo * 4.5) + 4;
         nuevaPaginaSiHaceFalta(altoNecesario);
 
