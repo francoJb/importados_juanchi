@@ -1,1 +1,0 @@
-ALTER TABLE vehiculos_unidades ADD COLUMN tipo VARCHAR(10) NOT NULL AFTER estado;
