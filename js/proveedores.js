@@ -178,19 +178,28 @@ export async function manejarSubmitProveedor(event) {
     };
 
     try {
+        let proveedorGuardado;
+
         if (id) {
-            await actualizarProveedor(id, proveedor);
+            proveedorGuardado = await actualizarProveedor(id, proveedor);
         } else {
-            await crearProveedor(proveedor);
+            proveedorGuardado = await crearProveedor(proveedor);
         }
+
         limpiarFormularioProveedor();
         toggleModal('modalProveedor', false);
+
         await listarProveedores(proveedoresEstado);
+        await poblarSelectProveedores();
+
+        if (proveedorGuardado?.id) {
+            document.getElementById("proveedor").value = proveedorGuardado.id;
+        }
+
     } catch (error) {
         console.error("Error al guardar el proveedor:", error);
     }
 }
-
 // 10. INICIALIZACIÓN
 export async function initProveedores() {
     await listarProveedores();
