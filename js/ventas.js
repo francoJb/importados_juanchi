@@ -694,11 +694,27 @@ function renderVentasPendientesModal() {
 
     const tbody = document.getElementById('modalPago-ventasPendientes');
     const titulo = document.getElementById('modalPago-listaTitulo');
+    const todasSeleccionadas = ventasPendientesModal.length > 0 && ventasPendientesModal.every(v => ventasSeleccionadasModal.has(v.id));
+    
     if (titulo) {
         titulo.textContent = modoCobranzaCuotas ? "Cuotas pendientes" : "Ventas pendientes del cliente";
     }
+    
+    const headerSeleccionarTodos = `
+    <tr class="bg-gray-50 dark:bg-slate-800">
+        <td class="p-2">
+            <input 
+                type="checkbox"
+                id="modalPago-check-todos"
+                class="h-4 w-4"
+                ${todasSeleccionadas ? "checked" : ""}
+            >
+        </td>
+        <td class="p-2 font-bold" colspan="3">Seleccionar todos</td>
+    </tr>
+`;
 
-    tbody.innerHTML = ventasPendientesModal.map(v => {
+    tbody.innerHTML = headerSeleccionarTodos + ventasPendientesModal.map(v => {
         let textoIdentificador = v.label || `#${v.id}`;
         
         // Simplificamos la condición: Si la propiedad existe en el objeto, la usamos directamente
@@ -724,6 +740,30 @@ function renderVentasPendientesModal() {
             </tr>
         `;
     }).join('');
+
+    const checkTodos = document.getElementById('modalPago-check-todos');
+
+    if (checkTodos) {
+        checkTodos.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                ventasSeleccionadasModal = new Set(ventasPendientesModal.map(v => v.id));
+            } else {
+                ventasSeleccionadasModal.clear();
+            }
+
+            const totalSeleccionado = obtenerTotalSeleccionadoModal();
+            const inputMonto = document.getElementById('modalPago-monto');
+
+            if (e.target.checked) {
+                inputMonto.value = totalSeleccionado.toFixed(2);
+            } else {
+                inputMonto.value = "0.00";
+            }
+
+            renderVentasPendientesModal();
+            actualizarResumenPagoModal();
+        });
+    }
 
     document.querySelectorAll('.modalPago-check-venta').forEach(check => {
         check.addEventListener('change', (e) => {
@@ -911,36 +951,89 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
         let montoRestante = monto;
         const pagosRealizados = [];
 
-        for (const venta of ventasSeleccionadas) {
-            if (montoRestante <= 0) break;
-            const saldoVenta = parseFloat(venta.saldo_pendiente);
-            const montoParaVenta = Math.min(montoRestante, saldoVenta);
-            const ventaIdPago = modoCobranzaCuotas ? venta.venta_id : venta.id;
+        if (modoCobranzaCuotas) {
+            const gruposPorVenta = {};
 
-            const response = await apiFetch(`${URL_API}/${ventaIdPago}/pago`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    monto: montoParaVenta,
-                    metodo: metodo,
-                    observaciones: observaciones,
-                    cuota_ids: modoCobranzaCuotas ? [venta.id] : undefined
-                })
-            });
+            ventasSeleccionadas.forEach(cuota => {
+                const ventaId = cuota.venta_id;
 
-            const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${ventaIdPago}`);
+                if (!gruposPorVenta[ventaId]) {
+                    gruposPorVenta[ventaId] = {
+                        ventaId: ventaId,
+                        montoTotal: 0,
+                        cuotaIds: [],
+                        cuotas: []
+                    };
                 }
 
-            pagosRealizados.push({
-                ventaId: ventaIdPago,
-                montoPagado: montoParaVenta,
-                nuevoSaldo: data.nuevoSaldo,
-                reciboId: data.reciboId || null,
-                reciboNumero: data.reciboNumero || null
+                gruposPorVenta[ventaId].montoTotal += parseFloat(cuota.saldo_pendiente || 0);
+                gruposPorVenta[ventaId].cuotaIds.push(cuota.id);
+                gruposPorVenta[ventaId].cuotas.push(cuota);
             });
-            montoRestante -= montoParaVenta;
+
+            for (const grupo of Object.values(gruposPorVenta)) {
+                const response = await apiFetch(`${URL_API}/${grupo.ventaId}/pago`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        monto: grupo.montoTotal,
+                        metodo: metodo,
+                        observaciones: observaciones,
+                        cuota_ids: grupo.cuotaIds
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${grupo.ventaId}`);
+                }
+
+                pagosRealizados.push({
+                    ventaId: grupo.ventaId,
+                    montoPagado: grupo.montoTotal,
+                    nuevoSaldo: data.nuevoSaldo,
+                    reciboId: data.reciboId || null,
+                    reciboNumero: data.reciboNumero || null,
+                    cuotasCanceladas: grupo.cuotas
+                });
+            }
+        } else {
+            let montoRestante = monto;
+
+            for (const venta of ventasSeleccionadas) {
+                if (montoRestante <= 0) break;
+
+                const saldoVenta = parseFloat(venta.saldo_pendiente);
+                const montoParaVenta = Math.min(montoRestante, saldoVenta);
+
+                const response = await apiFetch(`${URL_API}/${venta.id}/pago`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        monto: montoParaVenta,
+                        metodo: metodo,
+                        observaciones: observaciones
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `No se pudo registrar el pago de la venta #${venta.id}`);
+                }
+
+                pagosRealizados.push({
+                    ventaId: venta.id,
+                    montoPagado: montoParaVenta,
+                    nuevoSaldo: data.nuevoSaldo,
+                    reciboId: data.reciboId || null,
+                    reciboNumero: data.reciboNumero || null,
+                    cuotasCanceladas: []
+                });
+
+                montoRestante -= montoParaVenta;
+            }
         }
 
         if (pagosRealizados.length === 0) {
@@ -975,7 +1068,8 @@ document.getElementById('btnAcceptRegistroPago').addEventListener('click', async
                     comprobantesCanceladosNumeros,
                     observaciones,
                     metodo,
-                    pago.reciboNumero
+                    pago.reciboNumero,
+                    pago.cuotasCanceladas || []
                 );
                 abrirPreviewPDF(doc, `ReciboPago_${pago.reciboNumero || (ventaActualizada ? (ventaActualizada.numero || ventaActualizada.id) : 'sin-id')}.pdf`);
             }
@@ -1094,7 +1188,7 @@ async function fetchVentaPorId(ventaId) {
     return ventas.find(v => v.id == ventaId);
 }
 
-async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "", metodoPago = null, reciboNumero = null) {
+async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantesCancelados = [], observacionesPago = "", metodoPago = null, reciboNumero = null, cuotasCanceladas = []) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1153,6 +1247,25 @@ async function generarReciboPagoPDF(venta, montoPagado, nuevoSaldo, comprobantes
     y += 7;
     doc.text(`Saldo de cuenta corriente después del pago: $${parseFloat(nuevoSaldo).toFixed(2)}.`, margin, y);
     y += 15;
+
+    if (cuotasCanceladas.length > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Cuotas canceladas:", margin, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+
+        cuotasCanceladas.forEach(cuota => {
+            doc.text(
+                `${cuota.label} - Importe: $${parseFloat(cuota.saldo_pendiente || 0).toFixed(2)}`,
+                margin,
+                y
+            );
+            y += 6;
+        });
+
+        y += 6;
+    }
 
     if (comprobantesCancelados.length > 0) {
         const comprobantesFormateados = comprobantesCancelados.map(numero => formatearNumeroDocumento(numero));
