@@ -10,18 +10,6 @@ const URL_API = `${API_BASE_URL}/api/ventas`;
 const PUNTO_VENTA_DEFAULT = "0001";
 
 
-function obtenerDatosEmpresa() {
-    const config = load("empresaConfig");
-    if (!config || Array.isArray(config)) {
-        return DATOS_VENDEDOR;
-    }
-    return {
-        razonSocial: config.razonSocial || DATOS_VENDEDOR.razonSocial,
-        nombreFantasia: config.nombreFantasia || DATOS_VENDEDOR.nombreFantasia,
-        domicilio: config.domicilio || DATOS_VENDEDOR.domicilio,
-        cuit: config.cuit || DATOS_VENDEDOR.cuit
-    };
-}
 // 5. BUSCADOR DE VENTAS (Seccion Ventas)
 export function configurarBuscadorVentas() {
     const inputBusqueda = document.getElementById("buscarVentas");
@@ -57,22 +45,29 @@ function formatearNumeroDocumento(numero, puntoVenta = PUNTO_VENTA_DEFAULT) {
 async function obtenerDatosEmpresaActual() {
     try {
         const response = await apiFetch(`${API_BASE_URL}/api/auth/empresa-actual`);
+
         if (!response.ok) {
-            return obtenerDatosEmpresa();
+            throw new Error("No se pudieron obtener los datos de la empresa actual");
         }
 
         const data = await response.json();
-        const empresa = data.empresa;
-        
+        const empresa = data.empresa || {};
+
         return {
-            razonSocial: empresa.razon_social || DATOS_VENDEDOR.razonSocial,
-            nombreFantasia: empresa.nombre || DATOS_VENDEDOR.nombreFantasia,
-            domicilio: empresa.domicilio || DATOS_VENDEDOR.domicilio,
-            cuit: empresa.cuit || DATOS_VENDEDOR.cuit
+            razonSocial: empresa.razon_social || empresa.nombre || "Empresa sin razón social",
+            nombreFantasia: empresa.nombre || "Empresa sin nombre comercial",
+            domicilio: empresa.domicilio || "Domicilio no configurado",
+            cuit: empresa.cuit || "CUIT no configurado"
         };
     } catch (error) {
-        console.error('Error obteniendo datos de empresa:', error);
-        return obtenerDatosEmpresa();
+        console.error("Error obteniendo datos de empresa:", error);
+
+        return {
+            razonSocial: "Empresa no configurada",
+            nombreFantasia: "Empresa no configurada",
+            domicilio: "Domicilio no configurado",
+            cuit: "CUIT no configurado"
+        };
     }
 }
 
