@@ -206,13 +206,19 @@ export async function initProveedores() {
     configurarFormularioProveedor();
     configurarBuscadorProveedores();
 
-    const btnAbrirModalProveedor = document.getElementById("btnAbrirModalProveedor");
-    if (btnAbrirModalProveedor) {
-        btnAbrirModalProveedor.onclick = () => {
-            limpiarFormularioProveedor();
-            toggleModal('modalProveedor', true);
-        };
-    }
+    const botonesAbrirModalProveedor = [
+        document.getElementById("btnAbrirModalProveedorProducto"),
+        document.getElementById("btnAbrirModalProveedorSeccion")
+    ];
+
+    botonesAbrirModalProveedor.forEach((boton) => {
+        if (boton) {
+            boton.onclick = () => {
+                limpiarFormularioProveedor();
+                toggleModal('modalProveedor', true);
+            };
+        }
+    });
 
     const toggleEliminados = document.getElementById("toggleProveedoresEliminados");
     if (toggleEliminados) {

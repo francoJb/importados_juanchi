@@ -12,7 +12,7 @@ import { load, save } from "./storage.js";
 import { API_BASE_URL } from "./config.js";
 import { apiFetch } from "./apiClient.js";
 
-const CONFIG_STORAGE_KEY = "empresaConfig";
+
 const URL_API_VENTAS = `${API_BASE_URL}/api/ventas`;
 let chartVentasDashboard = null;
 let currentSessionUser = null;
@@ -29,6 +29,15 @@ function esPlatformAdmin() {
 
 function esUsuarioEmpresa() {
     return ['tenant_admin', 'user'].includes(currentSessionUser?.role);
+}
+
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }
 
 function aplicarPermisosUsuario() {
@@ -115,56 +124,7 @@ async function validarSesionActual() {
     }
 }
 
-const CONFIG_DEFAULTS = {
-    razonSocial: "JR Import S.A.",
-    nombreFantasia: "JR Import",
-    domicilio: "Calle Ficticia 123, Ciudad Autónoma de Buenos Aires",
-    cuit: "30-12345678-9",
-    email: "info@jrimport.com",
-    telefono: "(011) 1234-5678",
-    website: "www.jrimport.com",
-    condicionIva: "Responsable Inscripto"
-};
 
-// ==========================================
-// CONFIGURACIÓN LOCAL DE LA EMPRESA
-// ==========================================
-function obtenerConfiguracionEmpresa() {
-    const config = load(CONFIG_STORAGE_KEY);
-    if (!config || Array.isArray(config)) {
-        return CONFIG_DEFAULTS;
-    }
-    return { ...CONFIG_DEFAULTS, ...config };
-}
-
-function popularFormularioConfiguracion() {
-    const config = obtenerConfiguracionEmpresa();
-    document.getElementById("configRazonSocial").value = config.razonSocial;
-    document.getElementById("configNombreFantasia").value = config.nombreFantasia;
-    document.getElementById("configCuit").value = config.cuit;
-    document.getElementById("configDomicilio").value = config.domicilio;
-    document.getElementById("configEmail").value = config.email;
-    document.getElementById("configTelefono").value = config.telefono;
-    document.getElementById("configWebsite").value = config.website;
-    document.getElementById("configCondicionIva").value = config.condicionIva;
-}
-
-function guardarConfiguracionEmpresa(event) {
-    event.preventDefault();
-    const nuevaConfig = {
-        razonSocial: document.getElementById("configRazonSocial").value.trim(),
-        nombreFantasia: document.getElementById("configNombreFantasia").value.trim(),
-        cuit: document.getElementById("configCuit").value.trim(),
-        domicilio: document.getElementById("configDomicilio").value.trim(),
-        email: document.getElementById("configEmail").value.trim(),
-        telefono: document.getElementById("configTelefono").value.trim(),
-        website: document.getElementById("configWebsite").value.trim(),
-        condicionIva: document.getElementById("configCondicionIva").value.trim()
-    };
-
-    save(CONFIG_STORAGE_KEY, nuevaConfig);
-    mostrarAlerta("Datos de la empresa guardados correctamente.", "¡Éxito!", "success");
-}
 
 // ==========================================
 // ADMINISTRACIÓN DE EMPRESAS Y USUARIOS
@@ -188,10 +148,10 @@ function popularEmpresasAdmin(empresas) {
     if (lista) {
         lista.innerHTML = empresas.map(e => `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                <td class="p-3">${e.nombre}</td>
-                <td class="p-3">${e.razon_social || '-'}</td>
-                <td class="p-3 text-right">${e.cuit || '-'}</td>
-                <td class="p-3">${e.domicilio || '-'}</td>
+                <td class="p-3">${escapeHTML(e.nombre)}</td>
+                <td class="p-3">${escapeHTML(e.razon_social || '-')}</td>
+                <td class="p-3 text-right">${escapeHTML(e.cuit || '-')}</td>
+                <td class="p-3">${escapeHTML(e.domicilio || '-')}</td>
                 <td class="p-3 text-center">
                     <button type="button" onclick="prepararEdicionEmpresa(${e.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
                 </td>
@@ -205,11 +165,11 @@ function popularUsuariosAdmin(usuarios) {
     if (!lista) return;
     lista.innerHTML = usuarios.map(u => `
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-            <td class="p-3">${u.nombre || '-'}</td>
-            <td class="p-3">${u.apellido || '-'}</td>
-            <td class="p-3">${u.usuario}</td>
-            <td class="p-3">${u.empresa_nombre}</td>
-            <td class="p-3 text-center uppercase">${u.role}</td>
+            <td class="p-3">${escapeHTML(u.nombre || '-')}</td>
+            <td class="p-3">${escapeHTML(u.apellido || '-')}</td>
+            <td class="p-3">${escapeHTML(u.usuario)}</td>
+            <td class="p-3">${escapeHTML(u.empresa_nombre)}</td>
+            <td class="p-3 text-center uppercase">${escapeHTML(u.role)}</td>
             <td class="p-3 text-center">
                 <button type="button" onclick="prepararEdicionUsuario(${u.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
             </td>
@@ -396,7 +356,7 @@ function generarListaStockBajo(productos) {
 
     return bajos.map(p => `
         <div class="rounded-2xl border border-orange-100 dark:border-orange-900/40 bg-orange-50/70 dark:bg-orange-950/20 p-4">
-            <p class="font-bold text-gray-900 dark:text-white">${p.descripcion || p.sku}</p>
+            <p class="font-bold text-gray-900 dark:text-white">${escapeHTML(p.descripcion || p.sku)}</p>
             <p class="text-sm text-gray-600 dark:text-gray-400">Stock: ${p.stock} / Min: ${p.stock_minimo}</p>
         </div>
     `).join('');
@@ -489,10 +449,12 @@ async function renderDashboard() {
         const ultimas5 = ventas.slice(0, 5);
         document.getElementById("dashboardUltimasVentasBody").innerHTML = ultimas5.map(v => {
             const fecha = fechaValida(v.fecha);
+            const cliente = v.cliente_nombre
+            ? `${v.cliente_nombre} ${v.cliente_apellido || ''}`: 'Consumidor Final';
             return `
                 <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                     <td class="p-3 font-mono text-gray-700 dark:text-gray-200">#${v.id}</td>
-                    <td class="p-3 text-gray-600 dark:text-gray-300">${v.cliente_nombre ? `${v.cliente_nombre} ${v.cliente_apellido || ''}` : 'Consumidor Final'}</td>
+                    <td class="p-3 text-gray-600 dark:text-gray-300">${escapeHTML(cliente)}</td>
                     <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${formatMoney(v.total)}</td>
                     <td class="p-3 text-sm font-semibold ${v.estado_pago && v.estado_pago.toLowerCase().includes('pagado') ? 'text-green-600' : 'text-orange-500'}">${v.estado_pago || 'Pendiente'}</td>
                     <td class="p-3">${fecha ? fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}</td>
@@ -503,7 +465,7 @@ async function renderDashboard() {
         const topProductos = await obtenerTopProductosMasVendidos(ventas);
         document.getElementById("dashboardTopProductosBody").innerHTML = topProductos.map(p => `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                <td class="p-3 text-gray-700 dark:text-gray-200">${p.descripcion}</td>
+                <td class="p-3 text-gray-700 dark:text-gray-200">${escapeHTML(p.descripcion)}</td>
                 <td class="p-3 text-right font-bold text-slate-900 dark:text-white">${p.cantidad}</td>
             </tr>
         `).join('');
@@ -525,7 +487,6 @@ async function renderDashboard() {
 async function initApp() {
     if (esPlatformAdmin()) {
         cambiarSeccion('seccionConfig');
-        popularFormularioConfiguracion();
     } else if (esUsuarioEmpresa()) {
         // Inicializar módulos operativos solo para usuarios de empresa.
         await initClientes();
@@ -635,17 +596,11 @@ async function initApp() {
         e.preventDefault();
         if (!esPlatformAdmin()) return;
         cambiarSeccion('seccionConfig');
-        popularFormularioConfiguracion();
     });
 
     const dashboardRefresh = document.getElementById("dashboardRefresh");
     if (dashboardRefresh) {
         dashboardRefresh.addEventListener("click", renderDashboard);
-    }
-
-    const formConfigEmpresa = document.getElementById("formConfigEmpresa");
-    if (formConfigEmpresa) {
-        formConfigEmpresa.addEventListener("submit", guardarConfiguracionEmpresa);
     }
 
     const formNuevaEmpresa = document.getElementById("formNuevaEmpresa");
@@ -668,7 +623,7 @@ async function initApp() {
         botonCancelarUsuario.addEventListener('click', resetUsuarioForm);
     }
 
-    popularFormularioConfiguracion();
+    
 
     // 1. Reloj profesional
     if(document.getElementById("pantallaGenerarVenta")){

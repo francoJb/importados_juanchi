@@ -92,7 +92,7 @@
             <!-- Aquí irán el Sidebar y el Contenido -->
             <!-- Sidebar (Menú Lateral) -->
             <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 border-r border-cyan-400/10 bg-slate-950 text-slate-100 shadow-2xl shadow-cyan-950/30 flex flex-col transform -translate-x-full transition-transform duration-300 md:static md:translate-x-0">
-                <!-- Logo de JR Import -->
+                <!-- Logo de ELDA GESTION -->
                 <div class="flex items-center justify-center font-black select-none">
                     <div class="flex items-center justify-center bg-gradient-to-br from-cyan-400 to-teal-500 mb-2 w-10 h-10 rounded-xl shadow-lg shadow-cyan-500/30">
                         <span class="text-white text-5xl mb-2">E</span>
@@ -308,7 +308,7 @@
                                     <input type="text" id="cuit" class="w-full border p-2 rounded-lg dark:bg-slate-700 font-mono" placeholder="20-XXXXXXXX-X">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold mb-1">Categoría ARCA (Ex-AFIP)</label>
+                                    <label class="block text-sm font-bold mb-1">Categoría ARCA</label>
                                     <select id="arca" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                         <option value="Consumidor Final">Consumidor Final</option>
                                         <option value="Responsable Monotributo">Responsable Monotributo</option>
@@ -610,7 +610,7 @@
                                             <option value="">Seleccione un proveedor...</option>
                                         </select>
                                         
-                                        <button type="button" id="btnAbrirModalProveedor" 
+                                        <button type="button" id="btnAbrirModalProveedorProducto" 
                                                 class="p-2 font-bold text-xl text-blue-500 items-center justify-center"
                                                 title="Agregar un nuevo proveedor">
                                             +
@@ -689,7 +689,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Proveedores</h1>
                         </div>
-                        <button id="btnAbrirModalProveedor" class="w-full md:w-auto btn-primary">
+                        <button id="btnAbrirModalProveedorSeccion" class="w-full md:w-auto btn-primary">
                             + Nuevo Proveedor
                         </button>
                     </header>
@@ -732,38 +732,43 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Nombre del Proveedor</label>
-                                    <input type="text" id="proveedorNombre" required placeholder="Ingresa el nombre del proveedor" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="text" id="proveedorNombre" required class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">CUIT</label>
-                                    <input type="text" id="proveedorCuit" placeholder="30-12345678-9" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="text" id="proveedorCuit" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Categoría ARCA</label>
-                                    <input type="text" id="proveedorArcaCategoria" placeholder="Categoría para ARCA" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <select id="proveedorArcaCategoria" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                        <option value="Consumidor Final">Consumidor Final</option>
+                                        <option value="Responsable Monotributo">Responsable Monotributo</option>
+                                        <option value="IVA Responsable Inscripto">IVA Responsable Inscripto</option>
+                                        <option value="Exento">Exento</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Cuenta Bancaria</label>
-                                    <input type="text" id="proveedorBancoCuenta" placeholder="Número de cuenta bancaria" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="text" id="proveedorBancoCuenta" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                             </div>
                             <!-- Columna Derecha -->
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Teléfono</label>
-                                    <input type="text" id="proveedorTelefono" placeholder="(011) 1234-5678" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="text" id="proveedorTelefono" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Dirección</label>
-                                    <input type="text" id="proveedorDireccion" placeholder="Dirección completa" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="text" id="proveedorDireccion" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Email</label>
-                                    <input type="email" id="proveedorEmail" placeholder="proveedor@email.com" class="w-full border p-2 rounded-lg dark:bg-slate-700">
+                                    <input type="email" id="proveedorEmail" class="w-full border p-2 rounded-lg dark:bg-slate-700">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold mb-1">Observaciones</label>
-                                    <textarea id="proveedorObservaciones" rows="3" placeholder="Observaciones" class="w-full border p-2 rounded-lg dark:bg-slate-700"></textarea>
+                                    <textarea id="proveedorObservaciones" rows="3" class="w-full border p-2 rounded-lg dark:bg-slate-700"></textarea>
                                 </div>
                                 <div class="pt-4 flex flex-wrap gap-3">
                                     <button type="submit" class="flex-1 btn-primary">GUARDAR</button>
@@ -790,50 +795,49 @@
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Razón Social</label>
-                                        <input id="configRazonSocial" type="text" class="form-input" placeholder="Ej: JR Import S.A.">
+                                        <input id="configRazonSocial" type="text" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Nombre Fantasía</label>
-                                        <input id="configNombreFantasia" type="text" class="form-input" placeholder="Ej: JR Import">
+                                        <input id="configNombreFantasia" type="text" class="form-input">
                                     </div>
                                 </div>
 
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">CUIT</label>
-                                        <input id="configCuit" type="text" class="form-input" placeholder="30-12345678-9">
+                                        <input id="configCuit" type="text" class="form-input" placeholder="Escribir sin guiones, ej: 30123456789">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Domicilio</label>
-                                        <input id="configDomicilio" type="text" class="form-input" placeholder="Calle Ficticia 123, CABA">
+                                        <input id="configDomicilio" type="text" class="form-input">
                                     </div>
                                 </div>
 
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Email</label>
-                                        <input id="configEmail" type="email" class="form-input" placeholder="info@jrimport.com">
+                                        <input id="configEmail" type="email" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Teléfono</label>
-                                        <input id="configTelefono" type="text" class="form-input" placeholder="(011) 1234-5678">
+                                        <input id="configTelefono" type="text" class="form-input">
                                     </div>
                                 </div>
 
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Sitio Web</label>
-                                        <input id="configWebsite" type="text" class="form-input" placeholder="www.jrimport.com">
+                                        <input id="configWebsite" type="text" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Condición frente al IVA</label>
-                                        <input id="configCondicionIva" type="text" class="form-input" placeholder="Responsable Inscripto">
+                                        <input id="configCondicionIva" type="text" class="form-input">
                                     </div>
                                 </div>
 
                                 <div class="flex flex-wrap gap-3 pt-4">
                                     <button type="submit" class="btn-primary">Guardar Empresa</button>
-                                    <button type="button" onclick="cambiarSeccion('seccionDashboard')" class="btn-secondary">Volver al Dashboard</button>
                                 </div>
                             </form>
                         </div>
@@ -844,17 +848,17 @@
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Nombre</label>
-                                        <input id="nuevaEmpresaNombre" type="text" class="form-input" placeholder="Nueva empresa">
+                                        <input id="nuevaEmpresaNombre" type="text" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Razón Social</label>
-                                        <input id="nuevaEmpresaRazonSocial" type="text" class="form-input" placeholder="Razón social">
+                                        <input id="nuevaEmpresaRazonSocial" type="text" class="form-input">
                                     </div>
                                 </div>
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">CUIT</label>
-                                        <input id="nuevaEmpresaCuit" type="text" class="form-input" placeholder="30-12345678-9">
+                                        <input id="nuevaEmpresaCuit" type="text" class="form-input" placeholder="Escribir sin guiones, ej: 30123456789">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Domicilio</label>
@@ -864,21 +868,21 @@
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Email</label>
-                                        <input id="nuevaEmpresaEmail" type="email" class="form-input" placeholder="contacto@empresa.com">
+                                        <input id="nuevaEmpresaEmail" type="email" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Teléfono</label>
-                                        <input id="nuevaEmpresaTelefono" type="text" class="form-input" placeholder="Teléfono">
+                                        <input id="nuevaEmpresaTelefono" type="text" class="form-input">
                                     </div>
                                 </div>
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Sitio Web</label>
-                                        <input id="nuevaEmpresaWebsite" type="text" class="form-input" placeholder="Sitio web">
+                                        <input id="nuevaEmpresaWebsite" type="text" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold mb-1">Condición IVA</label>
-                                        <input id="nuevaEmpresaCondicionIva" type="text" class="form-input" placeholder="Responsable Inscripto">
+                                        <input id="nuevaEmpresaCondicionIva" type="text" class="form-input">
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-3 pt-4">
