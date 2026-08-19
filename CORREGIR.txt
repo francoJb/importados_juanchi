@@ -1,17 +1,30 @@
-al generar una venta:
-	en el carrito de venta solo figura la descripción del producto, no asi el nro de motor, chasis, etc todos los campos de un VEHICULO. lo mismo en la factura de venta (solo se muestra "Moto 110" y en precio unitario "$NaN" en subtotal "$NaN") 
-	Agregar MARCA y MODELO a la factura cuando se trate de la venta de un VEHICULO.
-No se descuenta del stock de vehículos.
-	SOLUCION: crear un modal de edición para los VEHICULOS, donde permita seleccionar el VEHICULO de una lista de vehículos cargados con sus respectivos nro de chasis , etc.
-		Agregar una lista desplegable al carrito de ventas, donde se muestren los chasis cargados.
+URGENTES
 
+	EDITAR PRODUCTO NO FUNCIONA.
+		al querer GUARDAR la edición de un producto,  se muesrta el siguiente error "❌  obtenerOCrearCategoria is not defined. ARREGLAR
+
+	EL STOCK NO SE GUARDA.
+		al querer guardar un producto nuevo con stock de 5 por ej., no se guarda el stock (si se guarda el stock minimo). ARREGLAR
+		el sistema permite llegar hasta el metodo de pago para alertar que NO HAY STOCK del producto con el siguiete alert: "Error al procesar
+		venta: Fallo en la base de datos: Stock insuficiente para "Producto55". Disponible: 0"
+
+	EN LA PANTALLA "DETALLE DE VENTA"
+		la descripcion del producto vendido en el caso de que sea una MOTO, falta uinformacion de chasis, nro de motor , etc.
+		
 -------------------------------------------------------------
- EDITAR PRODUCTO NO FUNCIONA.
-	al querer GUARDAR la edición de un producto,  se muesrta el siguiente error "❌ Unknown column 'vehiculo_anio' in 'field list'". ARREGLAR
 
--------------------------------------------------------------
+ALERTAS
 
-AGREGAR CARTEL DE ALERTA DE PRODUCTO SIN STOCK al momento de querer agregarlo al carrito de ventas, hoy la alerta ocurre cuando se presiona el boton CREAR, tarde para la dinámica de carga de productos.
+	ALERTA DE "SUCCESS: Proveedor creado exitosamente"
+		normalizar con el diseño del resto de las ALERTAS
+
+	ALERTA DE "EXITO: Categoria añadida con exito"
+		normalizar con el diseño del resto de las ALERTAS
+	
+	ALERTA AL QUERER SALIR DE LA PANTALLA DE CARRITO CON BOTON "ESCAPE"
+		normalizar diseño, hoy se muestra un "Alert" con lo siguiemnte:"⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver?".
+		Sin embargo, cuando el carrito tiene productos y se hace click en otra seccion, no se alerta al usuario.
+		SOLUCION: DEJAR CARGADOS LOS PRODUCTOS AL SALIR DEL CARRITO DE VENTAS 
 
 
 ------------------------------------------------------------
@@ -22,15 +35,10 @@ ERROR GRAVISIMO:
 
 
 -------------------------------------------------------------
-
-el mismo cartel de alerta que me avisa que tengo productos cargados en el carrito cuando presiono ESC:
-⚠️ Tenés productos cargados. ¿Seguro que querés cancelar la venta y volver? (cambiar ese ALERT por un modal)
-quiero que aparezca también cuando hago click en alguna sección, que salga de la pantalla de ventas.
-
---------------------------------------------------------------
+INVESTIGAR. COMO SE GESTIONAN LOS PRODUTOS DE UN LOCAL COMO FRAVEGA, QUE VENDE TANTO MOTOS, COMO ELECTRODOMESTICOS.
 
 
-Al generar el recibo de pago, cuando cancelo 3 cuotas juntas, me genera un recibo ppor cada cuota, eso debe corregirse para que un recibo muestre el el detalle de las cuotas pagadas.
+
 
 
 --------------------------------------------------------------
