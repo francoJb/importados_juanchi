@@ -183,8 +183,27 @@ exports.editarProducto = async (req, res) => {
     }
 
     try {
-        const categoriaId = await obtenerOCrearCategoria(p.categoria, empresaId);
-        const proveedorId = await obtenerOCrearProveedor(p.proveedor, empresaId);
+        const categoriaId = p.categoria_id || null;
+
+        let proveedorId = null;
+        if (p.proveedor_nombre?.trim() || p.proveedor?.trim()) {
+            const nombreProveedor = (p.proveedor_nombre || p.proveedor).trim().toUpperCase();
+
+            const [existingProv] = await db.query(
+                "SELECT id FROM proveedores WHERE empresa_id = ? AND nombre = ? AND estado = 1",
+                [empresaId, nombreProveedor]
+            );
+
+            if (existingProv.length > 0) {
+                proveedorId = existingProv[0].id;
+            } else {
+                const [resultProv] = await db.query(
+                    "INSERT INTO proveedores (empresa_id, nombre, estado) VALUES (?, ?, 1)",
+                    [empresaId, nombreProveedor]
+                );
+                proveedorId = resultProv.insertId;
+            }
+        }
 
         const sql = `
             UPDATE productos SET

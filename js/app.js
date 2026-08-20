@@ -3,7 +3,7 @@
 // ==========================================
 import { configurarBuscadorVentas } from "./ventas.js";
 import { initClientes, fetchClientes } from "./clientes.js";
-import { initProductos, fetchProductos } from "./productos.js";
+import { initProductos, fetchProductos, listarProductos } from "./productos.js";
 import { initProveedores, listarProveedores } from "./proveedores.js";
 import { initVentas, listarVentas, obtenerHistorialVentas } from "./ventas.js";
 import { initImportarProductos } from "./importarProductos.js";
@@ -577,10 +577,11 @@ async function initApp() {
     }
 
     // 4. Cuando hagan clic en Productos
-    document.getElementById("linkProductos").addEventListener("click", (e) => {
+    document.getElementById("linkProductos").addEventListener("click", async (e) => {
         e.preventDefault();
         if (!esUsuarioEmpresa()) return;
         cambiarSeccion('seccionProductos');
+        await listarProductos();
     });
 
     // 5. Cuando hagan clic en Proveedores
