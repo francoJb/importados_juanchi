@@ -1,15 +1,6 @@
 URGENTES
 
-	EDITAR PRODUCTO NO FUNCIONA.
-		al querer GUARDAR la edición de un producto,  se muesrta el siguiente error "❌  obtenerOCrearCategoria is not defined. ARREGLAR
 
-	EL STOCK NO SE GUARDA.
-		al querer guardar un producto nuevo con stock de 5 por ej., no se guarda el stock (si se guarda el stock minimo). ARREGLAR
-		el sistema permite llegar hasta el metodo de pago para alertar que NO HAY STOCK del producto con el siguiete alert: "Error al procesar
-		venta: Fallo en la base de datos: Stock insuficiente para "Producto55". Disponible: 0"
-
-	EN LA PANTALLA "DETALLE DE VENTA"
-		la descripcion del producto vendido en el caso de que sea una MOTO, falta uinformacion de chasis, nro de motor , etc.
 		
 -------------------------------------------------------------
 

@@ -642,7 +642,19 @@ window.verDetalleVenta = async (id) => {
     body.innerHTML = detalles.map(d => `
         <tr class="text-sm">
             <td class="py-4 font-mono text-gray-500">${d.sku}</td>
-            <td class="py-4 font-medium dark:text-white">${d.descripcion}</td>
+            <td class="py-4 font-medium dark:text-white">
+                <div>${d.descripcion}</div>
+                ${(d.vehiculo_chasis || d.vehiculo_motor) ? `
+                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 font-normal space-y-0.5">
+                        ${d.marca || d.modelo ? `<div>Marca/Modelo: ${d.marca || ''} ${d.modelo || ''}</div>` : ''}
+                        ${d.vehiculo_chasis ? `<div>Chasis: ${d.vehiculo_chasis}</div>` : ''}
+                        ${d.vehiculo_motor ? `<div>Motor: ${d.vehiculo_motor}</div>` : ''}
+                        ${d.vehiculo_color ? `<div>Color: ${d.vehiculo_color}</div>` : ''}
+                        ${d.vehiculo_anio ? `<div>Año: ${d.vehiculo_anio}</div>` : ''}
+                        ${d.patente ? `<div>Patente: ${d.patente}</div>` : ''}
+                    </div>
+                ` : ''}
+            </td>
             <td class="py-4 text-right font-mono">$${parseFloat(d.precio_unitario).toFixed(2)}</td>
             <td class="py-4 text-center font-bold text-blue-600">x${d.cantidad}</td>
             <td class="py-4 text-right font-black dark:text-white font-mono">$${(d.cantidad * d.precio_unitario).toFixed(2)}</td>

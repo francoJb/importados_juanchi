@@ -95,6 +95,7 @@ exports.crearProducto = async (req, res) => {
             descripcion,
             costo,
             precio_neto,
+            stock,
             stock_minimo,
             control_stock,
             categoria_id,
@@ -134,7 +135,7 @@ exports.crearProducto = async (req, res) => {
                 categoria_id,
                 proveedor_id,
                 estado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1)`, 
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`, 
             [
                 empresaId,
                 sku,
@@ -143,6 +144,7 @@ exports.crearProducto = async (req, res) => {
                 descripcion,
                 costo,
                 precio_neto,
+                stock || 0,
                 stock_minimo || 0,
                 control_stock ? 1 : 0,
                 categoria_id || null,
@@ -298,7 +300,7 @@ exports.obtenerUnidadesDisponibles = async (req, res) => {
         const { productoId } = req.params;
 
         const [unidades] = await db.query(
-            `SELECT id, chasis, motor, color, anio, patente 
+            `SELECT id, tipo, chasis, motor, color, anio, patente 
              FROM vehiculos_unidades 
              WHERE empresa_id = ? AND producto_id = ? AND estado_venta = 'Disponible' AND estado = 1
              ORDER BY fecha_ingreso ASC`,

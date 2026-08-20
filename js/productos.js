@@ -188,8 +188,9 @@ export async function prepararEdicionProducto(id) {
 }
 
 // 1. FUNCIÓN PARA ABRIR EL MODAL Y CARGAR LOS DATOS ACTUALES
-window.abrirModalEditarUnidad = function(id, chasis, motor, color, anio, patente) {
+window.abrirModalEditarUnidad = function(id, tipo, chasis, motor, color, anio, patente) {
     document.getElementById('editUnidadId').value = id;
+    document.getElementById('editTipo').value = tipo || '';
     document.getElementById('editChasis').value = chasis || '';
     document.getElementById('editMotor').value = motor || '';
     document.getElementById('editColor').value = color || '';
@@ -211,6 +212,7 @@ window.guardarCambiosUnidad = async function(event) {
 
     const id = document.getElementById('editUnidadId').value;
     const datosModificados = {
+        tipo: document.getElementById('editTipo').value,
         chasis: document.getElementById('editChasis').value,
         motor: document.getElementById('editMotor').value,
         color: document.getElementById('editColor').value,
@@ -219,7 +221,7 @@ window.guardarCambiosUnidad = async function(event) {
     };
 
     try {
-        const response = await fetch(`/vehiculos/unidades/${id}`, {
+        const response = await apiFetch(`${API_URL}/vehiculos/unidades/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -236,8 +238,13 @@ window.guardarCambiosUnidad = async function(event) {
         alert('✅ ¡Datos del vehículo corregidos con éxito!');
         window.cerrarModalEditarUnidad();
         
-        if (typeof window.obtenerProductos === 'function') {
-            window.obtenerProductos();
+        await listarProductos(productosEstado);
+
+        if (window.productoUnidadesActualId) {
+            await window.verUnidadesVehiculo(
+                window.productoUnidadesActualId,
+                window.productoUnidadesActualDescripcion
+            );
         }
 
     } catch (error) {
@@ -373,6 +380,8 @@ export async function initProductos() {
 // ==========================================
 
 window.verUnidadesVehiculo = async function(productoId, descripcion) {
+    window.productoUnidadesActualId = productoId;
+    window.productoUnidadesActualDescripcion = descripcion;
     try {
         // 1. Llamamos al endpoint del backend que ya tenemos creado
         const res = await apiFetch(`${API_URL}/${productoId}/unidades-disponibles`);
@@ -410,7 +419,7 @@ window.verUnidadesVehiculo = async function(productoId, descripcion) {
                         <td class="p-3 text-center">${u.anio || '-'}</td>
                         <td class="p-3 text-center">${u.patente || '-'}</td>
                         <td class="p-3 text-center">
-                            <button onclick="abrirModalEditarUnidad(${u.id}, '${u.chasis}', '${u.motor}', '${u.color}', ${u.anio}, '${u.patente}')" 
+                            <button onclick="abrirModalEditarUnidad(${u.id}, '${u.tipo}', '${u.chasis}', '${u.motor}', '${u.color}', ${u.anio}, '${u.patente}')" 
                                     class="text-blue-600 dark:text-blue-400 hover:underline font-medium">
                                 Editar
                             </button>
@@ -491,7 +500,7 @@ if (formNuevaUnidad) {
             
         } catch (err) {
             console.error("Error al guardar la unidad:", err);
-            mostrarAlerta("Error al guardar la unidad: " + err.message, "Error", "error");
+            mostrarAlerta("Error al guardar la unidad: Nro de Chasis o Motor ya existen");
         }
     };
 }
