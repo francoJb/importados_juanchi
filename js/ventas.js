@@ -1344,6 +1344,9 @@ window.anularVenta = async (id) => {
             // Si la función devuelve las filas (o si están globales), forzamos el re-renderizado
             if (ventasActualizadas && typeof renderTablaVentas === "function") {
                 renderTablaVentas(ventasActualizadas);
+                if (typeof window.renderDashboard === "function") {
+                    await window.renderDashboard();
+                }
             } else {
                 // Alternativa segura: Si tu función 'obtenerHistorialVentas' no retorna el array directamente
                 // simplemente recargamos la sección emulando el clic de forma automática:

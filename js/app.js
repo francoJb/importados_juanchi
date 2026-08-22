@@ -407,7 +407,7 @@ function crearGraficoVentas(ventas) {
         }
     });
 }
-
+window.renderDashboard = renderDashboard;
 async function renderDashboard() {
     if (!esUsuarioEmpresa()) {
         return;
@@ -427,13 +427,14 @@ async function renderDashboard() {
         const hace30Dias = new Date(ahora);
         hace30Dias.setDate(hace30Dias.getDate() - 30);
 
-        const ventasMes = ventas.filter(v => {
+        const ventasValidas = ventas.filter(v => Number(v.anulada) !== 1);
+        const ventasMes = ventasValidas.filter(v => {
             const fecha = fechaValida(v.fecha);
             return fecha && fecha >= primerDiaMes && fecha <= ahora;
         });
 
         const totalMes = ventasMes.reduce((sum, v) => sum + Number(v.total || 0), 0);
-        const saldoPendiente = ventas.reduce((sum, v) => sum + Number(v.saldo_pendiente || 0), 0);
+        const saldoPendiente = ventasValidas.reduce((sum, v) => sum + Number(v.saldo_pendiente || 0), 0);
         const nuevosClientes = clientes.filter(c => {
             const fecha = fechaValida(c.fecha_alta);
             return fecha && fecha >= hace30Dias && fecha <= ahora;
@@ -446,7 +447,7 @@ async function renderDashboard() {
         document.getElementById("dashboardProductosStockBajo").innerText = stockBajo;
         document.getElementById("dashboardLowStockList").innerHTML = generarListaStockBajo(productos);
 
-        const ultimas5 = ventas.slice(0, 5);
+        const ultimas5 = ventasValidas.slice(0, 5);
         document.getElementById("dashboardUltimasVentasBody").innerHTML = ultimas5.map(v => {
             const fecha = fechaValida(v.fecha);
             const cliente = v.cliente_nombre
@@ -462,7 +463,7 @@ async function renderDashboard() {
             `;
         }).join('');
 
-        const topProductos = await obtenerTopProductosMasVendidos(ventas);
+        const topProductos = await obtenerTopProductosMasVendidos(ventasValidas);
         document.getElementById("dashboardTopProductosBody").innerHTML = topProductos.map(p => `
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <td class="p-3 text-gray-700 dark:text-gray-200">${escapeHTML(p.descripcion)}</td>
